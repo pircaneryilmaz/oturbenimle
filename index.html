@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>oturbenimle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Three.js Import Map (CDN üzerinden güvenli ve hızlı modül yükleme) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            font-family: 'Space Mono', monospace;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            border-radius: 0px !important;
+        }
+        .pixel-title {
+            font-family: 'Silkscreen', monospace;
+            letter-spacing: -0.02em;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            overscroll-behavior: none;
+            background-color: #11131a;
+        }
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            z-index: 1;
+        }
+        #css2d-container {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+        #css2d-container > div {
+            pointer-events: none !important;
+        }
+        
+        /* Minimal Pixel Arayüz Stilleri */
+        .glass-panel {
+            background: #171a24;
+            border: 2px solid #33394d;
+            box-shadow: 4px 4px 0px #090b10;
+        }
+        .glass-card {
+            background: #1d212e;
+            border: 2px solid #2e3446;
+            box-shadow: 3px 3px 0px #090b10;
+            transition: transform 0.1s steps(2), border-color 0.1s steps(2), background-color 0.1s steps(2);
+        }
+        .glass-card:hover {
+            background: #252a3a;
+            border-color: #64748b;
+            transform: translate(-1px, -1px);
+        }
+        .glass-card.active {
+            background: #2b211a;
+            border-color: #f97316;
+            box-shadow: 3px 3px 0px #7c2d12;
+        }
+        .pixel-btn {
+            border: 2px solid #090b10;
+            box-shadow: 3px 3px 0px #090b10;
+            transition: transform 0.08s steps(2);
+        }
+        .pixel-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #090b10;
+        }
+
+        /* 3D Konuşma Balonları (CSS2DRenderer - Minimal Pixel) */
+        .speech-bubble-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(-92%);
+            pointer-events: none;
+            z-index: 15;
+        }
+        .speech-bubble {
+            background: #f8fafc;
+            color: #0f172a;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.35;
+            min-width: 48px;
+            max-width: min(175px, 44vw);
+            word-wrap: break-word;
+            text-align: center;
+            border: 2px solid #0f172a;
+            box-shadow: 3px 3px 0px #0f172a;
+            position: relative;
+            animation: bubblePop 0.18s steps(3) forwards;
+            margin-bottom: 6px;
+        }
+        @media (min-width: 640px) {
+            .speech-bubble {
+                padding: 7px 12px;
+                font-size: 12px;
+                max-width: 220px;
+                margin-bottom: 7px;
+            }
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: #f8fafc;
+            border-right: 2px solid #0f172a;
+            border-bottom: 2px solid #0f172a;
+        }
+        .speech-bubble.fade-out {
+            animation: bubbleFade 0.25s steps(3) forwards;
+        }
+        .name-tag {
+            background: #171a24;
+            color: #f8fafc;
+            padding: 3px 9px;
+            font-family: 'Silkscreen', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            border: 2px solid #475569;
+            box-shadow: 2px 2px 0px #090b10;
+            white-space: nowrap;
+        }
+        .seat-badge {
+            pointer-events: auto;
+            cursor: pointer;
+            touch-action: manipulation;
+            background: #10b981;
+            color: #052e16;
+            border: 2px solid #052e16;
+            padding: 6px 12px;
+            font-family: 'Silkscreen', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 3px 3px 0px #052e16;
+            animation: floatBadge 1.6s steps(2) infinite;
+        }
+        .seat-badge:hover, .seat-badge:active {
+            background: #34d399;
+        }
+
+        /* Piksel Art Önizleme ve İkram Rozetleri */
+        .pixel-art-img {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        .character-card {
+            background: #1d212e;
+            border: 2px solid #2e3446;
+            box-shadow: 2px 2px 0px #090b10;
+            transition: transform 0.1s steps(2), border-color 0.1s steps(2);
+        }
+        .character-card:hover {
+            background: #252a3a;
+            border-color: #64748b;
+        }
+        .character-card.active {
+            background: #2b211a;
+            border-color: #f97316;
+            box-shadow: 2px 2px 0px #7c2d12;
+        }
+
+        /* Yatay kaydırmada scrollbar gizle */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        #hover-tooltip {
+            position: fixed;
+            z-index: 25;
+            pointer-events: none;
+            background: #064e3b;
+            color: #ecfdf5;
+            border: 2px solid #34d399;
+            padding: 4px 10px;
+            font-family: 'Silkscreen', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            box-shadow: 3px 3px 0px #090b10;
+            transform: translate(14px, 14px);
+            transition: opacity 0.1s steps(2);
+        }
+
+        @keyframes bubblePop {
+            0% { opacity: 0; transform: scale(0.75) translateY(6px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes bubbleFade {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes floatBadge {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        /* Özel Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #11131a; }
+        ::-webkit-scrollbar-thumb { background: #33394d; }
+    </style>
+</head>
+<body class="text-slate-100">
+
+    <!-- 3D Sahne ve 2D Etiket Katmanları -->
+    <div id="canvas-container"></div>
+    <div id="css2d-container"></div>
+    <div id="hover-tooltip" class="opacity-0">🪑 Oturmak için tıkla</div>
+
+    <!-- Üst HUD (Oda Bilgisi & Kontroller) -->
+    <header id="top-hud" class="fixed top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex items-center justify-between gap-2 pointer-events-none">
+        <div class="glass-panel px-3 py-2 sm:px-3.5 sm:py-2 flex items-center gap-2.5 pointer-events-auto min-w-0">
+            <div id="room-theme-icon" class="w-8 h-8 shrink-0 bg-[#2b211a] border-2 border-orange-500 flex items-center justify-center text-sm sm:text-base">
+                ☕
+            </div>
+            <div class="min-w-0">
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <span class="pixel-title text-[10px] sm:text-xs font-bold text-orange-400">oturbenimle</span>
+                    <span class="text-slate-600 text-xs">•</span>
+                    <h1 id="hud-room-title" class="text-[11px] sm:text-xs font-bold text-white truncate">2 Kişilik Masa</h1>
+                    <span id="hud-seat-count" class="hidden sm:inline-block shrink-0 text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-500">2/2</span>
+                </div>
+                <p id="hud-theme-name" class="text-[10px] sm:text-[11px] text-slate-400 truncate">Kafe • 2 Kişilik Masa</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 pointer-events-auto">
+            <!-- Ambiyans Sesi Butonu -->
+            <button id="btn-audio" title="Ambiyans & Lo-Fi Sesi" class="glass-panel pixel-btn hover:bg-[#252a3a] px-2.5 py-2 sm:px-3 flex items-center gap-1.5 text-[11px] font-bold text-slate-200">
+                <span id="audio-icon" class="text-sm">🔇</span>
+                <span class="hidden md:inline pixel-title text-[10px]" id="audio-label">Ses: Kapalı</span>
+            </button>
+
+            <!-- Yeni Kişiyle Eşleş Butonu -->
+            <button id="btn-next-match" title="Yeni Biriyle Eşleş" class="pixel-btn bg-emerald-500 hover:bg-emerald-400 px-2.5 py-2 sm:px-3 flex items-center gap-1 text-[11px] font-bold text-slate-950">
+                <span>🔄</span>
+                <span class="pixel-title text-[10px]">Yeni</span>
+            </button>
+
+            <!-- Ayağa Kalk Butonu (Sadece otururken görünür) -->
+            <button id="btn-stand" class="hidden pixel-btn bg-amber-400 hover:bg-amber-300 px-2.5 py-2 sm:px-3 flex items-center gap-1 text-[11px] font-bold text-slate-950">
+                <span>🧍</span>
+                <span class="pixel-title text-[10px]">Kalk</span>
+            </button>
+
+            <!-- Ortam Değiştir Butonu -->
+            <button id="btn-open-lobby" class="glass-panel pixel-btn hover:bg-[#252a3a] px-2.5 py-2 sm:px-3 flex items-center gap-1.5 text-[11px] font-bold text-white">
+                <span>🌍</span>
+                <span class="hidden sm:inline pixel-title text-[10px]">Ortam</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Alt Sohbet Çubuğu, Akan Mesaj Geçmişi ve Hızlı İfadeler -->
+    <div id="bottom-chat-bar" class="fixed bottom-2.5 sm:bottom-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-col items-center pointer-events-none pb-[env(safe-area-inset-bottom)]">
+        <!-- İpucu / Durum Bildirimi -->
+        <div id="toast-banner" class="mb-2 px-3 py-1 glass-panel text-[11px] text-amber-200 opacity-0 transition-opacity duration-200 pointer-events-none text-center">
+            Mesaj göndermek için önce boş bir sandalyeye otur!
+        </div>
+
+        <div class="w-full max-w-xl glass-panel p-2 sm:p-2.5 pointer-events-auto flex flex-col gap-1.5 sm:gap-2">
+            <!-- Altta Akan Canlı Sohbet Geçmişi -->
+            <div id="live-chat-feed" class="max-h-20 sm:max-h-24 overflow-y-auto flex flex-col gap-1 px-1.5 py-1 bg-[#11131a] border-2 border-[#2a2f40] text-[11px]">
+                <div id="chat-feed-list" class="flex flex-col gap-1"></div>
+            </div>
+
+            <!-- Hızlı Emoji & Tepki Çubuğu -->
+            <div class="flex items-center justify-between px-0.5 gap-1">
+                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                    <button type="button" id="btn-toggle-menu" class="pixel-btn text-[10px] font-bold px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 whitespace-nowrap flex items-center gap-1">
+                        <span>🍽️</span>
+                        <span class="pixel-title">Menü</span>
+                    </button>
+                    <button type="button" id="btn-consume-item" class="hidden pixel-btn text-[10px] font-bold px-2.5 py-1 bg-emerald-400 hover:bg-emerald-300 text-slate-950 whitespace-nowrap flex items-center gap-1">
+                        <span id="consume-icon">☕</span>
+                        <span id="consume-label" class="pixel-title">Yudumla</span>
+                    </button>
+                    <button type="button" data-quick="Selam! 👋" class="quick-msg text-[11px] px-2 py-1 bg-[#222736] hover:bg-[#2e3446] border border-[#3a4156] text-slate-200 whitespace-nowrap">👋 Selam!</button>
+                    <button type="button" data-quick="Ortama bayıldım ✨" class="quick-msg text-[11px] px-2 py-1 bg-[#222736] hover:bg-[#2e3446] border border-[#3a4156] text-slate-200 whitespace-nowrap">✨ Ortam</button>
+                    <button type="button" data-quick="😂😂" class="quick-msg text-[11px] px-2 py-1 bg-[#222736] hover:bg-[#2e3446] border border-[#3a4156] text-slate-200 whitespace-nowrap">😂 Haha</button>
+                </div>
+                <span class="text-[10px] text-slate-400 hidden sm:inline shrink-0 ml-2">Sürükle: Bak</span>
+            </div>
+
+            <!-- Etkileşimli Sipariş ve Masaya Ismarlama Çekmecesi -->
+            <div id="order-drawer" class="hidden flex-col gap-2 p-2 bg-[#11131a] border-2 border-amber-500">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="pixel-title text-[10px] font-bold text-amber-300">🎁 Kime İkram?</span>
+                    <div id="treat-target-list" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                        <!-- JS ile doldurulacak (Kendime / Masadaki diğer kişiler) -->
+                    </div>
+                </div>
+                <div id="menu-items-grid" class="grid grid-cols-3 gap-1.5">
+                    <!-- JS ile mekana göre doldurulacak -->
+                </div>
+            </div>
+
+            <!-- Mesaj Yazma Alanı (16px font mobil iOS otomatik zoom yapmasını engeller) -->
+            <form id="chat-form" class="flex items-center gap-1.5 sm:gap-2">
+                <input 
+                    id="chat-input" 
+                    type="text" 
+                    maxlength="90"
+                    autocomplete="off"
+                    placeholder="Masaya bir şeyler yaz..." 
+                    class="flex-1 min-w-0 bg-[#11131a] border-2 border-[#33394d] focus:border-orange-400 focus:outline-none px-3 py-2 text-base sm:text-xs text-white placeholder-slate-500 select-text"
+                >
+                <button 
+                    type="submit" 
+                    class="pixel-btn shrink-0 bg-orange-500 hover:bg-orange-400 text-slate-950 font-bold text-xs px-3.5 py-2 flex items-center gap-1.5">
+                    <span class="pixel-title text-[11px]">Gönder</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LOBİ & ODA SEÇİM MODALI (MINIMAL PIXEL) -->
+    <div id="lobby-modal" class="fixed inset-0 z-30 bg-[#090b10]/90 flex items-end sm:items-center justify-center p-2.5 sm:p-4 overflow-y-auto">
+        <div class="glass-panel w-full max-w-2xl p-4 sm:p-6 my-auto max-h-[92dvh] overflow-y-auto">
+            
+            <!-- Başlık -->
+            <div class="flex items-center justify-between pb-3 mb-3.5 border-b-2 border-[#2a2f40]">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg sm:text-xl">🪑</span>
+                        <h2 class="pixel-title text-lg sm:text-2xl font-bold text-orange-400">oturbenimle</h2>
+                    </div>
+                    <p class="text-[11px] sm:text-xs text-slate-400 mt-0.5">Karakterini ve ortamını seç, 2 kişilik masada sohbete başla.</p>
+                </div>
+                <button id="btn-close-lobby" class="hidden pixel-btn w-8 h-8 shrink-0 bg-[#222736] hover:bg-[#2e3446] flex items-center justify-center text-slate-200 font-bold">✕</button>
+            </div>
+
+            <!-- Profil Ayarları (Takma Ad & Pixel Karakter Seçimi) -->
+            <div class="flex flex-col gap-2.5 mb-3.5 sm:mb-4 p-3 bg-[#11131a] border-2 border-[#2a2f40]">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex-1">
+                        <label class="pixel-title block text-[10px] font-bold text-slate-400 mb-1">Takma Adın</label>
+                        <input id="input-nickname" type="text" maxlength="16" value="Misafir" placeholder="Adını yaz..." class="w-full bg-[#171a24] border-2 border-[#33394d] focus:border-orange-400 focus:outline-none px-3 py-1.5 text-base sm:text-xs text-white select-text">
+                    </div>
+                    <div class="text-right shrink-0">
+                        <span class="pixel-title block text-[10px] font-bold text-slate-400 mb-1">Seçilen</span>
+                        <span id="selected-char-name" class="inline-block text-[11px] font-bold px-2.5 py-1.5 bg-[#2b211a] text-orange-300 border-2 border-orange-500">Zeynep (Spor)</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1.5">
+                        <span class="pixel-title">Karakterini Seç</span>
+                        <span>4 Kadın • 4 Erkek</span>
+                    </div>
+                    <div id="character-picker" class="grid grid-cols-4 gap-1.5 sm:gap-2">
+                        <!-- JS ile 4 kadın + 4 erkek pixel art karakter önizlemesi oluşturulacak -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. Adım: Kategori / Mekan Seçimi -->
+            <div class="mb-4 sm:mb-5">
+                <label class="pixel-title block text-[10px] font-bold text-slate-400 mb-2">Ortam Seç</label>
+                <div id="theme-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button type="button" data-theme="cafe" class="glass-card active p-2.5 text-left flex flex-col gap-1">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-base">☕</span>
+                            <span class="pixel-title font-bold text-xs text-white">Kafe</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 leading-tight">Sıcak ahşap dokulu 2 kişilik kafe masası</span>
+                    </button>
+                    <button type="button" data-theme="campfire" class="glass-card p-2.5 text-left flex flex-col gap-1">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-base">🔥</span>
+                            <span class="pixel-title font-bold text-xs text-white">Kamp Ateşi</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 leading-tight">Ormanda ateş başı & 2 kamp sandalyesi</span>
+                    </button>
+                    <button type="button" data-theme="bosphorus" class="glass-card p-2.5 text-left flex flex-col gap-1">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-base">🗼</span>
+                            <span class="pixel-title font-bold text-xs text-white">Sahilde Bank</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 leading-tight">Üsküdar Kız Kulesi manzaralı bank</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Adım: Otomatik Eşleşme Başlat -->
+            <div class="flex flex-col items-center gap-1.5">
+                <button id="btn-auto-match" type="button" class="pixel-btn w-full py-3 sm:py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2">
+                    <span>🎲</span>
+                    <span id="match-btn-label" class="pixel-title">Otur & Eşleş</span>
+                </button>
+                <p id="match-status-text" class="text-[10px] text-slate-400 text-center">Anında 2 kişilik masada biriyle eşleşirsin.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ANA 3D OYUN VE SİMÜLASYON MOTORU -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // ==========================================
+        // 1. OYUN DURUMU VE VERİ YAPISI (STATE)
+        // ==========================================
+        const CHARACTER_PRESETS = [
+            // --- 4 KADIN KARAKTER ---
+            {
+                id: 'f_sporty',
+                gender: 'F',
+                label: 'Zeynep (Spor)',
+                accent: '#ec4899',
+                hairColor: '#4a2c18',
+                hairHighlight: '#6e4226',
+                hairStyle: 'ponytail',
+                outfitType: 'f_sporty',
+                topColor: '#ec4899',
+                pantsColor: '#1e293b',
+                shoeColor: '#38bdf8'
+            },
+            {
+                id: 'f_pajama',
+                gender: 'F',
+                label: 'Melis (Pijama)',
+                accent: '#c084fc',
+                hairColor: '#78350f',
+                hairHighlight: '#9a4716',
+                hairStyle: 'messy_bun',
+                outfitType: 'f_pajama',
+                topColor: '#c084fc',
+                pantsColor: '#a855f7',
+                shoeColor: '#fbcfe8'
+            },
+            {
+                id: 'f_fancy',
+                gender: 'F',
+                label: 'Alara (Şık)',
+                accent: '#f43f5e',
+                hairColor: '#b91c1c',
+                hairHighlight: '#ef4444',
+                hairStyle: 'long_glam',
+                outfitType: 'f_fancy',
+                topColor: '#f8fafc',
+                skirtColor: '#e11d48',
+                pantsColor: '#f3c6a5',
+                shoeColor: '#be123c'
+            },
+            {
+                id: 'f_student',
+                gender: 'F',
+                label: 'İrem (Çantalı)',
+                accent: '#f59e0b',
+                hairColor: '#292524',
+                hairHighlight: '#44403c',
+                hairStyle: 'bob_bangs',
+                outfitType: 'f_student',
+                topColor: '#d97706',
+                pantsColor: '#1e3a8a',
+                shoeColor: '#f8fafc',
+                hasBag: true
+            },
+            // --- 4 ERKEK KARAKTER ---
+            {
+                id: 'm_sporty',
+                gender: 'M',
+                label: 'Batu (Atletik)',
+                accent: '#10b981',
+                hairColor: '#1c1917',
+                hairHighlight: '#3f3f46',
+                hairStyle: 'short_spiky',
+                outfitType: 'm_sporty',
+                topColor: '#10b981',
+                pantsColor: '#0f172a',
+                shoeColor: '#34d399',
+                hasHeadband: true
+            },
+            {
+                id: 'm_suit',
+                gender: 'M',
+                label: 'Kerem (Kravatlı)',
+                accent: '#3b82f6',
+                hairColor: '#3b2314',
+                hairHighlight: '#5c3822',
+                hairStyle: 'slick_back',
+                outfitType: 'm_suit',
+                topColor: '#1e293b',
+                pantsColor: '#0f172a',
+                shoeColor: '#1c1917'
+            },
+            {
+                id: 'm_casual',
+                gender: 'M',
+                label: 'Emir (Kapüşon)',
+                accent: '#38bdf8',
+                hairColor: '#854d0e',
+                hairHighlight: '#a16207',
+                hairStyle: 'messy_fringe',
+                outfitType: 'm_casual',
+                topColor: '#0284c7',
+                pantsColor: '#334155',
+                shoeColor: '#e2e8f0'
+            },
+            {
+                id: 'm_student',
+                gender: 'M',
+                label: 'Ozan (Gözlüklü)',
+                accent: '#a78bfa',
+                hairColor: '#54331d',
+                hairHighlight: '#73482b',
+                hairStyle: 'side_part',
+                outfitType: 'm_student',
+                topColor: '#4f46e5',
+                pantsColor: '#29221e',
+                shoeColor: '#6366f1',
+                hasGlasses: true,
+                hasBag: true
+            }
+        ];
+
+        const THEME_MENUS = {
+            cafe: [
+                { id: 'latte', icon: '☕', name: 'Özel Latte', color: 0xd97706, type: 'cup' },
+                { id: 'cheesecake', icon: '🍰', name: 'Cheesecake', color: 0xf43f5e, type: 'plate' },
+                { id: 'croissant', icon: '🥐', name: 'Kruvasan', color: 0xf59e0b, type: 'plate' }
+            ],
+            campfire: [
+                { id: 'cola', icon: '🥤', name: 'Soğuk Kola', color: 0x3b1810, type: 'cup' },
+                { id: 'beer', icon: '🍺', name: 'Soğuk Bira', color: 0xf59e0b, type: 'cup' },
+                { id: 'peanuts', icon: '🥜', name: 'Tuzlu Fıstık', color: 0xd97706, type: 'plate' }
+            ],
+            bosphorus: [
+                { id: 'simit', icon: '🥯', name: 'Üsküdar Simidi', color: 0xd97706, type: 'plate' },
+                { id: 'bosphorus_tea', icon: '🫖', name: 'İnce Belli Çay', color: 0xb91c1c, type: 'cup' },
+                { id: 'sunflower_seeds', icon: '🌻', name: 'Ay Çekirdeği', color: 0x334155, type: 'plate' }
+            ]
+        };
+
+        const THEMES = {
+            cafe: {
+                id: 'cafe',
+                name: 'Kafe',
+                icon: '☕',
+                bgColor: 0x16110e,
+                fogColor: 0x16110e,
+                fogDensity: 0.025,
+                botLines: [
+                    "Bu kafenin kahvesi ve ortamı çok huzurlu ☕",
+                    "Bir kahve daha söyleyen var mı?",
+                    "Günün yorgunluğunu atmak için harika yer.",
+                    "Bugün günün nasıl geçti?",
+                    "Tatlılardan denedin mi, çok taze görünüyor!"
+                ]
+            },
+            campfire: {
+                id: 'campfire',
+                name: 'Kamp Ateşi',
+                icon: '🔥',
+                bgColor: 0x070b14,
+                fogColor: 0x070b14,
+                fogDensity: 0.032,
+                botLines: [
+                    "Ormanda ateş tam kıvamında yanıyor 🔥",
+                    "Yıldızlar bu gece çok net görünüyor ✨",
+                    "Odun çıtırtısı kadar huzurlu bir şey yok...",
+                    "Ateşe tıklayınca kıvılcımlar çıkıyor denesene!",
+                    "Şehirden uzaklaşmak çok iyi geldi."
+                ]
+            },
+            bosphorus: {
+                id: 'bosphorus',
+                name: 'Sahilde Bank',
+                icon: '🗼',
+                bgColor: 0x0c192c,
+                fogColor: 0x132642,
+                fogDensity: 0.015,
+                botLines: [
+                    "Üsküdar sahilinden Kız Kulesi bir başka görünüyor 🗼",
+                    "Boğaz esintisi ve dalga sesi çok iyi geldi 🌊",
+                    "Simit ve çay olmadan Kız Kulesi manzarası eksik kalır!",
+                    "Şu ışıklı yansımalara bakar mısın ✨",
+                    "İstanbul'un en güzel manzarası kesinlikle burası."
+                ]
+            }
+        };
+
+        const MATCH_PARTNER_POOL = [
+            { name: 'Zeynep', charId: 'f_sporty', color: '#ec4899' },
+            { name: 'Batu', charId: 'm_sporty', color: '#10b981' },
+            { name: 'Melis', charId: 'f_pajama', color: '#c084fc' },
+            { name: 'Kerem', charId: 'm_suit', color: '#3b82f6' },
+            { name: 'Alara', charId: 'f_fancy', color: '#f43f5e' },
+            { name: 'Emir', charId: 'm_casual', color: '#38bdf8' },
+            { name: 'İrem', charId: 'f_student', color: '#f59e0b' },
+            { name: 'Ozan', charId: 'm_student', color: '#a78bfa' }
+        ];
+
+        const state = {
+            nickname: 'Misafir',
+            selectedCharId: 'f_sporty',
+            avatarColor: '#ec4899',
+            selectedLobbyTheme: 'cafe',
+            currentRoom: { id: 'match_init', theme: 'cafe', title: '2 Kişilik Kafe Masası', partner: MATCH_PARTNER_POOL[0] },
+            lastPartnerName: null,
+            seats: [],
+            interactiveProps: [],
+            hoveredSeatIndex: null,
+            selectedTreatTargetSeat: null,
+            playerSeatIndex: null,
+            particles: [],
+            audioEnabled: false
+        };
+
+        // ==========================================
+        // 2. THREE.JS SAHNE, KAMERA VE RENDERER KURULUMU
+        // ==========================================
+        const isMobileView = () => window.innerWidth < 640;
+        const getOverviewCamPos = () => isMobileView() ? new THREE.Vector3(0, 4.9, 7.6) : new THREE.Vector3(0, 4.2, 6.2);
+
+        const container = document.getElementById('canvas-container');
+        const cssContainer = document.getElementById('css2d-container');
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(isMobileView() ? 60 : 55, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.copy(getOverviewCamPos());
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        cssContainer.appendChild(labelRenderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.maxPolarAngle = Math.PI * 0.47;
+        controls.minDistance = 2.0;
+        controls.maxDistance = 13.0;
+        controls.target.set(0, 0.9, 0);
+
+        // Yumuşak Kamera Geçiş Hedefleri
+        const cameraTransition = {
+            active: false,
+            targetPos: getOverviewCamPos(),
+            targetLook: new THREE.Vector3(0, 0.9, 0)
+        };
+
+        // Sahne Grupları (Tema değişiminde kolay temizlik için)
+        const environmentGroup = new THREE.Group();
+        const avatarsGroup = new THREE.Group();
+        const particleGroup = new THREE.Group();
+        scene.add(environmentGroup, avatarsGroup, particleGroup);
+
+        let fireLight = null;
+        let waterMesh = null;
+
+        // ==========================================
+        // 3. YARDIMCI 3D & PIXEL-ART SPRITE OLUŞTURUCULAR
+        // ==========================================
+        const pixelSpriteCache = {};
+
+        function drawPixelCharacterCanvas(preset, isSitting = true) {
+            const w = 24;
+            const h = isSitting ? 34 : 42;
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            const outline = '#18141e';
+            const skin = '#f3c6a5';
+            const skinShadow = '#dfa57f';
+            const blush = '#e15b64';
+
+            const px = (x, y, col) => {
+                ctx.fillStyle = col;
+                ctx.fillRect(x, y, 1, 1);
+            };
+            const rect = (x, y, rw, rh, col) => {
+                ctx.fillStyle = col;
+                ctx.fillRect(x, y, rw, rh);
+            };
+
+            // 1. Arka Saç & Topuz / At Kuyruğu Detayları
+            if (preset.hairStyle === 'long_glam') {
+                rect(5, 6, 14, 16, outline);
+                rect(6, 7, 12, 14, preset.hairColor);
+                rect(6, 7, 2, 13, preset.hairHighlight);
+            } else if (preset.hairStyle === 'bob_bangs') {
+                rect(5, 6, 14, 11, outline);
+                rect(6, 7, 12, 9, preset.hairColor);
+            } else if (preset.hairStyle === 'ponytail') {
+                rect(16, 4, 4, 8, outline);
+                rect(17, 5, 2, 6, preset.hairColor);
+                px(16, 5, '#f472b6'); // Pembe toka
+            } else if (preset.hairStyle === 'messy_bun') {
+                rect(9, 0, 6, 4, outline);
+                rect(10, 1, 4, 3, preset.hairColor);
+            } else if (preset.hairStyle === 'short_spiky') {
+                rect(9, 1, 2, 2, outline);
+                rect(13, 1, 2, 2, outline);
+            }
+
+            // 2. Kafa Dış Hat & Ten
+            rect(7, 4, 10, 11, outline);
+            rect(8, 5, 8, 9, skin);
+            rect(8, 12, 8, 2, skinShadow);
+
+            // Gözler & Kirpik (Kadın karakterlerde ince kirpik vurgusu)
+            px(10, 9, '#1e293b');
+            px(10, 10, preset.gender === 'F' ? '#2563eb' : '#1e293b');
+            px(14, 9, '#1e293b');
+            px(14, 10, preset.gender === 'F' ? '#2563eb' : '#1e293b');
+            if (preset.gender === 'F') {
+                px(9, 9, outline);
+                px(15, 9, outline);
+            }
+
+            // Pembe Burun & Yanaklar
+            px(12, 10, blush);
+            px(9, 11, '#f48c94');
+            px(15, 11, '#f48c94');
+            rect(11, 12, 3, 1, preset.outfitType === 'f_fancy' ? '#e11d48' : '#b4694e');
+
+            // Gözlük (Öğrenci Erkek)
+            if (preset.hasGlasses) {
+                rect(7, 8, 10, 3, outline);
+                rect(8, 9, 3, 2, '#bae6fd');
+                rect(13, 9, 3, 2, '#bae6fd');
+            }
+
+            // 3. Ön Saç & Saç Bandı
+            rect(6, 3, 12, 5, outline);
+            rect(7, 4, 10, 3, preset.hairColor);
+            rect(8, 4, 8, 1, preset.hairHighlight);
+
+            if (preset.hasHeadband) {
+                rect(7, 6, 10, 2, '#ffffff');
+                rect(10, 6, 4, 2, '#10b981');
+            }
+            if (preset.outfitType === 'f_pajama') {
+                // Tatlı uyku bandı
+                rect(7, 5, 10, 2, '#f472b6');
+                px(10, 5, '#fef08a');
+                px(13, 5, '#fef08a');
+            }
+
+            // 4. Gövde & Kıyafet Tasarımları
+            rect(7, 15, 10, 10, outline);
+            rect(8, 16, 8, 8, preset.topColor);
+
+            if (preset.outfitType === 'f_sporty') {
+                // Spor büstiyer + bel şeridi
+                rect(8, 21, 8, 2, skin);
+                rect(8, 23, 8, 1, '#38bdf8');
+            } else if (preset.outfitType === 'f_pajama') {
+                // Yıldızlı/puantiyeli pijama üstü + düğmeler
+                px(11, 17, '#fef08a');
+                px(11, 20, '#fef08a');
+                px(9, 18, '#f8fafc');
+                px(14, 21, '#f8fafc');
+            } else if (preset.outfitType === 'f_fancy') {
+                // Şık bluz + altın kolye + kırmızı pileli etek
+                px(11, 16, '#fbbf24');
+                px(12, 16, '#fbbf24');
+                rect(7, 21, 10, 4, outline);
+                rect(8, 21, 8, 4, preset.skirtColor);
+                px(10, 22, '#fb7185');
+                px(13, 22, '#fb7185');
+            } else if (preset.outfitType === 'f_student' || preset.outfitType === 'm_student') {
+                // Beyaz yaka + çapraz çanta askısı + yan çanta
+                rect(10, 16, 4, 2, '#f8fafc');
+                px(9, 16, '#78350f');
+                px(10, 17, '#78350f');
+                px(11, 18, '#78350f');
+                px(12, 19, '#78350f');
+                px(13, 20, '#78350f');
+                // Yan okul çantası
+                rect(15, 20, 4, 5, outline);
+                rect(16, 21, 2, 3, '#92400e');
+                px(16, 22, '#fbbf24');
+            } else if (preset.outfitType === 'm_suit') {
+                // Beyaz gömlek üçgeni + kırmızı kravat + ceket düğmesi
+                rect(10, 16, 4, 4, '#f8fafc');
+                rect(11, 16, 2, 6, '#dc2626');
+                px(11, 22, '#94a3b8');
+            } else if (preset.outfitType === 'm_casual') {
+                // Kapüşonlu ipleri & kanguru cebi
+                px(10, 16, '#f8fafc');
+                px(13, 16, '#f8fafc');
+                rect(9, 21, 6, 3, '#0369a1');
+            }
+
+            // Kollar
+            const sleeveCol = (preset.outfitType === 'f_sporty' || preset.outfitType === 'm_sporty') ? skin : preset.topColor;
+            rect(5, 16, 2, 7, outline);
+            rect(17, 16, 2, 7, outline);
+            rect(6, 17, 1, 4, sleeveCol);
+            rect(17, 17, 1, 4, sleeveCol);
+            px(6, 21, skin);
+            px(17, 21, skin);
+
+            // 5. Bacaklar ve Ayakkabılar
+            if (isSitting) {
+                rect(7, 24, 10, 4, outline);
+                rect(8, 25, 8, 2, preset.outfitType === 'f_fancy' ? preset.skirtColor : preset.pantsColor);
+
+                rect(7, 27, 4, 5, outline);
+                rect(13, 27, 4, 5, outline);
+                rect(8, 27, 2, 4, preset.pantsColor);
+                rect(14, 27, 2, 4, preset.pantsColor);
+
+                rect(6, 31, 5, 3, outline);
+                rect(13, 31, 5, 3, outline);
+                rect(7, 32, 3, 1, preset.shoeColor);
+                rect(14, 32, 3, 1, preset.shoeColor);
+            } else {
+                // Tam boy ayakta önizleme
+                rect(8, 24, 3, 15, outline);
+                rect(13, 24, 3, 15, outline);
+                rect(9, 24, 1, 14, preset.pantsColor);
+                rect(14, 24, 1, 14, preset.pantsColor);
+
+                // Erkek sporcuda şort detayı
+                if (preset.outfitType === 'm_sporty') {
+                    rect(8, 24, 8, 6, outline);
+                    rect(9, 24, 2, 5, '#0f172a');
+                    rect(13, 24, 2, 5, '#0f172a');
+                    rect(9, 30, 1, 8, skin);
+                    rect(14, 30, 1, 8, skin);
+                }
+
+                rect(7, 38, 5, 3, outline);
+                rect(13, 38, 5, 3, outline);
+                rect(8, 39, 3, 1, preset.shoeColor);
+                rect(14, 39, 3, 1, preset.shoeColor);
+            }
+
+            return canvas;
+        }
+
+        function createAvatarMesh(charIdOrColor) {
+            const preset = CHARACTER_PRESETS.find(c => c.id === charIdOrColor) || CHARACTER_PRESETS[0];
+            const group = new THREE.Group();
+
+            if (!pixelSpriteCache[preset.id]) {
+                const canvas = drawPixelCharacterCanvas(preset, true);
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.magFilter = THREE.NearestFilter;
+                tex.minFilter = THREE.NearestFilter;
+                tex.colorSpace = THREE.SRGBColorSpace;
+                pixelSpriteCache[preset.id] = tex;
+            }
+
+            // Zemin temas gölgesi
+            const shadowDisc = new THREE.Mesh(
+                new THREE.CircleGeometry(0.32, 16),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })
+            );
+            shadowDisc.rotation.x = -Math.PI / 2;
+            shadowDisc.position.y = 0.02;
+            group.add(shadowDisc);
+
+            // HD-2D Pixel Art Karakter Billboard Sprite'ı (Her açıdan net görünür)
+            const spriteMat = new THREE.SpriteMaterial({
+                map: pixelSpriteCache[preset.id],
+                transparent: true
+            });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(0.95, 1.35, 1);
+            sprite.position.set(0, 0.92, 0.06);
+            group.add(sprite);
+
+            group.userData.sprite = sprite;
+            return group;
+        }
+
+        function createPixelPatternTexture(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            if (type === 'wood') {
+                ctx.fillStyle = '#4a2e1b';
+                ctx.fillRect(0, 0, 64, 64);
+                for (let y = 0; y < 64; y += 8) {
+                    ctx.fillStyle = (y / 8) % 2 === 0 ? '#573620' : '#3d2414';
+                    ctx.fillRect(0, y, 64, 7);
+                    ctx.fillStyle = '#29170c';
+                    ctx.fillRect(0, y + 7, 64, 1);
+                }
+            } else if (type === 'grass') {
+                ctx.fillStyle = '#17291b';
+                ctx.fillRect(0, 0, 64, 64);
+                for (let i = 0; i < 90; i++) {
+                    ctx.fillStyle = i % 2 === 0 ? '#1f3824' : '#112114';
+                    ctx.fillRect((i * 17) % 62, (i * 29) % 62, 2, 2);
+                }
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(8, 8);
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            return tex;
+        }
+
+        function createTreatPropMesh(item) {
+            const group = new THREE.Group();
+            if (item.type === 'cup') {
+                const cup = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.075, 0.06, 0.14, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 })
+                );
+                cup.position.y = 0.07;
+                group.add(cup);
+
+                const drink = new THREE.Mesh(
+                    new THREE.CircleGeometry(0.068, 12),
+                    new THREE.MeshBasicMaterial({ color: item.color })
+                );
+                drink.rotation.x = -Math.PI / 2;
+                drink.position.y = 0.142;
+                group.add(drink);
+            } else {
+                const plate = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.13, 0.1, 0.025, 14),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 })
+                );
+                plate.position.y = 0.015;
+                group.add(plate);
+
+                const food = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.11, 0.08, 0.11),
+                    new THREE.MeshStandardMaterial({ color: item.color, roughness: 0.5 })
+                );
+                food.position.y = 0.065;
+                group.add(food);
+            }
+            return group;
+        }
+
+        function createCampChair(color = 0x334155) {
+            const chair = new THREE.Group();
+            const fabricMat = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+            const metalMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6, roughness: 0.3 });
+
+            // Oturak
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.07, 0.62), fabricMat);
+            seat.position.y = 0.38;
+            seat.castShadow = true;
+            seat.receiveShadow = true;
+            chair.add(seat);
+
+            // Sırtlık
+            const back = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.65, 0.07), fabricMat);
+            back.position.set(0, 0.72, -0.28);
+            back.rotation.x = -0.16;
+            back.castShadow = true;
+            chair.add(back);
+
+            // Çapraz ayaklar
+            const legPositions = [[-0.28, -0.24], [0.28, -0.24], [-0.28, 0.24], [0.28, 0.24]];
+            legPositions.forEach(([x, z]) => {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.4, 8), metalMat);
+                leg.position.set(x, 0.19, z);
+                chair.add(leg);
+            });
+
+            chair.userData.highlightMats = [fabricMat];
+            return chair;
+        }
+
+        function createWoodChair() {
+            const chair = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.65 });
+
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.07, 0.6), woodMat);
+            seat.position.y = 0.42;
+            seat.castShadow = true;
+            seat.receiveShadow = true;
+            chair.add(seat);
+
+            const back = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.07), woodMat);
+            back.position.set(0, 0.75, -0.26);
+            back.castShadow = true;
+            chair.add(back);
+
+            [[-0.25, -0.24], [0.25, -0.24], [-0.25, 0.24], [0.25, 0.24]].forEach(([x, z]) => {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.06), woodMat);
+                leg.position.set(x, 0.21, z);
+                leg.castShadow = true;
+                chair.add(leg);
+            });
+
+            chair.userData.highlightMats = [woodMat];
+            return chair;
+        }
+
+        function createSeatArrow() {
+            const arrowGroup = new THREE.Group();
+            const arrowMat = new THREE.MeshStandardMaterial({
+                color: 0x10b981,
+                emissive: 0x059669,
+                emissiveIntensity: 0.85,
+                roughness: 0.25
+            });
+
+            // Aşağı bakan 3D Ok Gövdesi ve Ucu
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.22, 12), arrowMat);
+            shaft.position.y = 0.14;
+            arrowGroup.add(shaft);
+
+            const tip = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.22, 16), arrowMat);
+            tip.rotation.x = Math.PI; // Aşağı doğru bakar
+            tip.position.y = -0.04;
+            arrowGroup.add(tip);
+
+            // Altında parlayan halka
+            const ring = new THREE.Mesh(
+                new THREE.RingGeometry(0.14, 0.19, 24),
+                new THREE.MeshBasicMaterial({ color: 0x34d399, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })
+            );
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = -0.18;
+            arrowGroup.add(ring);
+
+            arrowGroup.userData.arrowMat = arrowMat;
+            return arrowGroup;
+        }
+
+        function createCoffeeMug(x, y, z) {
+            const mugGroup = new THREE.Group();
+            mugGroup.position.set(x, y, z);
+
+            const cupMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25 });
+            const coffeeMat = new THREE.MeshStandardMaterial({ color: 0x3e2215, roughness: 0.1 });
+
+            const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.14, 16), cupMat);
+            cup.position.y = 0.07;
+            cup.castShadow = true;
+            mugGroup.add(cup);
+
+            const liquid = new THREE.Mesh(new THREE.CircleGeometry(0.068, 16), coffeeMat);
+            liquid.rotation.x = -Math.PI / 2;
+            liquid.position.y = 0.132;
+            mugGroup.add(liquid);
+
+            // Etkileşimli nesne olarak işaretle
+            cup.userData.interactType = 'coffee';
+            cup.userData.worldPos = new THREE.Vector3(x, y + 0.18, z);
+            state.interactiveProps.push(cup);
+
+            return mugGroup;
+        }
+
+        function spawnParticleBurst(origin, colorHex, count = 12, isSteam = false) {
+            const geo = new THREE.SphereGeometry(isSteam ? 0.045 : 0.03, 6, 6);
+            for (let i = 0; i < count; i++) {
+                const mat = new THREE.MeshBasicMaterial({
+                    color: colorHex,
+                    transparent: true,
+                    opacity: isSteam ? 0.45 : 0.95
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.copy(origin);
+                mesh.position.x += (Math.random() - 0.5) * 0.25;
+                mesh.position.z += (Math.random() - 0.5) * 0.25;
+
+                const vel = new THREE.Vector3(
+                    (Math.random() - 0.5) * (isSteam ? 0.15 : 0.8),
+                    (isSteam ? 0.35 : 0.9) + Math.random() * 0.7,
+                    (Math.random() - 0.5) * (isSteam ? 0.15 : 0.8)
+                );
+
+                particleGroup.add(mesh);
+                state.particles.push({ mesh, vel, life: 1.0 });
+            }
+        }
+
+        // ==========================================
+        // 4. MEKAN (TEMA) OLUŞTURUCULAR
+        // ==========================================
+        function clearSceneObjects() {
+            while (environmentGroup.children.length > 0) {
+                environmentGroup.remove(environmentGroup.children[0]);
+            }
+            while (avatarsGroup.children.length > 0) {
+                avatarsGroup.remove(avatarsGroup.children[0]);
+            }
+            while (particleGroup.children.length > 0) {
+                particleGroup.remove(particleGroup.children[0]);
+            }
+            // Eski CSS2DObject nesnelerini sahneden ve DOM'dan eksiksiz kaldır (eski isimler asla kalmaz)
+            state.seats.forEach(seat => {
+                if (seat.bubbleTimeout) clearTimeout(seat.bubbleTimeout);
+                if (seat.labelObj) {
+                    scene.remove(seat.labelObj);
+                }
+                if (seat.uiWrapper && seat.uiWrapper.parentNode) {
+                    seat.uiWrapper.parentNode.removeChild(seat.uiWrapper);
+                }
+                if (seat.treatMesh) {
+                    environmentGroup.remove(seat.treatMesh);
+                    seat.treatMesh = null;
+                }
+            });
+            // Güvenlik için CSS2D katmanındaki tüm eski etiket düğümlerini temizle
+            if (labelRenderer && labelRenderer.domElement && labelRenderer.domElement.firstChild) {
+                labelRenderer.domElement.firstChild.innerHTML = '';
+            }
+            state.seats = [];
+            state.interactiveProps = [];
+            state.particles = [];
+            fireLight = null;
+            waterMesh = null;
+        }
+
+        function createBenchMesh() {
+            const bench = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x7c4a27, roughness: 0.65 });
+            const ironMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.35 });
+
+            // Oturma Tahtaları
+            const seatPlank1 = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.07, 0.26), woodMat);
+            seatPlank1.position.set(0, 0.42, 0.14);
+            seatPlank1.castShadow = true;
+            bench.add(seatPlank1);
+
+            const seatPlank2 = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.07, 0.26), woodMat);
+            seatPlank2.position.set(0, 0.42, -0.14);
+            seatPlank2.castShadow = true;
+            bench.add(seatPlank2);
+
+            // Sırtlık Tahtaları
+            const backPlank1 = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.22, 0.06), woodMat);
+            backPlank1.position.set(0, 0.68, -0.28);
+            backPlank1.rotation.x = -0.15;
+            backPlank1.castShadow = true;
+            bench.add(backPlank1);
+
+            const backPlank2 = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.22, 0.06), woodMat);
+            backPlank2.position.set(0, 0.94, -0.32);
+            backPlank2.rotation.x = -0.15;
+            backPlank2.castShadow = true;
+            bench.add(backPlank2);
+
+            // Dökme Demir Ayaklar & Kolçaklar
+            [-0.92, 0, 0.92].forEach((x) => {
+                const frontLeg = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.42, 0.07), ironMat);
+                frontLeg.position.set(x, 0.21, 0.22);
+                bench.add(frontLeg);
+
+                const backLeg = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.02, 0.07), ironMat);
+                backLeg.position.set(x, 0.51, -0.27);
+                bench.add(backLeg);
+            });
+
+            bench.userData.highlightMats = [woodMat];
+            return bench;
+        }
+
+        function buildThemeEnvironment(themeId) {
+            const theme = THEMES[themeId] || THEMES.cafe;
+            scene.background = new THREE.Color(theme.bgColor);
+            scene.fog = new THREE.FogExp2(theme.fogColor, theme.fogDensity);
+
+            const seatConfigs = [];
+
+            if (themeId === 'campfire') {
+                // Işıklar
+                const hemi = new THREE.HemisphereLight(0x3b4d7a, 0x1a1410, 0.75);
+                environmentGroup.add(hemi);
+
+                fireLight = new THREE.PointLight(0xff6b1a, 4.5, 16, 1.5);
+                fireLight.position.set(0, 0.85, 0);
+                fireLight.castShadow = true;
+                environmentGroup.add(fireLight);
+
+                // Zemin (Piksel dokulu çimen)
+                const ground = new THREE.Mesh(
+                    new THREE.CircleGeometry(28, 36),
+                    new THREE.MeshStandardMaterial({ map: createPixelPatternTexture('grass'), roughness: 0.95 })
+                );
+                ground.rotation.x = -Math.PI / 2;
+                ground.receiveShadow = true;
+                environmentGroup.add(ground);
+
+                // Ateş Çukuru Taşları
+                const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2;
+                    const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16, 0), stoneMat);
+                    stone.position.set(Math.cos(angle) * 0.72, 0.1, Math.sin(angle) * 0.72);
+                    stone.castShadow = true;
+                    environmentGroup.add(stone);
+                }
+
+                // Odunlar
+                const logMat = new THREE.MeshStandardMaterial({ color: 0x4a2e1b, roughness: 0.9 });
+                for (let i = 0; i < 4; i++) {
+                    const log = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.85, 8), logMat);
+                    log.position.set(0, 0.14, 0);
+                    log.rotation.z = Math.PI / 2.4;
+                    log.rotation.y = (i * Math.PI) / 2;
+                    environmentGroup.add(log);
+                }
+
+                // Parlayan Ateş Çekirdeği (Tıklanabilir)
+                const fireCore = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.35, 0.75, 7),
+                    new THREE.MeshBasicMaterial({ color: 0xff7b00 })
+                );
+                fireCore.position.y = 0.42;
+                fireCore.userData.interactType = 'fire';
+                environmentGroup.add(fireCore);
+                state.interactiveProps.push(fireCore);
+
+                // Çevrede Çam Ağaçları
+                const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.9 });
+                const leafMat = new THREE.MeshStandardMaterial({ color: 0x0f2e1d, roughness: 0.85 });
+                for (let i = 0; i < 18; i++) {
+                    const angle = (i / 18) * Math.PI * 2 + 0.2;
+                    const dist = 6.5 + (i % 3) * 2.5;
+                    const tree = new THREE.Group();
+                    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 1.4, 7), trunkMat);
+                    trunk.position.y = 0.7;
+                    tree.add(trunk);
+
+                    for (let layer = 0; layer < 3; layer++) {
+                        const cone = new THREE.Mesh(new THREE.ConeGeometry(1.3 - layer * 0.3, 1.8, 7), leafMat);
+                        cone.position.y = 1.9 + layer * 1.1;
+                        cone.castShadow = true;
+                        tree.add(cone);
+                    }
+                    tree.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+                    environmentGroup.add(tree);
+                }
+
+                // Yıldızlar
+                const starGeo = new THREE.BufferGeometry();
+                const starCoords = [];
+                for (let i = 0; i < 250; i++) {
+                    starCoords.push((Math.random() - 0.5) * 60, 8 + Math.random() * 25, (Math.random() - 0.5) * 60);
+                }
+                starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
+                const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.14 }));
+                environmentGroup.add(stars);
+
+                // Ateş etrafında 2 Kamp Sandalyesi (Karşılıklı samimi açı)
+                const radius = 1.95;
+                const angles = [Math.PI * 0.35, -Math.PI * 0.35];
+                angles.forEach((ang, idx) => {
+                    const x = Math.cos(ang) * radius;
+                    const z = Math.sin(ang) * radius;
+                    const rotY = Math.atan2(-x, -z);
+                    const chair = createCampChair(idx === 0 ? 0x1e3a5f : 0x3f2e3e);
+                    chair.position.set(x, 0, z);
+                    chair.rotation.y = rotY;
+                    environmentGroup.add(chair);
+                    seatConfigs.push({ index: idx, position: new THREE.Vector3(x, 0, z), rotationY: rotY, chairMesh: chair });
+                });
+
+            } else if (themeId === 'cafe') {
+                // Sıcak Lo-Fi Cafe Işıkları
+                const hemi = new THREE.HemisphereLight(0xffedd5, 0x291d18, 0.9);
+                environmentGroup.add(hemi);
+
+                const pendantLight = new THREE.PointLight(0xffb76b, 3.8, 14);
+                pendantLight.position.set(0, 2.7, 0);
+                pendantLight.castShadow = true;
+                environmentGroup.add(pendantLight);
+
+                // Ahşap Zemin (Piksel ahşap tahta dokusu)
+                const floor = new THREE.Mesh(
+                    new THREE.PlaneGeometry(16, 16),
+                    new THREE.MeshStandardMaterial({ map: createPixelPatternTexture('wood'), roughness: 0.75 })
+                );
+                floor.rotation.x = -Math.PI / 2;
+                floor.receiveShadow = true;
+                environmentGroup.add(floor);
+
+                // Arka Duvar & Yağmurlu Gece Penceresi
+                const wallMat = new THREE.MeshStandardMaterial({ color: 0x261a14, roughness: 0.85 });
+                const backWall = new THREE.Mesh(new THREE.BoxGeometry(12, 5, 0.3), wallMat);
+                backWall.position.set(0, 2.5, -4.5);
+                environmentGroup.add(backWall);
+
+                const windowGlass = new THREE.Mesh(
+                    new THREE.PlaneGeometry(5.5, 2.4),
+                    new THREE.MeshBasicMaterial({ color: 0x172554 })
+                );
+                windowGlass.position.set(0, 2.3, -4.32);
+                environmentGroup.add(windowGlass);
+
+                // Sarkıt Lamba
+                const lampShade = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.42, 0.32, 16),
+                    new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3 })
+                );
+                lampShade.position.set(0, 2.85, 0);
+                environmentGroup.add(lampShade);
+
+                // 2 Kişilik Cafe Masası
+                const tableTop = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.5, 0.1, 1.25),
+                    new THREE.MeshStandardMaterial({ color: 0x7c4a27, roughness: 0.45 })
+                );
+                tableTop.position.set(0, 0.78, 0);
+                tableTop.castShadow = true;
+                tableTop.receiveShadow = true;
+                environmentGroup.add(tableTop);
+
+                const tableLeg = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.12, 0.2, 0.78, 12),
+                    new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.5 })
+                );
+                tableLeg.position.set(0, 0.39, 0);
+                environmentGroup.add(tableLeg);
+
+                // Masada 2 Kahve Fincanı
+                environmentGroup.add(createCoffeeMug(0, 0.83, 0.32));
+                environmentGroup.add(createCoffeeMug(0, 0.83, -0.32));
+
+                // Masa etrafında karşılıklı 2 Ahşap Sandalye
+                const positions = [
+                    { x: 0, z: 1.05, rot: Math.PI },
+                    { x: 0, z: -1.05, rot: 0 }
+                ];
+                positions.forEach((p, idx) => {
+                    const chair = createWoodChair();
+                    chair.position.set(p.x, 0, p.z);
+                    chair.rotation.y = p.rot;
+                    environmentGroup.add(chair);
+                    seatConfigs.push({ index: idx, position: new THREE.Vector3(p.x, 0, p.z), rotationY: p.rot, chairMesh: chair });
+                });
+
+            } else if (themeId === 'scenic') {
+                // Gün Batımı & Manzaralı Kamp
+                const hemi = new THREE.HemisphereLight(0xfb7185, 0x31102f, 1.1);
+                environmentGroup.add(hemi);
+
+                const sunLight = new THREE.DirectionalLight(0xfdba74, 2.4);
+            } else if (themeId === 'bosphorus') {
+                // Üsküdar Sahili & Kız Kulesi Manzarası
+                const hemi = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, 1.15);
+                environmentGroup.add(hemi);
+
+                const moonLight = new THREE.DirectionalLight(0xfde68a, 1.9);
+                moonLight.position.set(6, 9, -22);
+                moonLight.castShadow = true;
+                environmentGroup.add(moonLight);
+
+                // Gökyüzünde Dolunay
+                const moonMesh = new THREE.Mesh(
+                    new THREE.CircleGeometry(1.8, 28),
+                    new THREE.MeshBasicMaterial({ color: 0xfef3c7 })
+                );
+                moonMesh.position.set(7.5, 8.2, -36);
+                environmentGroup.add(moonMesh);
+
+                // Üsküdar Sahil Yürüyüş Yolu & Taş Kordon
+                const promenade = new THREE.Mesh(
+                    new THREE.BoxGeometry(22, 1.6, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 })
+                );
+                promenade.position.set(0, -0.8, 1.8);
+                promenade.receiveShadow = true;
+                environmentGroup.add(promenade);
+
+                // Sahil Korkuluk Babaları & Zincir
+                const bollardMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.4 });
+                for (let x = -6; x <= 6; x += 2.0) {
+                    const bollard = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.65, 10), bollardMat);
+                    bollard.position.set(x, 0.32, -2.05);
+                    environmentGroup.add(bollard);
+                }
+                const railBar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 12.5, 8), bollardMat);
+                railBar.rotation.z = Math.PI / 2;
+                railBar.position.set(0, 0.55, -2.05);
+                environmentGroup.add(railBar);
+
+                // İstanbul Boğazı Denizi
+                waterMesh = new THREE.Mesh(
+                    new THREE.PlaneGeometry(95, 65),
+                    new THREE.MeshStandardMaterial({ color: 0x0f294a, roughness: 0.18, metalness: 0.78 })
+                );
+                waterMesh.rotation.x = -Math.PI / 2;
+                waterMesh.position.set(0, -0.75, -30);
+                environmentGroup.add(waterMesh);
+
+                // --- KIZ KULESİ (Deniz Ortası Adacık ve Kule) ---
+                const towerGroup = new THREE.Group();
+                towerGroup.position.set(0, -0.75, -22);
+
+                // Kayalık Ada Tabanı
+                const island = new THREE.Mesh(
+                    new THREE.CylinderGeometry(2.6, 3.2, 0.7, 16),
+                    new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 })
+                );
+                island.position.y = 0.35;
+                towerGroup.add(island);
+
+                // Avlu Duvarları
+                const courtyard = new THREE.Mesh(
+                    new THREE.BoxGeometry(3.4, 1.1, 2.6),
+                    new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.6 })
+                );
+                courtyard.position.y = 1.2;
+                towerGroup.add(courtyard);
+
+                // Kule Ana Gövdesi
+                const towerBody = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.72, 0.88, 3.2, 16),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 })
+                );
+                towerBody.position.y = 2.9;
+                towerGroup.add(towerBody);
+
+                // Fener Odası (Sıcak Sarı Işıklı)
+                const lanternRoom = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.55, 0.55, 0.75, 16),
+                    new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+                );
+                lanternRoom.position.y = 4.85;
+                towerGroup.add(lanternRoom);
+
+                // Külah Çatı & Alem
+                const spireRoof = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.68, 1.35, 16),
+                    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 })
+                );
+                spireRoof.position.y = 5.88;
+                towerGroup.add(spireRoof);
+
+                const towerGlow = new THREE.PointLight(0xfbbf24, 3.5, 14);
+                towerGlow.position.set(0, 4.9, 1.0);
+                towerGroup.add(towerGlow);
+
+                environmentGroup.add(towerGroup);
+
+                // Karşı Kıyı Silüeti & Şehir Işıkları
+                const farShore = new THREE.Mesh(
+                    new THREE.BoxGeometry(90, 2.5, 4),
+                    new THREE.MeshBasicMaterial({ color: 0x09111e })
+                );
+                farShore.position.set(0, 0.4, -46);
+                environmentGroup.add(farShore);
+
+                // Sahil Bankı (2 Kişilik, Kız Kulesi'ne dönük)
+                const bench = createBenchMesh();
+                bench.position.set(0, 0, -0.35);
+                bench.rotation.y = Math.PI;
+                environmentGroup.add(bench);
+
+                const xOffsets = [-0.52, 0.52];
+                xOffsets.forEach((x, idx) => {
+                    seatConfigs.push({
+                        index: idx,
+                        position: new THREE.Vector3(x, 0, -0.35),
+                        rotationY: Math.PI,
+                        chairMesh: bench
+                    });
+                });
+            }
+
+            return seatConfigs;
+        }
+
+        // ==========================================
+        // 6. OTOMATİK 2 KİŞİLİK EŞLEŞME VE SOHBET DÖNGÜSÜ
+        // ==========================================
+        function pickRandomPartner() {
+            const candidates = MATCH_PARTNER_POOL.filter(p => p.name !== state.lastPartnerName);
+            const chosen = candidates[Math.floor(Math.random() * candidates.length)] || MATCH_PARTNER_POOL[0];
+            state.lastPartnerName = chosen.name;
+            return chosen;
+        }
+
+        function startAutoMatch(themeId = state.selectedLobbyTheme) {
+            saveProfileInputs();
+            const partner = pickRandomPartner();
+            const themeInfo = THEMES[themeId] || THEMES.cafe;
+            const room = {
+                id: 'match_' + Date.now(),
+                theme: themeId,
+                title: `${state.nickname} & ${partner.name}`,
+                partner
+            };
+
+            loadRoom(room);
+            closeLobbyModal();
+
+            // Gecikmesiz doğrudan masaya oturt
+            sitAtSeat(0, true);
+            showToast(`⚡ ${partner.name} ile ${themeInfo.name} ortamında eşleştin!`);
+        }
+
+        function loadRoom(room) {
+            state.currentRoom = room;
+            state.playerSeatIndex = null;
+            state.selectedTreatTargetSeat = null;
+            chatHistoryLog = [];
+            const feedList = document.getElementById('chat-feed-list');
+            if (feedList) feedList.innerHTML = '';
+            document.getElementById('btn-stand').classList.add('hidden');
+            document.getElementById('btn-consume-item').classList.add('hidden');
+            document.getElementById('order-drawer').classList.add('hidden');
+
+            clearSceneObjects();
+            const seatConfigs = buildThemeEnvironment(room.theme);
+
+            state.seats = seatConfigs.map(cfg => ({
+                ...cfg,
+                occupant: null,
+                avatarMesh: null,
+                treatMesh: null,
+                bubbleTimeout: null
+            }));
+
+            state.seats.forEach(seat => createSeatUI(seat));
+
+            // Eşleşilen partneri 1 numaralı sandalyeye yerleştir
+            if (room.partner && state.seats[1]) {
+                state.seats[1].occupant = {
+                    isPlayer: false,
+                    name: room.partner.name,
+                    charId: room.partner.charId || 'm_casual',
+                    color: room.partner.color,
+                    treat: null
+                };
+            }
+
+            state.seats.forEach(seat => refreshSeatVisuals(seat));
+
+            // Üst HUD bilgilerini güncelle
+            const themeInfo = THEMES[room.theme] || THEMES.cafe;
+            document.getElementById('room-theme-icon').textContent = themeInfo.icon;
+            document.getElementById('hud-room-title').textContent = room.title;
+            document.getElementById('hud-theme-name').textContent = `${themeInfo.name} • 2 Kişilik Özel Masa`;
+
+            // Kamerayı sıfırla
+            cameraTransition.targetPos.copy(getOverviewCamPos());
+            cameraTransition.targetLook.set(0, 0.9, 0);
+            cameraTransition.active = true;
+
+            // Partnerin hızlı karşılama balonu
+            const currentRoomId = room.id;
+            setTimeout(() => {
+                if (state.currentRoom.id === currentRoomId && state.seats[1] && state.seats[1].occupant) {
+                    showSpeechBubble(1, `Selam ${state.nickname}! Hoş geldin 😊`);
+                }
+            }, 350);
+        }
+
+        function updateHudCounters() {
+            const occupied = state.seats.filter(s => s.occupant !== null).length;
+            const total = state.seats.length || 2;
+            document.getElementById('hud-seat-count').textContent = `${occupied}/${total} Dolu`;
+        }
+
+        function createSeatUI(seatObj) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'speech-bubble-wrapper';
+
+            const bubbleSlot = document.createElement('div');
+            const tagSlot = document.createElement('div');
+            wrapper.appendChild(bubbleSlot);
+            wrapper.appendChild(tagSlot);
+
+            const labelObj = new CSS2DObject(wrapper);
+            labelObj.position.set(seatObj.position.x, 1.62, seatObj.position.z);
+            scene.add(labelObj);
+
+            const arrowMesh = createSeatArrow();
+            arrowMesh.position.set(seatObj.position.x, 1.32, seatObj.position.z);
+            environmentGroup.add(arrowMesh);
+
+            if (seatObj.chairMesh) {
+                seatObj.chairMesh.traverse((child) => {
+                    if (child.isMesh) {
+                        child.userData.interactType = 'seat';
+                        child.userData.seatIndex = seatObj.index;
+                        state.interactiveProps.push(child);
+                    }
+                });
+            }
+            arrowMesh.traverse((child) => {
+                if (child.isMesh) {
+                    child.userData.interactType = 'seat';
+                    child.userData.seatIndex = seatObj.index;
+                    state.interactiveProps.push(child);
+                }
+            });
+
+            seatObj.arrowMesh = arrowMesh;
+            seatObj.uiWrapper = wrapper;
+            seatObj.bubbleSlot = bubbleSlot;
+            seatObj.tagSlot = tagSlot;
+            seatObj.labelObj = labelObj;
+        }
+
+        function refreshSeatVisuals(seatObj) {
+            // Eski avatar varsa kaldır
+            if (seatObj.avatarMesh) {
+                avatarsGroup.remove(seatObj.avatarMesh);
+                seatObj.avatarMesh = null;
+            }
+            seatObj.tagSlot.innerHTML = '';
+
+            if (seatObj.occupant) {
+                // Dolu sandalye: 3D ok gizlenir, Pixel Art Avatar ve İsim Etiketi gösterilir
+                if (seatObj.arrowMesh) seatObj.arrowMesh.visible = false;
+
+                const avatar = createAvatarMesh(seatObj.occupant.charId || 'char_emerald');
+                avatar.position.copy(seatObj.position);
+                avatar.rotation.y = seatObj.rotationY;
+                avatarsGroup.add(avatar);
+                seatObj.avatarMesh = avatar;
+
+                const nameTag = document.createElement('div');
+                nameTag.className = 'name-tag';
+                nameTag.textContent = seatObj.occupant.isPlayer ? `${seatObj.occupant.name} (Sen)` : seatObj.occupant.name;
+                if (seatObj.occupant.isPlayer) {
+                    nameTag.style.borderColor = 'rgba(249, 115, 22, 0.7)';
+                    nameTag.style.color = '#fed7aa';
+                }
+                seatObj.tagSlot.appendChild(nameTag);
+                seatObj.labelObj.position.set(seatObj.position.x, 1.72, seatObj.position.z);
+            } else {
+                // Boş sandalye: 3D ok görünür ve tıklanabilir "Otur" rozeti eklenir
+                if (seatObj.arrowMesh) seatObj.arrowMesh.visible = true;
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'seat-badge';
+                btn.innerHTML = `<span>🪑</span><span>Otur</span>`;
+                btn.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    sitAtSeat(seatObj.index);
+                });
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    sitAtSeat(seatObj.index);
+                });
+                seatObj.tagSlot.appendChild(btn);
+                seatObj.labelObj.position.set(seatObj.position.x, 1.62, seatObj.position.z);
+            }
+
+            updateHudCounters();
+            renderOrderDrawer();
+        }
+
+        function appendChatFeed(senderName, text, colorHex = '#f97316', isPlayer = false) {
+            if (text === '•••') return;
+            const feedList = document.getElementById('chat-feed-list');
+            const feedBox = document.getElementById('live-chat-feed');
+            if (!feedList) return;
+
+            const item = document.createElement('div');
+            item.className = 'leading-snug break-words px-1.5 py-0.5 rounded-md bg-white/[0.04]';
+            item.innerHTML = `<span class="font-bold" style="color:${colorHex}">${senderName}${isPlayer ? ' (Sen)' : ''}:</span> <span class="text-slate-100">${text}</span>`;
+            feedList.appendChild(item);
+
+            while (feedList.children.length > 30) {
+                feedList.removeChild(feedList.firstChild);
+            }
+            feedBox.scrollTop = feedBox.scrollHeight;
+        }
+
+        function showSpeechBubble(seatIndex, text) {
+            const seat = state.seats[seatIndex];
+            if (!seat || !seat.occupant) return;
+
+            // Varsa önceki balonu temizle
+            if (seat.bubbleTimeout) clearTimeout(seat.bubbleTimeout);
+            seat.bubbleSlot.innerHTML = '';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'speech-bubble';
+            bubble.textContent = text;
+            seat.bubbleSlot.appendChild(bubble);
+
+            // Sağ üstteki canlı sohbet günlüğüne de ekle
+            appendChatFeed(seat.occupant.name, text, seat.occupant.color, seat.occupant.isPlayer);
+
+            // Hafif konuşma zıplaması
+            if (seat.avatarMesh) {
+                seat.avatarMesh.userData.talkBounce = 1.0;
+            }
+
+            // 8 saniye sonra balonu yumuşakça kaybet
+            seat.bubbleTimeout = setTimeout(() => {
+                bubble.classList.add('fade-out');
+                setTimeout(() => {
+                    if (seat.bubbleSlot.contains(bubble)) {
+                        seat.bubbleSlot.removeChild(bubble);
+                    }
+                }, 400);
+            }, 8000);
+        }
+
+        // ==========================================
+        // 5.5 MENÜ, ISMARLAMA VE YEME/İÇME SİSTEMİ
+        // ==========================================
+        function renderOrderDrawer() {
+            const targetList = document.getElementById('treat-target-list');
+            const itemsGrid = document.getElementById('menu-items-grid');
+            if (!targetList || !itemsGrid) return;
+
+            targetList.innerHTML = '';
+            const occupiedSeats = state.seats.filter(s => s.occupant !== null);
+            if (occupiedSeats.length === 0) return;
+
+            if (state.selectedTreatTargetSeat === null || !state.seats[state.selectedTreatTargetSeat]?.occupant) {
+                const otherSeat = occupiedSeats.find(s => !s.occupant.isPlayer);
+                state.selectedTreatTargetSeat = otherSeat ? otherSeat.index : occupiedSeats[0].index;
+            }
+
+            occupiedSeats.forEach(s => {
+                const isSelected = s.index === state.selectedTreatTargetSeat;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `text-[10px] font-bold px-2 py-1 border transition whitespace-nowrap ${
+                    isSelected
+                        ? 'bg-amber-400 text-slate-950 border-slate-950'
+                        : 'bg-[#1d212e] text-slate-200 border-[#33394d] hover:border-slate-400'
+                }`;
+                btn.textContent = s.occupant.isPlayer ? 'Kendime' : `${s.occupant.name}'e`;
+                btn.addEventListener('click', () => {
+                    state.selectedTreatTargetSeat = s.index;
+                    renderOrderDrawer();
+                });
+                targetList.appendChild(btn);
+            });
+
+            itemsGrid.innerHTML = '';
+            const menuItems = THEME_MENUS[state.currentRoom.theme] || THEME_MENUS.cafe;
+            menuItems.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'flex flex-col items-center justify-center gap-0.5 p-2 bg-[#1d212e] hover:bg-[#2b211a] border-2 border-[#33394d] hover:border-amber-400 active:translate-y-0.5';
+                btn.innerHTML = `<span class="text-base">${item.icon}</span><span class="text-[10px] font-bold text-white truncate w-full text-center">${item.name}</span>`;
+                btn.addEventListener('click', () => orderOrTreatItem(item));
+                itemsGrid.appendChild(btn);
+            });
+        }
+
+        function orderOrTreatItem(item) {
+            if (state.playerSeatIndex === null) return;
+            const targetSeat = state.seats[state.selectedTreatTargetSeat];
+            if (!targetSeat || !targetSeat.occupant) return;
+
+            if (targetSeat.treatMesh) {
+                environmentGroup.remove(targetSeat.treatMesh);
+            }
+
+            const propMesh = createTreatPropMesh(item);
+            const forward = new THREE.Vector3(Math.sin(targetSeat.rotationY), 0, Math.cos(targetSeat.rotationY));
+            const tableY = (state.currentRoom.theme === 'cafe' || state.currentRoom.theme === 'library') ? 0.84 : 0.02;
+            propMesh.position.copy(targetSeat.position).addScaledVector(forward, 0.55);
+            propMesh.position.y = tableY;
+            environmentGroup.add(propMesh);
+            targetSeat.treatMesh = propMesh;
+
+            const maxUses = item.type === 'cup' ? 5 : 3;
+            targetSeat.occupant.treat = { ...item, remaining: maxUses, maxUses };
+
+            if (targetSeat.occupant.isPlayer) {
+                updateConsumeButton();
+                showToast(`${item.icon} ${item.name} masana geldi!`);
+            } else {
+                const treatMsg = `${targetSeat.occupant.name} sana ${item.name.toLowerCase()} ısmarlayayım dedim ${item.icon}`;
+                showSpeechBubble(state.playerSeatIndex, treatMsg);
+                setTimeout(() => {
+                    if (targetSeat.occupant) {
+                        showSpeechBubble(targetSeat.index, `Çok teşekkürler ${state.nickname}! Tam zamanında geldi ${item.icon}😊`);
+                    }
+                }, 1300);
+            }
+
+            document.getElementById('order-drawer').classList.add('hidden');
+        }
+
+        function updateConsumeButton() {
+            const btn = document.getElementById('btn-consume-item');
+            const playerSeat = state.playerSeatIndex !== null ? state.seats[state.playerSeatIndex] : null;
+            const treat = playerSeat?.occupant?.treat;
+
+            if (!treat || treat.remaining <= 0) {
+                btn.classList.add('hidden');
+                return;
+            }
+
+            btn.classList.remove('hidden');
+            document.getElementById('consume-icon').textContent = treat.icon;
+            const verb = treat.type === 'cup' ? 'Yudumla' : 'Ye';
+            document.getElementById('consume-label').textContent = `${verb} (${treat.remaining}/${treat.maxUses})`;
+        }
+
+        function consumeMyTreat() {
+            if (state.playerSeatIndex === null) return;
+            const seat = state.seats[state.playerSeatIndex];
+            const treat = seat?.occupant?.treat;
+            if (!treat || treat.remaining <= 0) return;
+
+            treat.remaining -= 1;
+
+            if (seat.avatarMesh) {
+                seat.avatarMesh.userData.eatAnim = 1.0;
+            }
+
+            if (seat.treatMesh) {
+                const ratio = Math.max(0.25, treat.remaining / treat.maxUses);
+                seat.treatMesh.scale.set(1, ratio, 1);
+            }
+
+            if (treat.remaining <= 0) {
+                if (seat.treatMesh) {
+                    environmentGroup.remove(seat.treatMesh);
+                    seat.treatMesh = null;
+                }
+                seat.occupant.treat = null;
+                showToast(`${treat.icon} ${treat.name} bitti!`);
+            }
+
+            updateConsumeButton();
+        }
+
+        function sitAtSeat(seatIndex, silentJoin = false) {
+            const targetSeat = state.seats[seatIndex];
+            if (!targetSeat || targetSeat.occupant) return;
+
+            // Eğer oyuncu başka bir sandalyede oturuyorsa önce oradan kalksın
+            if (state.playerSeatIndex !== null) {
+                const prevSeat = state.seats[state.playerSeatIndex];
+                prevSeat.occupant = null;
+                prevSeat.bubbleSlot.innerHTML = '';
+                refreshSeatVisuals(prevSeat);
+            }
+
+            // Yeni sandalyeye otur
+            state.playerSeatIndex = seatIndex;
+            targetSeat.occupant = {
+                isPlayer: true,
+                name: state.nickname,
+                charId: state.selectedCharId,
+                color: state.avatarColor,
+                treat: null
+            };
+            refreshSeatVisuals(targetSeat);
+
+            // Kamerayı 3. şahıs açısına çek (mobil dikey ekranda tüm karakter ve balon sığacak şekilde biraz daha geniş)
+            const forward = new THREE.Vector3(Math.sin(targetSeat.rotationY), 0, Math.cos(targetSeat.rotationY));
+            const right = new THREE.Vector3(Math.cos(targetSeat.rotationY), 0, -Math.sin(targetSeat.rotationY));
+            const distScale = isMobileView() ? 1.28 : 1.0;
+
+            const camPos = targetSeat.position.clone()
+                .add(new THREE.Vector3(0, 2.75 * (isMobileView() ? 1.12 : 1.0), 0))
+                .addScaledVector(forward, -2.75 * distScale)
+                .addScaledVector(right, 1.05 * distScale);
+
+            const lookTarget = targetSeat.position.clone()
+                .add(new THREE.Vector3(0, 1.25, 0))
+                .addScaledVector(forward, 1.25);
+
+            cameraTransition.targetPos.copy(camPos);
+            cameraTransition.targetLook.copy(lookTarget);
+            cameraTransition.active = true;
+
+            document.getElementById('btn-stand').classList.remove('hidden');
+            if (!silentJoin) {
+                showSpeechBubble(seatIndex, "Selam! 👋");
+                triggerBotReply("Selam! 👋");
+            }
+            if (!isMobileView()) {
+                document.getElementById('chat-input').focus();
+            }
+        }
+
+        function standUp() {
+            if (state.playerSeatIndex === null) return;
+            const prevSeat = state.seats[state.playerSeatIndex];
+            if (prevSeat.treatMesh) {
+                environmentGroup.remove(prevSeat.treatMesh);
+                prevSeat.treatMesh = null;
+            }
+            prevSeat.occupant = null;
+            prevSeat.bubbleSlot.innerHTML = '';
+            refreshSeatVisuals(prevSeat);
+
+            state.playerSeatIndex = null;
+            document.getElementById('btn-stand').classList.add('hidden');
+            document.getElementById('btn-consume-item').classList.add('hidden');
+            document.getElementById('order-drawer').classList.add('hidden');
+
+            cameraTransition.targetPos.copy(getOverviewCamPos());
+            cameraTransition.targetLook.set(0, 0.9, 0);
+            cameraTransition.active = true;
+        }
+
+        // ==========================================
+        // 6. SOHBET & YAPAY ZEKA CEVAP DÖNGÜSÜ
+        // ==========================================
+        // Sohbet Geçmişi (AI karakterlerin bağlamı hatırlaması için)
+        let chatHistoryLog = [];
+
+        // Akıllı Yerel Yedek Cevap Üretici (API gecikirse veya çevrimdışıysa anında doğal cevap verir)
+        function generateSmartFallbackReply(userMsg, themeId) {
+            const msg = userMsg.toLowerCase();
+            if (msg.includes('selam') || msg.includes('merhaba') || msg.includes('nbr') || msg.includes('naber')) {
+                return ["Selam! Hoş geldin masaya 😊", "Merhaba! Nasılsın, keyifler nasıl?", "Selamlar! Tam zamanında geldin 👋"][Math.floor(Math.random() * 3)];
+            }
+            if (msg.includes('nasıl') || msg.includes('iyiyim') || msg.includes('iyi')) {
+                return ["Bomba gibiyim, bu ortam çok iyi geldi ✨", "İyidir valla, keyif yapıyoruz burada 😄", "Çok iyiyim teşekkürler, sende durumlar nasıl?"][Math.floor(Math.random() * 3)];
+            }
+            if (msg.includes('kahve') || msg.includes('çay') || msg.includes('iç')) {
+                return ["Bir kahveye asla hayır demem ☕", "Sıcak sıcak tam şu an iyi giderdi!", "Benimki orta şekerli olsun lütfen 😄"][Math.floor(Math.random() * 3)];
+            }
+            if (msg.includes('?')) {
+                return ["Güzel soru! Bence kesinlikle harika fikir 🤔", "Valla ben de tam onu düşünüyordum!", "Kesinlikle katılıyorum, çok mantıklı 👍"][Math.floor(Math.random() * 3)];
+            }
+            const lines = THEMES[themeId]?.botLines || THEMES.campfire.botLines;
+            return lines[Math.floor(Math.random() * lines.length)];
+        }
+
+        // Gemini API üzerinden AI Karakterlerin Gerçek Zamanlı Sohbet Cevabı Üretmesi
+        async function fetchAiBotReply(botName, themeName, userName, userMsg) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `Sen Mekan3D adlı 3D sosyal sohbet oyununda "${themeName}" ortamında 4 kişilik masada oturan "${botName}" adlı gerçekçi, samimi bir Türk oyuncusun.
+Kurallar:
+- Sadece kendi karakterin (${botName}) ağzından tek bir kısa, doğal sohbet balonu mesajı yaz (maksimum 1-2 cümle, en fazla 85 karakter).
+- Asla yapay zeka olduğunu söyleme, rol yapma açıklaması veya tırnak işareti kullanma.
+- Bulunduğunuz ortamın (${themeName}) atmosferine uygun samimi, arkadaş canlısı bir Türkçe kullan. Ara sıra doğal emoji ekleyebilirsin.`;
+
+            const recentContext = chatHistoryLog.slice(-6).join('\n');
+            const promptText = `Masadaki son konuşmalar:\n${recentContext}\n\n${userName} az önce şunu söyledi: "${userMsg}"\n${botName} olarak kısa cevabın:`;
+
+            const payload = {
+                contents: [{ parts: [{ text: promptText }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) return text.trim().replace(/^["']|["']$/g, '');
+            } catch (err) {
+                clearTimeout(timeoutId);
+            }
+            return null;
+        }
+
+        // Kullanıcı mesaj yazdığında masadaki AI karakterlerin sırayla cevap vermesi
+        async function triggerBotReply(userMsg) {
+            const botSeats = state.seats.filter(s => s.occupant && !s.occupant.isPlayer);
+            if (botSeats.length === 0) return;
+
+            chatHistoryLog.push(`${state.nickname}: ${userMsg}`);
+            const themeId = state.currentRoom.theme;
+            const themeName = THEMES[themeId].name;
+
+            // Rastgele bir AI karakter seç ve önce "..." düşünme balonu göster
+            const responder = botSeats[Math.floor(Math.random() * botSeats.length)];
+            const botName = responder.occupant.name;
+            showSpeechBubble(responder.index, "•••");
+
+            const aiText = await fetchAiBotReply(botName, themeName, state.nickname, userMsg);
+            const finalReply = aiText || generateSmartFallbackReply(userMsg, themeId);
+
+            chatHistoryLog.push(`${botName}: ${finalReply}`);
+            showSpeechBubble(responder.index, finalReply);
+
+            // Masada 2. bir AI karakter varsa %45 ihtimalle sohbete kısa bir ek yorumla katılsın
+            if (botSeats.length > 1 && Math.random() < 0.45) {
+                const otherBots = botSeats.filter(b => b.index !== responder.index);
+                const secondBot = otherBots[Math.floor(Math.random() * otherBots.length)];
+                setTimeout(async () => {
+                    showSpeechBubble(secondBot.index, "•••");
+                    const secondReply = await fetchAiBotReply(secondBot.occupant.name, themeName, botName, finalReply);
+                    const finalSecond = secondReply || generateSmartFallbackReply(finalReply, themeId);
+                    chatHistoryLog.push(`${secondBot.occupant.name}: ${finalSecond}`);
+                    showSpeechBubble(secondBot.index, finalSecond);
+                }, 2000);
+            }
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        const hoverTooltip = document.getElementById('hover-tooltip');
+        let pointerDownPos = { x: 0, y: 0 };
+
+        function updateSeatHighlight(hoveredIdx) {
+            if (state.hoveredSeatIndex === hoveredIdx) return;
+            state.hoveredSeatIndex = hoveredIdx;
+
+            state.seats.forEach((seat) => {
+                const isHovered = (seat.index === hoveredIdx && !seat.occupant);
+                if (seat.chairMesh && seat.chairMesh.userData.highlightMats) {
+                    seat.chairMesh.userData.highlightMats.forEach(mat => {
+                        mat.emissive.setHex(isHovered ? 0x10b981 : 0x000000);
+                        mat.emissiveIntensity = isHovered ? 0.35 : 0;
+                    });
+                }
+                if (seat.arrowMesh && seat.arrowMesh.userData.arrowMat) {
+                    seat.arrowMesh.userData.arrowMat.emissiveIntensity = isHovered ? 1.6 : 0.85;
+                    seat.arrowMesh.scale.setScalar(isHovered ? 1.22 : 1.0);
+                }
+            });
+        }
+
+        renderer.domElement.addEventListener('pointermove', (e) => {
+            pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            const hits = raycaster.intersectObjects(state.interactiveProps, false);
+            let foundSeatIdx = null;
+            let foundInteractive = false;
+
+            if (hits.length > 0) {
+                const obj = hits[0].object;
+                if (obj.userData.interactType === 'seat') {
+                    const seat = state.seats[obj.userData.seatIndex];
+                    if (seat && !seat.occupant) {
+                        foundSeatIdx = seat.index;
+                        foundInteractive = true;
+                    }
+                } else if (obj.userData.interactType === 'fire' || obj.userData.interactType === 'coffee') {
+                    foundInteractive = true;
+                }
+            }
+
+            updateSeatHighlight(foundSeatIdx);
+
+            if (foundSeatIdx !== null) {
+                renderer.domElement.style.cursor = 'pointer';
+                hoverTooltip.style.left = `${e.clientX}px`;
+                hoverTooltip.style.top = `${e.clientY}px`;
+                hoverTooltip.classList.remove('opacity-0');
+            } else {
+                renderer.domElement.style.cursor = foundInteractive ? 'pointer' : 'grab';
+                hoverTooltip.classList.add('opacity-0');
+            }
+        });
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            pointerDownPos = { x: e.clientX, y: e.clientY };
+        });
+
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            // Sürükleme (kamera döndürme) ile tıklamayı ayırt et
+            const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+            if (moveDist > 6) return;
+
+            pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            const hits = raycaster.intersectObjects(state.interactiveProps, false);
+            if (hits.length > 0) {
+                const obj = hits[0].object;
+                if (obj.userData.interactType === 'seat') {
+                    const seatIdx = obj.userData.seatIndex;
+                    if (state.seats[seatIdx] && !state.seats[seatIdx].occupant) {
+                        sitAtSeat(seatIdx);
+                        hoverTooltip.classList.add('opacity-0');
+                        updateSeatHighlight(null);
+                    }
+                } else if (obj.userData.interactType === 'fire') {
+                    spawnParticleBurst(new THREE.Vector3(0, 0.5, 0), 0xffaa00, 18, false);
+                    if (fireLight) fireLight.intensity = 7.5;
+                } else if (obj.userData.interactType === 'coffee') {
+                    spawnParticleBurst(obj.userData.worldPos, 0xffffff, 10, true);
+                }
+            }
+        });
+
+        // ==========================================
+        // 8. WEB AUDIO API (AMBİYANS & LO-FI SES SENTEZİ)
+        // ==========================================
+        let audioCtx = null;
+        let ambientGain = null;
+        let chordInterval = null;
+
+        function toggleAmbientAudio() {
+            const btnIcon = document.getElementById('audio-icon');
+            const btnLabel = document.getElementById('audio-label');
+
+            if (!state.audioEnabled) {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+
+                    // Yumuşak Kahverengi Gürültü (Ateş çıtırtısı / Yağmur uğultusu)
+                    const bufferSize = 2 * audioCtx.sampleRate;
+                    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const output = noiseBuffer.getChannelData(0);
+                    let lastOut = 0.0;
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        output[i] = (lastOut + (0.02 * white)) / 1.02;
+                        lastOut = output[i];
+                        output[i] *= 0.45;
+                    }
+
+                    const brownNoise = audioCtx.createBufferSource();
+                    brownNoise.buffer = noiseBuffer;
+                    brownNoise.loop = true;
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 380;
+
+                    ambientGain = audioCtx.createGain();
+                    ambientGain.gain.value = 0.14;
+
+                    brownNoise.connect(filter);
+                    filter.connect(ambientGain);
+                    ambientGain.connect(audioCtx.destination);
+                    brownNoise.start();
+
+                    // Hafif Lo-Fi Akor Pad Sentezi
+                    const chords = [
+                        [261.63, 329.63, 392.00, 493.88], // Cmaj7
+                        [220.00, 261.63, 329.63, 392.00], // Am7
+                        [174.61, 220.00, 261.63, 329.63], // Fmaj7
+                        [196.00, 246.94, 293.66, 349.23]  // G7
+                    ];
+                    let chordIdx = 0;
+
+                    chordInterval = setInterval(() => {
+                        if (!state.audioEnabled || !audioCtx) return;
+                        const notes = chords[chordIdx % chords.length];
+                        chordIdx++;
+
+                        notes.forEach(freq => {
+                            const osc = audioCtx.createOscillator();
+                            const noteGain = audioCtx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.value = freq;
+
+                            const now = audioCtx.currentTime;
+                            noteGain.gain.setValueAtTime(0.001, now);
+                            noteGain.gain.exponentialRampToValueAtTime(0.018, now + 0.8);
+                            noteGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.6);
+
+                            osc.connect(noteGain);
+                            noteGain.connect(audioCtx.destination);
+                            osc.start(now);
+                            osc.stop(now + 3.7);
+                        });
+                    }, 4000);
+                }
+
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                ambientGain.gain.setTargetAtTime(0.14, audioCtx.currentTime, 0.3);
+                state.audioEnabled = true;
+                btnIcon.textContent = '🔊';
+                btnLabel.textContent = 'Ambiyans Açık';
+            } else {
+                if (audioCtx && ambientGain) {
+                    ambientGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.2);
+                }
+                state.audioEnabled = false;
+                btnIcon.textContent = '🔇';
+                btnLabel.textContent = 'Ambiyans Kapalı';
+            }
+        }
+
+        // ==========================================
+        // 9. ARAYÜZ ETKİLEŞİMLERİ VE OLAY DİNLEYİCİLERİ
+        // ==========================================
+        function saveProfileInputs() {
+            const rawName = document.getElementById('input-nickname').value.trim();
+            state.nickname = rawName || 'Misafir';
+        }
+
+        function openLobbyModal() {
+            document.getElementById('lobby-modal').classList.remove('hidden');
+            document.getElementById('btn-close-lobby').classList.remove('hidden');
+        }
+
+        function closeLobbyModal() {
+            document.getElementById('lobby-modal').classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-banner');
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2800);
+        }
+
+        // Kategori Seçimi
+        document.querySelectorAll('#theme-grid button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#theme-grid button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.selectedLobbyTheme = btn.dataset.theme;
+            });
+        });
+
+        // Pixel Art Karakter Seçimi Oluşturucu
+        function renderCharacterPicker() {
+            const picker = document.getElementById('character-picker');
+            if (!picker) return;
+            picker.innerHTML = '';
+
+            CHARACTER_PRESETS.forEach(preset => {
+                const isSelected = preset.id === state.selectedCharId;
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = `character-card p-1.5 flex flex-col items-center gap-1 ${isSelected ? 'active' : ''}`;
+
+                const previewCanvas = drawPixelCharacterCanvas(preset, false);
+                previewCanvas.className = 'pixel-art-img w-8 h-12 sm:w-10 sm:h-16 object-contain';
+                card.appendChild(previewCanvas);
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'text-[9px] sm:text-[10px] font-bold text-slate-200 truncate w-full text-center';
+                nameSpan.textContent = preset.label;
+                card.appendChild(nameSpan);
+
+                card.addEventListener('click', () => {
+                    state.selectedCharId = preset.id;
+                    state.avatarColor = preset.accent;
+                    document.getElementById('selected-char-name').textContent = preset.label;
+                    renderCharacterPicker();
+                });
+
+                picker.appendChild(card);
+            });
+        }
+
+        // Otomatik 2 Kişilik Eşleşme Butonu (Anında hızlı eşleşme)
+        document.getElementById('btn-auto-match').addEventListener('click', () => {
+            startAutoMatch(state.selectedLobbyTheme);
+        });
+
+        // Üst Bardaki "Yeni Eşleşme" Butonu (Anında hızlı eşleşme)
+        document.getElementById('btn-next-match').addEventListener('click', () => {
+            startAutoMatch(state.currentRoom.theme);
+        });
+
+        // Sohbet Gönderme
+        function sendPlayerMessage(text) {
+            const clean = text.trim();
+            if (!clean) return;
+
+            if (state.playerSeatIndex === null) {
+                showToast('Konuşmak için önce boş bir sandalyeye "Otur" de! 🪑');
+                return;
+            }
+
+            showSpeechBubble(state.playerSeatIndex, clean);
+            triggerBotReply(clean);
+        }
+
+        document.getElementById('chat-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            sendPlayerMessage(input.value);
+            input.value = '';
+        });
+
+        document.querySelectorAll('.quick-msg').forEach(btn => {
+            btn.addEventListener('click', () => sendPlayerMessage(btn.dataset.quick));
+        });
+
+        document.getElementById('btn-stand').addEventListener('click', standUp);
+        document.getElementById('btn-open-lobby').addEventListener('click', openLobbyModal);
+        document.getElementById('btn-close-lobby').addEventListener('click', closeLobbyModal);
+        document.getElementById('btn-audio').addEventListener('click', toggleAmbientAudio);
+
+        document.getElementById('btn-toggle-menu').addEventListener('click', () => {
+            if (state.playerSeatIndex === null) {
+                showToast('Sipariş veya ikram için önce bir sandalyeye otur! 🪑');
+                return;
+            }
+            const drawer = document.getElementById('order-drawer');
+            drawer.classList.toggle('hidden');
+            if (!drawer.classList.contains('hidden')) {
+                drawer.classList.add('flex');
+                renderOrderDrawer();
+            }
+        });
+
+        document.getElementById('btn-consume-item').addEventListener('click', consumeMyTreat);
+
+        // Kullanıcı kamerayı elle sürüklemeye başlarsa otomatik kamera geçişini durdur
+        controls.addEventListener('start', () => {
+            cameraTransition.active = false;
+        });
+
+        // ==========================================
+        // 10. ANİMASYON DÖNGÜSÜ (60 FPS RENDER)
+        // ==========================================
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const elapsed = clock.getElapsedTime();
+
+            // Kamera yumuşak geçiş (Lerp)
+            if (cameraTransition.active) {
+                camera.position.lerp(cameraTransition.targetPos, 0.07);
+                controls.target.lerp(cameraTransition.targetLook, 0.08);
+                if (camera.position.distanceTo(cameraTransition.targetPos) < 0.05) {
+                    cameraTransition.active = false;
+                }
+            }
+
+            // Kamp ateşi titreşimi ve kıvılcımlar
+            if (fireLight) {
+                fireLight.intensity = THREE.MathUtils.lerp(
+                    fireLight.intensity,
+                    4.2 + Math.sin(elapsed * 12) * 0.6 + Math.cos(elapsed * 23) * 0.4,
+                    0.15
+                );
+                if (Math.random() < 0.18) {
+                    spawnParticleBurst(new THREE.Vector3(0, 0.45, 0), 0xff8c1a, 1, false);
+                }
+            }
+
+            // Cafe kahve dumanı
+            if (state.currentRoom.theme === 'cafe' && Math.random() < 0.08) {
+                const steamPositions = [
+                    new THREE.Vector3(-0.6, 1.0, 0.32),
+                    new THREE.Vector3(0.6, 1.0, 0.32),
+                    new THREE.Vector3(-0.6, 1.0, -0.32),
+                    new THREE.Vector3(0.6, 1.0, -0.32)
+                ];
+                const pick = steamPositions[Math.floor(Math.random() * steamPositions.length)];
+                spawnParticleBurst(pick, 0xffffff, 1, true);
+            }
+
+            // Avatarların nefes alma & konuşma animasyonu + Boş sandalye ok animasyonu
+            state.seats.forEach((seat, idx) => {
+                if (seat.arrowMesh && seat.arrowMesh.visible) {
+                    seat.arrowMesh.position.y = 1.32 + Math.sin(elapsed * 3.5 + idx) * 0.08;
+                    seat.arrowMesh.rotation.y = elapsed * 1.4;
+                }
+                if (seat.avatarMesh) {
+                    const sprite = seat.avatarMesh.userData.sprite;
+                    if (sprite) {
+                        const breathe = Math.sin(elapsed * 2.8 + idx) * 0.015;
+                        sprite.position.y = 0.92 + breathe;
+                        sprite.scale.set(0.95 - breathe * 0.4, 1.35 + breathe * 0.6, 1);
+                    }
+                    if (seat.avatarMesh.userData.talkBounce > 0) {
+                        seat.avatarMesh.position.y = Math.sin(seat.avatarMesh.userData.talkBounce * Math.PI) * 0.09;
+                        seat.avatarMesh.userData.talkBounce -= delta * 3.2;
+                    } else {
+                        seat.avatarMesh.position.y = 0;
+                    }
+                    if (seat.avatarMesh.userData.eatAnim > 0) {
+                        const dip = Math.sin(seat.avatarMesh.userData.eatAnim * Math.PI);
+                        if (sprite) {
+                            sprite.position.y -= dip * 0.08;
+                            sprite.material.rotation = -dip * 0.14;
+                        }
+                        seat.avatarMesh.userData.eatAnim -= delta * 2.8;
+                    } else if (sprite) {
+                        sprite.material.rotation = 0;
+                    }
+                }
+            });
+
+            // Partikül güncelleme
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const p = state.particles[i];
+                p.mesh.position.addScaledVector(p.vel, delta);
+                p.life -= delta * 1.1;
+                p.mesh.material.opacity = Math.max(0, p.life);
+                p.mesh.scale.setScalar(Math.max(0.01, p.life));
+
+                if (p.life <= 0) {
+                    particleGroup.remove(p.mesh);
+                    state.particles.splice(i, 1);
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+        // Pencere Yeniden Boyutlandırma (Mobil ekran döndürme dahil)
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.fov = isMobileView() ? 60 : 55;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Başlangıç Yüklemesi
+        window.onload = () => {
+            renderCharacterPicker();
+            loadRoom(state.currentRoom);
+            animate();
+        };
+    </script>
+</body>
+</html>
