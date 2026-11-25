@@ -1532,22 +1532,27 @@
             standUp(true, true);
         }
 
-        async function loadAdminReports() {
-            const reportsList = document.getElementById('admin-reports-list');
-            const statReports = document.getElementById('admin-stat-reports');
-            let reports = JSON.parse(localStorage.getItem('oturbenimle_reports') || '[]');
-
-            if (sbClient) {
-                try {
-                    const { data, error } = await sbClient
-                        .from('reports')
-                        .select('*')
-                        .order('created_at', { ascending: false })
-                        .limit(30);
-                    if (!error && Array.isArray(data)) {
-                        reports = data;
-                    }
-                } catch (_) {}
+        function createTreatMesh(item, xOffset) {
+            const group = new THREE.Group();
+            if (item.type === 'drink') {
+                const cup = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.065, 0.05, 0.14, 8),
+                    new THREE.MeshStandardMaterial({ color: item.color, roughness: 0.3 })
+                );
+                cup.position.y = 0.07;
+                group.add(cup);
+            } else {
+                const plate = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.11, 0.08, 0.025, 10),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 })
+                );
+                plate.position.y = 0.0125;
+                const food = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.09, 0.06, 0.09),
+                    new THREE.MeshStandardMaterial({ color: item.color, roughness: 0.7 })
+                );
+                food.position.y = 0.05;
+                group.add(plate, food);
             }
             const baseY = state.currentTheme === 'beach' ? 0.52 : (state.currentTheme === 'campfire' ? 0.15 : 0.82);
             group.position.set(xOffset, baseY, state.currentTheme === 'beach' ? 0.25 : 0);
@@ -1759,6 +1764,24 @@
 
             let matched = false;
 
+            const finalizeMatch = (roomId, mySeatIdx, partner) => {
+                if (matched) return;
+                matched = true;
+                state.isSearching = false;
+                statusText.textContent = `${partner.name} ile eşleştin! Masaya geçiliyor...`;
+
+                setTimeout(() => {
+                    if (queueChannel) {
+                        sbClient.removeChannel(queueChannel);
+                        queueChannel = null;
+                    }
+                    matchOverlay.classList.add('hidden');
+                    matchBtn.disabled = false;
+                    matchBtn.classList.remove('opacity-50');
+                    enterMultiplayerRoom(roomId, mySeatIdx, partner);
+                }, 450);
+            };
+
             const tryPairFromPresence = () => {
                 if (matched || !state.isSearching) return;
                 const presenceState = queueChannel.presenceState();
@@ -1769,35 +1792,44 @@
                 });
 
                 // Sıraya giriş zamanına göre deterministik eşleştirme
-                waiters.sort((a, b) => a.joinedAt - b.joinedAt);
+                waiters.sort((a, b) => (a.joinedAt - b.joinedAt) || a.id.localeCompare(b.id));
                 const myIdx = waiters.findIndex(w => w.id === CLIENT_ID);
                 if (myIdx === -1) return;
 
                 const partnerIdx = myIdx % 2 === 0 ? myIdx + 1 : myIdx - 1;
                 if (partnerIdx >= 0 && partnerIdx < waiters.length) {
                     const partner = waiters[partnerIdx];
-                    matched = true;
-                    state.isSearching = false;
                     const pairIds = [CLIENT_ID, partner.id].sort();
                     const roomId = `room_${state.currentTheme}_${pairIds[0]}_${pairIds[1]}`;
                     const mySeatIdx = pairIds[0] === CLIENT_ID ? 0 : 1;
 
-                    statusText.textContent = `${partner.name} ile eşleştin! Masaya geçiliyor...`;
-
-                    setTimeout(() => {
-                        if (queueChannel) {
-                            sbClient.removeChannel(queueChannel);
-                            queueChannel = null;
+                    // Diğer cihaza eşleşmenin kesinleştiğini anında bildir
+                    queueChannel.send({
+                        type: 'broadcast',
+                        event: 'match_found',
+                        payload: {
+                            targetId: partner.id,
+                            roomId,
+                            seatForTarget: mySeatIdx === 0 ? 1 : 0,
+                            initiator: {
+                                id: CLIENT_ID,
+                                name: state.playerName,
+                                gender: state.playerGender,
+                                profile: state.playerProfile
+                            }
                         }
-                        matchOverlay.classList.add('hidden');
-                        matchBtn.disabled = false;
-                        matchBtn.classList.remove('opacity-50');
-                        enterMultiplayerRoom(roomId, mySeatIdx, partner);
-                    }, 700);
+                    });
+
+                    finalizeMatch(roomId, mySeatIdx, partner);
                 }
             };
 
             queueChannel
+                .on('broadcast', { event: 'match_found' }, ({ payload }) => {
+                    if (payload.targetId === CLIENT_ID && !matched && state.isSearching) {
+                        finalizeMatch(payload.roomId, payload.seatForTarget, payload.initiator);
+                    }
+                })
                 .on('presence', { event: 'sync' }, tryPairFromPresence)
                 .on('presence', { event: 'join' }, tryPairFromPresence)
                 .subscribe(async (status) => {
@@ -1809,6 +1841,7 @@
                             profile: state.playerProfile,
                             joinedAt: Date.now()
                         });
+                        setTimeout(tryPairFromPresence, 300);
                     }
                 });
         }
