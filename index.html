@@ -337,6 +337,11 @@
                 <span class="pixel-title text-[11px] sm:text-xs">Kalk</span>
             </button>
 
+            <button type="button" id="btn-toggle-music" title="Ortam Müziğini Aç/Kapat" class="glass-panel pixel-btn hover:bg-[#262b38] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 text-xs font-semibold text-amber-300">
+                <span id="music-icon">🔊</span>
+                <span id="music-label" class="pixel-title text-[11px] sm:text-xs">Müzik</span>
+            </button>
+
             <button type="button" id="btn-open-lobby" class="glass-panel pixel-btn hover:bg-[#262b38] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-slate-100">
                 <span>🏠</span>
                 <span class="pixel-title text-[11px] sm:text-xs">Lobiye Dön</span>
@@ -496,7 +501,7 @@
                         type="text"
                         maxlength="16"
                         required
-                        placeholder="Örn: Gezgin, Deniz..."
+                        placeholder=""
                         class="pixel-input px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500"
                     >
                     <p id="nickname-warning" class="hidden text-[11px] text-rose-400">Lütfen en az 2 karakterlik uygun bir takma ad girin.</p>
@@ -836,6 +841,224 @@
 
         let lastOwBroadcast = 0;
         let lastSentOwPos = { x: 0, z: 3.5 };
+
+        // Web Audio API ile her ortama özel döngüsel ortam müziği motoru + gerçek ses dosyası (.mp3) desteği
+        const ambientAudio = {
+            ctx: null,
+            masterGain: null,
+            timerId: null,
+            step: 0,
+            enabled: true,
+            currentTheme: null,
+            trackAudio: null,
+            trackSources: {
+                campfire: './akdeniz-aksamlari.mp3'
+            },
+
+            ensureContext() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioCtx) return;
+                    this.ctx = new AudioCtx();
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.value = this.enabled ? 0.14 : 0.0;
+                    this.masterGain.connect(this.ctx.destination);
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume().catch(() => {});
+                }
+            },
+
+            stopLoop() {
+                if (this.timerId) {
+                    clearInterval(this.timerId);
+                    this.timerId = null;
+                }
+            },
+
+            playTone(freq, duration, type = 'sine', vol = 0.25) {
+                if (!this.enabled) return;
+                this.ensureContext();
+                if (!this.ctx || !this.masterGain) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(vol, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(now);
+                osc.stop(now + duration + 0.02);
+            },
+
+            playNoiseBurst(duration, filterFreq = 1200, vol = 0.08) {
+                if (!this.enabled) return;
+                this.ensureContext();
+                if (!this.ctx || !this.masterGain) return;
+
+                const sampleCount = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
+                const buffer = this.ctx.createBuffer(1, sampleCount, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < sampleCount; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleCount * 0.45));
+                }
+
+                const src = this.ctx.createBufferSource();
+                src.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = filterFreq;
+
+                const gain = this.ctx.createGain();
+                gain.gain.value = vol;
+
+                src.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+                src.start();
+            },
+
+            ensureTrackAudio(src) {
+                if (!src) return null;
+                if (!this.trackAudio) {
+                    this.trackAudio = new Audio();
+                    this.trackAudio.loop = true;
+                    this.trackAudio.preload = 'auto';
+                    this.trackAudio.volume = 0.6;
+                    this.trackAudio.addEventListener('ended', () => {
+                        if (this.enabled && this.trackSources[this.currentTheme]) {
+                            this.trackAudio.currentTime = 0;
+                            this.trackAudio.play().catch(() => {});
+                        }
+                    });
+                }
+                if (this.trackAudio.getAttribute('data-src') !== src) {
+                    this.trackAudio.setAttribute('data-src', src);
+                    this.trackAudio.src = src;
+                    this.trackAudio.load();
+                }
+                return this.trackAudio;
+            },
+
+            isTrackPlaying() {
+                return Boolean(
+                    this.enabled &&
+                    this.trackSources[this.currentTheme] &&
+                    this.trackAudio &&
+                    !this.trackAudio.paused &&
+                    !this.trackAudio.ended
+                );
+            },
+
+            syncTrackForTheme(themeId) {
+                const src = this.trackSources[themeId];
+                if (!src || !this.enabled) {
+                    if (this.trackAudio && !this.trackAudio.paused) {
+                        this.trackAudio.pause();
+                    }
+                    return;
+                }
+                const audioEl = this.ensureTrackAudio(src);
+                if (!audioEl) return;
+                if (audioEl.paused) {
+                    audioEl.play().catch(() => {});
+                }
+            },
+
+            startForTheme(themeId) {
+                this.currentTheme = themeId || 'campfire';
+                this.stopLoop();
+                this.step = 0;
+                this.syncTrackForTheme(this.currentTheme);
+
+                const patterns = {
+                    cafe: {
+                        interval: 650,
+                        notes: [261.63, 329.63, 392.00, 493.88, 293.66, 349.23, 440.00, 523.25],
+                        type: 'triangle',
+                        vol: 0.22
+                    },
+                    campfire: {
+                        interval: 750,
+                        notes: [196.00, 246.94, 293.66, 246.94, 174.61, 220.00, 261.63, 220.00],
+                        type: 'sine',
+                        vol: 0.20,
+                        crackle: true
+                    },
+                    beach: {
+                        interval: 700,
+                        notes: [220.00, 277.18, 329.63, 415.30, 329.63, 277.18, 246.94, 293.66],
+                        type: 'sine',
+                        vol: 0.18,
+                        wave: true
+                    },
+                    club: {
+                        interval: 280,
+                        notes: [110.00, 110.00, 130.81, 146.83, 164.81, 146.83, 130.81, 98.00],
+                        type: 'sawtooth',
+                        vol: 0.16,
+                        beat: true
+                    },
+                    openworld: {
+                        interval: 420,
+                        notes: [329.63, 392.00, 440.00, 523.25, 493.88, 440.00, 392.00, 329.63],
+                        type: 'triangle',
+                        vol: 0.20
+                    }
+                };
+
+                const pat = patterns[this.currentTheme] || patterns.campfire;
+                this.timerId = setInterval(() => {
+                    if (!this.enabled) return;
+                    if (this.trackSources[this.currentTheme]) {
+                        this.syncTrackForTheme(this.currentTheme);
+                        if (this.isTrackPlaying()) return;
+                    }
+                    const freq = pat.notes[this.step % pat.notes.length];
+                    this.playTone(freq, (pat.interval / 1000) * 0.9, pat.type, pat.vol);
+
+                    if (pat.crackle && this.step % 2 === 1) {
+                        this.playNoiseBurst(0.08, 2200, 0.06);
+                    }
+                    if (pat.wave && this.step % 4 === 0) {
+                        this.playNoiseBurst(0.55, 420, 0.08);
+                    }
+                    if (pat.beat && this.step % 2 === 0) {
+                        this.playTone(65.41, 0.14, 'sine', 0.35);
+                    }
+                    this.step += 1;
+                }, pat.interval);
+            },
+
+            setEnabled(val) {
+                this.enabled = Boolean(val);
+                if (this.masterGain && this.ctx) {
+                    this.masterGain.gain.setTargetAtTime(this.enabled ? 0.14 : 0.0, this.ctx.currentTime, 0.05);
+                }
+                if (this.trackAudio) {
+                    this.trackAudio.muted = !this.enabled;
+                    if (this.enabled && this.trackSources[this.currentTheme]) {
+                        this.trackAudio.play().catch(() => {});
+                    }
+                }
+                if (this.enabled) {
+                    this.ensureContext();
+                    this.startForTheme(this.currentTheme || state.theme);
+                }
+                const iconEl = document.getElementById('music-icon');
+                const labelEl = document.getElementById('music-label');
+                if (iconEl) iconEl.textContent = this.enabled ? '🔊' : '🔇';
+                if (labelEl) labelEl.textContent = this.enabled ? 'Müzik' : 'Kapalı';
+            }
+        };
+
         const OW_MAX_PLAYERS_PER_SHARD = 25;
         const owInput = { x: 0, z: 0 };
         const owKeys = {};
@@ -1865,8 +2088,7 @@
             }
 
             applyResponsiveCameraForTheme(themeId);
-            updateMinigameButtonVisibility();
-            renderTreatsOnTable();
+            ambientAudio.startForTheme(themeId);
             if (themeId !== 'openworld' && themeId !== 'campfire' && themeId !== 'club') {
                 renderAvatars();
             }
@@ -3898,6 +4120,23 @@
         document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmaking);
 
         document.getElementById('btn-stand').addEventListener('click', () => standUp(true));
+
+        document.getElementById('btn-toggle-music').addEventListener('click', () => {
+            ambientAudio.setEnabled(!ambientAudio.enabled);
+        });
+
+        ['pointerdown', 'keydown'].forEach((evName) => {
+            window.addEventListener(evName, () => {
+                if (ambientAudio.enabled) {
+                    ambientAudio.ensureContext();
+                    if (!ambientAudio.timerId) {
+                        ambientAudio.startForTheme(state.theme);
+                    } else {
+                        ambientAudio.syncTrackForTheme(state.theme);
+                    }
+                }
+            }, { once: false });
+        });
 
         document.getElementById('btn-open-lobby').addEventListener('click', () => {
             standUp(true);
