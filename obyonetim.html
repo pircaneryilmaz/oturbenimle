@@ -28,9 +28,14 @@
                 <h1 class="text-base sm:text-lg font-bold text-amber-300">🛡️ OTURBENİMLE — Moderasyon & Yönetim</h1>
                 <p class="text-xs text-slate-400">Canlı çevrimiçi durumu ve kullanıcı bildirimleri</p>
             </div>
-            <button type="button" id="btn-logout" class="hidden text-xs bg-rose-900/70 hover:bg-rose-800 text-rose-200 px-3 py-1.5 rounded border border-rose-700/60">
-                Çıkış Yap
-            </button>
+            <div class="flex items-center gap-2">
+                <button type="button" id="btn-download-html" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded border border-slate-700 cursor-pointer">
+                    İndir (.html)
+                </button>
+                <button type="button" id="btn-logout" class="hidden text-xs bg-rose-900/70 hover:bg-rose-800 text-rose-200 px-3 py-1.5 rounded border border-rose-700/60 cursor-pointer">
+                    Çıkış Yap
+                </button>
+            </div>
         </div>
 
         <form id="login-form" class="flex flex-col gap-3 max-w-sm mx-auto w-full py-4">
@@ -43,7 +48,7 @@
                 <input id="pass-input" type="password" autocomplete="current-password" required placeholder="Şifreniz..." class="bg-[#0d1118] border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
             </div>
             <p id="login-error" class="hidden text-xs text-rose-400">Giriş başarısız. E-posta veya şifrenizi kontrol edin.</p>
-            <button type="submit" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded text-sm mt-1">
+            <button type="submit" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded text-sm mt-1 cursor-pointer">
                 Güvenli Giriş Yap
             </button>
         </form>
@@ -70,6 +75,7 @@
 
             <div class="flex flex-col gap-1.5">
                 <h2 class="text-xs font-bold text-slate-300">🟢 Şu An Sitede Aktif Olanlar</h2>
+                <p id="mod-action-status" class="text-[11px] text-amber-300 min-h-[16px]"></p>
                 <div id="active-users-box" class="bg-[#0d1118] border border-slate-800 rounded p-3 text-xs text-slate-300 space-y-1.5 max-h-36 overflow-y-auto">
                     Bağlanıyor...
                 </div>
@@ -78,7 +84,7 @@
             <div class="flex flex-col gap-1.5">
                 <div class="flex items-center justify-between">
                     <h2 class="text-xs font-bold text-rose-300">⚠️ Gelen Şikayet ve Bildirimler</h2>
-                    <button type="button" id="btn-refresh" class="text-xs text-amber-300 hover:underline">Listeyi Yenile</button>
+                    <button type="button" id="btn-refresh" class="text-xs text-amber-300 hover:underline cursor-pointer">Listeyi Yenile</button>
                 </div>
                 <div id="reports-box" class="bg-[#0d1118] border border-slate-800 rounded p-3 text-xs text-slate-300 space-y-2.5 max-h-80 overflow-y-auto">
                     Yükleniyor...
@@ -101,11 +107,34 @@
         };
 
         let presenceChannel = null;
+        let isPresenceSubscribed = false;
+
+        // Sayfanın güncel HTML kaynağını obyonetim.html olarak bilgisayara indirir
+        document.getElementById('btn-download-html').addEventListener('click', () => {
+            try {
+                const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'obyonetim.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error('İndirme hatası:', err);
+            }
+        });
 
         async function checkSession() {
-            const { data } = await sb.auth.getSession();
-            if (data?.session) {
-                showDashboard();
+            try {
+                const { data } = await sb.auth.getSession();
+                if (data?.session) {
+                    showDashboard();
+                }
+            } catch (err) {
+                console.error('Oturum kontrolü hatası:', err);
             }
         }
 
@@ -119,32 +148,86 @@
         }
 
         async function fetchSiteStats() {
-            const { data } = await sb
-                .from('site_stats')
-                .select('total_visits, peak_online')
-                .eq('id', 1)
-                .single();
+            try {
+                const { data } = await sb
+                    .from('site_stats')
+                    .select('total_visits, peak_online')
+                    .eq('id', 1)
+                    .single();
 
-            if (data) {
-                document.getElementById('stat-visits').textContent = `${data.total_visits || 0} Kişi`;
-                document.getElementById('stat-peak').textContent = `${data.peak_online || 0} Kişi`;
+                if (data) {
+                    document.getElementById('stat-visits').textContent = `${data.total_visits || 0} Kişi`;
+                    document.getElementById('stat-peak').textContent = `${data.peak_online || 0} Kişi`;
+                }
+            } catch (err) {
+                console.error('İstatistik hatası:', err);
             }
         }
 
         function startPresenceListener() {
             if (presenceChannel) sb.removeChannel(presenceChannel);
+            isPresenceSubscribed = false;
 
             presenceChannel = sb.channel('private_oturbenimle_online', {
-                config: { private: true, presence: { key: 'admin_monitor_' + Date.now() } }
+                config: {
+                    private: true,
+                    broadcast: { ack: true },
+                    presence: { key: 'admin_monitor_' + Date.now() }
+                }
             });
+
+            const setModStatus = (msg, isErr = false) => {
+                const el = document.getElementById('mod-action-status');
+                if (!el) return;
+                el.className = 'text-[11px] min-h-[16px] ' + (isErr ? 'text-rose-400' : 'text-emerald-300');
+                el.textContent = msg;
+            };
+
+            const sendModBroadcast = async (eventName, payload) => {
+                if (!presenceChannel) {
+                    setModStatus('Kanal bağlı değil, yeniden bağlanılıyor...', true);
+                    startPresenceListener();
+                    return false;
+                }
+                if (!isPresenceSubscribed) {
+                    await new Promise((resolve) => {
+                        let settled = false;
+                        const timer = setTimeout(() => {
+                            if (!settled) { settled = true; resolve(); }
+                        }, 1500);
+                        presenceChannel.subscribe((status) => {
+                            if (status === 'SUBSCRIBED') {
+                                isPresenceSubscribed = true;
+                                if (!settled) { settled = true; clearTimeout(timer); resolve(); }
+                            }
+                        });
+                    });
+                }
+                const res = await presenceChannel.send({
+                    type: 'broadcast',
+                    event: eventName,
+                    payload
+                });
+                if (res === 'error' || res === 'timed out') {
+                    setModStatus(`Sinyal iletilemedi (${res}). Sayfayı yenileyip tekrar deneyin.`, true);
+                    return false;
+                }
+                return true;
+            };
 
             const syncUsers = () => {
                 if (!presenceChannel) return;
                 const pState = presenceChannel.presenceState();
                 const users = Object.entries(pState)
                     .filter(([key]) => !key.startsWith('admin_monitor_'))
-                    .map(([, arr]) => arr[0])
-                    .filter(Boolean);
+                    .map(([presenceKey, arr]) => {
+                        const first = (arr && arr[0]) || {};
+                        return {
+                            ...first,
+                            resolvedId: String(first.id || presenceKey || '').trim()
+                        };
+                    })
+                    .filter(u => u.resolvedId);
 
                 document.getElementById('stat-online').textContent = `${users.length} Kişi`;
                 const box = document.getElementById('active-users-box');
@@ -157,18 +240,20 @@
                 box.innerHTML = users.map(u => {
                     const themeLabel = THEME_NAMES[u.theme] || u.theme || 'Lobi';
                     const safeName = String(u.name || 'Misafir').replace(/[<>&"]/g, '');
-                    const safeId = String(u.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+                    const safeId = String(u.resolvedId || '').replace(/[^a-zA-Z0-9_-]/g, '');
                     return `<div class="flex items-center justify-between gap-2 border-b border-slate-800/70 pb-1.5 last:border-0">
                         <div class="min-w-0">
                             <span class="text-emerald-300 font-semibold">• ${safeName}</span>
                             <span class="text-slate-400 text-[11px] ml-1.5">(${themeLabel})</span>
                         </div>
-                        <button type="button" data-kick-id="${safeId}" data-kick-name="${safeName}" class="kick-user-btn shrink-0 text-[11px] bg-rose-950/90 hover:bg-rose-700 text-rose-200 border border-rose-700/70 px-2 py-0.5 rounded cursor-pointer">
-                            Oyundan Çıkar
-                        </button>
-                        <button type="button" data-warn-id="${safeId}" data-warn-name="${safeName}" class="warn-user-btn shrink-0 text-[11px] bg-amber-950/90 hover:bg-amber-600 text-amber-200 border border-amber-600/70 px-2 py-0.5 rounded cursor-pointer">
-                            10 Sn Uyarı
-                        </button>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button type="button" data-kick-id="${safeId}" data-kick-name="${safeName}" class="kick-user-btn text-[11px] bg-rose-950/90 hover:bg-rose-700 text-rose-200 border border-rose-700/70 px-2 py-0.5 rounded cursor-pointer">
+                                Oyundan Çıkar
+                            </button>
+                            <button type="button" data-warn-id="${safeId}" data-warn-name="${safeName}" class="warn-user-btn text-[11px] bg-amber-950/90 hover:bg-amber-600 text-amber-200 border border-amber-600/70 px-2 py-0.5 rounded cursor-pointer">
+                                10 Sn Uyarı
+                            </button>
+                        </div>
                     </div>`;
                 }).join('');
 
@@ -176,19 +261,18 @@
                     btn.addEventListener('click', async () => {
                         const targetId = btn.getAttribute('data-kick-id');
                         const targetName = btn.getAttribute('data-kick-name') || 'Kullanıcı';
-                        if (!targetId || !presenceChannel) return;
+                        if (!targetId) return;
 
                         btn.disabled = true;
                         btn.textContent = 'Çıkarılıyor...';
 
-                        await presenceChannel.send({
-                            type: 'broadcast',
-                            event: 'admin_kick',
-                            payload: {
-                                targetId,
-                                targetName
-                            }
+                        const ok = await sendModBroadcast('admin_kick', {
+                            targetId,
+                            targetName
                         });
+                        if (ok) {
+                            setModStatus(`✅ "${targetName}" için oyundan çıkarma komutu gönderildi.`);
+                        }
 
                         setTimeout(() => {
                             btn.disabled = false;
@@ -201,25 +285,26 @@
                 box.querySelectorAll('.warn-user-btn').forEach((btn) => {
                     btn.addEventListener('click', async () => {
                         const targetId = btn.getAttribute('data-warn-id');
-                        if (!targetId || !presenceChannel) return;
+                        const targetName = btn.getAttribute('data-warn-name') || 'Kullanıcı';
+                        if (!targetId) return;
 
                         btn.disabled = true;
                         btn.textContent = 'Gönderildi';
 
-                        await presenceChannel.send({
-                            type: 'broadcast',
-                            event: 'admin_warning',
-                            payload: {
-                                targetId,
-                                seconds: 10,
-                                message: 'KÜFÜR ETME! Küfür edersen banlanır, bir daha siteye giriş yapamazsın!'
-                            }
+                        const ok = await sendModBroadcast('admin_warning', {
+                            targetId,
+                            targetName,
+                            seconds: 10,
+                            message: 'KÜFÜR ETME! Küfür edersen banlanır, bir daha siteye giriş yapamazsın!'
                         });
+                        if (ok) {
+                            setModStatus(`🚨 "${targetName}" ekranına 10 saniyelik uyarı gönderildi.`);
+                        }
 
                         setTimeout(() => {
                             btn.disabled = false;
                             btn.textContent = '10 Sn Uyarı';
-                        }, 2500);
+                        }, 1500);
                     });
                 });
             };
@@ -228,46 +313,56 @@
                 .on('presence', { event: 'sync' }, syncUsers)
                 .on('presence', { event: 'join' }, syncUsers)
                 .on('presence', { event: 'leave' }, syncUsers)
-                .subscribe();
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        isPresenceSubscribed = true;
+                        setModStatus('🟢 Canlı moderasyon kanalı aktif.');
+                        syncUsers();
+                    }
+                });
 
             setInterval(syncUsers, 3500);
         }
 
         async function fetchReports() {
             const box = document.getElementById('reports-box');
-            const { data, error } = await sb
-                .from('reports')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(50);
+            try {
+                const { data, error } = await sb
+                    .from('reports')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
 
-            if (error) {
-                box.innerHTML = '<span class="text-rose-400">Bildirimler yüklenemedi.</span>';
-                return;
+                if (error) {
+                    box.innerHTML = '<span class="text-rose-400">Bildirimler yüklenemedi.</span>';
+                    return;
+                }
+
+                document.getElementById('stat-reports').textContent = `${data.length} Kayıt`;
+
+                if (data.length === 0) {
+                    box.innerHTML = '<span class="text-slate-500">Henüz şikayet kaydı yok.</span>';
+                    return;
+                }
+
+                box.innerHTML = data.map(r => {
+                    const dateStr = new Date(r.created_at).toLocaleString('tr-TR');
+                    const safeReported = String(r.reported_name || '').replace(/[<>&"]/g, '');
+                    const safeReporter = String(r.reporter_name || '').replace(/[<>&"]/g, '');
+                    const safeReason = String(r.reason || '').replace(/[<>&"]/g, '');
+                    const safeChat = String(r.recent_chat || '').replace(/[<>&"]/g, '');
+                    return `<div class="bg-[#131823] border border-slate-800 rounded p-2.5 flex flex-col gap-1">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="text-rose-400 font-bold">Bildirilen: ${safeReported}</span>
+                            <span class="text-slate-500">${dateStr}</span>
+                        </div>
+                        <div class="text-amber-300 text-[11px]">Sebep: ${safeReason} (Bildiren: ${safeReporter})</div>
+                        ${safeChat ? `<div class="text-slate-400 text-[11px] bg-black/30 p-1.5 rounded mt-1 break-words">${safeChat}</div>` : ''}
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                box.innerHTML = '<span class="text-rose-400">Bildirimler yüklenirken hata oluştu.</span>';
             }
-
-            document.getElementById('stat-reports').textContent = `${data.length} Kayıt`;
-
-            if (data.length === 0) {
-                box.innerHTML = '<span class="text-slate-500">Henüz şikayet kaydı yok.</span>';
-                return;
-            }
-
-            box.innerHTML = data.map(r => {
-                const dateStr = new Date(r.created_at).toLocaleString('tr-TR');
-                const safeReported = String(r.reported_name || '').replace(/[<>&"]/g, '');
-                const safeReporter = String(r.reporter_name || '').replace(/[<>&"]/g, '');
-                const safeReason = String(r.reason || '').replace(/[<>&"]/g, '');
-                const safeChat = String(r.recent_chat || '').replace(/[<>&"]/g, '');
-                return `<div class="bg-[#131823] border border-slate-800 rounded p-2.5 flex flex-col gap-1">
-                    <div class="flex items-center justify-between text-[11px]">
-                        <span class="text-rose-400 font-bold">Bildirilen: ${safeReported}</span>
-                        <span class="text-slate-500">${dateStr}</span>
-                    </div>
-                    <div class="text-amber-300 text-[11px]">Sebep: ${safeReason} (Bildiren: ${safeReporter})</div>
-                    ${safeChat ? `<div class="text-slate-400 text-[11px] bg-black/30 p-1.5 rounded mt-1 break-words">${safeChat}</div>` : ''}
-                </div>`;
-            }).join('');
         }
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -277,17 +372,24 @@
             const errEl = document.getElementById('login-error');
             errEl.classList.add('hidden');
 
-            const { error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) {
+            try {
+                const { error } = await sb.auth.signInWithPassword({ email, password });
+                if (error) {
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+                showDashboard();
+            } catch (err) {
                 errEl.classList.remove('hidden');
-                return;
             }
-            showDashboard();
         });
 
         document.getElementById('btn-logout').addEventListener('click', async () => {
-            await sb.auth.signOut();
-            location.reload();
+            try {
+                await sb.auth.signOut();
+            } finally {
+                location.reload();
+            }
         });
 
         document.getElementById('btn-refresh').addEventListener('click', () => {
