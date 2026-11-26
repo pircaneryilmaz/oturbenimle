@@ -157,11 +157,71 @@
                 box.innerHTML = users.map(u => {
                     const themeLabel = THEME_NAMES[u.theme] || u.theme || 'Lobi';
                     const safeName = String(u.name || 'Misafir').replace(/[<>&"]/g, '');
-                    return `<div class="flex items-center justify-between border-b border-slate-800/70 pb-1 last:border-0">
-                        <span class="text-emerald-300 font-semibold">• ${safeName}</span>
-                        <span class="text-slate-400 text-[11px]">${themeLabel}</span>
+                    const safeId = String(u.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+                    return `<div class="flex items-center justify-between gap-2 border-b border-slate-800/70 pb-1.5 last:border-0">
+                        <div class="min-w-0">
+                            <span class="text-emerald-300 font-semibold">• ${safeName}</span>
+                            <span class="text-slate-400 text-[11px] ml-1.5">(${themeLabel})</span>
+                        </div>
+                        <button type="button" data-kick-id="${safeId}" data-kick-name="${safeName}" class="kick-user-btn shrink-0 text-[11px] bg-rose-950/90 hover:bg-rose-700 text-rose-200 border border-rose-700/70 px-2 py-0.5 rounded cursor-pointer">
+                            Oyundan Çıkar
+                        </button>
+                        <button type="button" data-warn-id="${safeId}" data-warn-name="${safeName}" class="warn-user-btn shrink-0 text-[11px] bg-amber-950/90 hover:bg-amber-600 text-amber-200 border border-amber-600/70 px-2 py-0.5 rounded cursor-pointer">
+                            10 Sn Uyarı
+                        </button>
                     </div>`;
                 }).join('');
+
+                box.querySelectorAll('.kick-user-btn').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const targetId = btn.getAttribute('data-kick-id');
+                        const targetName = btn.getAttribute('data-kick-name') || 'Kullanıcı';
+                        if (!targetId || !presenceChannel) return;
+
+                        btn.disabled = true;
+                        btn.textContent = 'Çıkarılıyor...';
+
+                        await presenceChannel.send({
+                            type: 'broadcast',
+                            event: 'admin_kick',
+                            payload: {
+                                targetId,
+                                targetName
+                            }
+                        });
+
+                        setTimeout(() => {
+                            btn.disabled = false;
+                            btn.textContent = 'Oyundan Çıkar';
+                            syncUsers();
+                        }, 1000);
+                    });
+                });
+
+                box.querySelectorAll('.warn-user-btn').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const targetId = btn.getAttribute('data-warn-id');
+                        if (!targetId || !presenceChannel) return;
+
+                        btn.disabled = true;
+                        btn.textContent = 'Gönderildi';
+
+                        await presenceChannel.send({
+                            type: 'broadcast',
+                            event: 'admin_warning',
+                            payload: {
+                                targetId,
+                                seconds: 10,
+                                message: 'KÜFÜR ETME! Küfür edersen banlanır, bir daha siteye giriş yapamazsın!'
+                            }
+                        });
+
+                        setTimeout(() => {
+                            btn.disabled = false;
+                            btn.textContent = '10 Sn Uyarı';
+                        }, 2500);
+                    });
+                });
             };
 
             presenceChannel
