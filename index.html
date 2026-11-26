@@ -245,6 +245,18 @@
             transform: translate(0px, 0px);
         }
 
+        .ow-action-btn {
+            pointer-events: auto;
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 6px 11px;
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            touch-action: manipulation;
+        }
+
         .custom-scroll {
             touch-action: pan-y;
             -webkit-overflow-scrolling: touch;
@@ -272,6 +284,45 @@
         <div id="mobile-joystick-knob"></div>
     </div>
 
+    <!-- Açık Dünya Sağ Alt Bağlamsal & Sosyal Etkileşim Çubuğu (Emojisiz Sade Metin) -->
+    <div id="ow-social-bar" class="hidden fixed right-3 bottom-36 sm:bottom-40 z-20 flex flex-col items-end gap-1.5 pointer-events-none">
+        <div id="ow-zone-banner" class="glass-panel px-2.5 py-1 text-[11px] font-semibold text-amber-300 border-amber-600/50">
+            Meydan Merkezi
+        </div>
+        <div class="flex flex-wrap justify-end gap-1.5 pointer-events-auto max-w-[240px]">
+            <button type="button" id="btn-ow-wave" class="ow-action-btn bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600">
+                El Salla
+            </button>
+            <button type="button" id="btn-ow-sit" class="hidden ow-action-btn bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-400">
+                Otur
+            </button>
+            <button type="button" id="btn-ow-jump" class="hidden ow-action-btn bg-purple-700 hover:bg-purple-600 text-white border border-purple-400">
+                Zipla
+            </button>
+            <button type="button" id="btn-ow-love" class="hidden ow-action-btn bg-pink-700 hover:bg-pink-600 text-white border border-pink-400">
+                Ask Yasa
+            </button>
+            <button type="button" id="btn-ow-hug" class="hidden ow-action-btn bg-rose-700 hover:bg-rose-600 text-white border border-rose-400">
+                Saril
+            </button>
+            <button type="button" id="btn-ow-hand" class="hidden ow-action-btn bg-sky-700 hover:bg-sky-600 text-white border border-sky-400">
+                El Ele Tutus
+            </button>
+            <button type="button" id="btn-ow-stop-pair" class="hidden ow-action-btn bg-amber-700 hover:bg-amber-600 text-white border border-amber-400">
+                Ayril
+            </button>
+        </div>
+    </div>
+
+    <!-- Açık Dünya Karşılıklı Onay Penceresi -->
+    <div id="ow-consent-banner" class="hidden fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-30 glass-panel border-amber-500/80 px-3.5 py-2.5 flex items-center gap-3 shadow-lg">
+        <span id="ow-consent-text" class="text-xs font-semibold text-slate-100">Oyuncu seninle ask yasamak istiyor</span>
+        <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" id="btn-ow-accept-pair" class="pixel-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 text-xs font-bold">Kabul Et</button>
+            <button type="button" id="btn-ow-decline-pair" class="pixel-btn bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 text-xs">Reddet</button>
+        </div>
+    </div>
+
     <!-- Üst HUD (Oda Bilgisi & Kontroller) -->
     <header id="top-hud" class="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex items-center justify-between gap-1.5 sm:gap-2 pointer-events-none pt-[env(safe-area-inset-top)]">
         <div class="glass-panel px-2.5 py-1.5 sm:px-3.5 sm:py-2 flex items-center gap-2 pointer-events-auto min-w-0">
@@ -288,25 +339,21 @@
         </div>
 
         <div class="flex items-center gap-1 sm:gap-2 shrink-0 pointer-events-auto">
-            <!-- Bildir Butonu -->
             <button type="button" id="btn-report-partner" title="Kullanıcıyı Bildir" class="hidden pixel-btn bg-rose-700/90 hover:bg-rose-600 px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 text-xs font-semibold text-white">
                 <span>⚠️</span>
                 <span class="pixel-title text-[11px] sm:text-xs">Bildir</span>
             </button>
 
-            <!-- Yeni Kişiyle Eşleş Butonu -->
             <button type="button" id="btn-next-match" title="Yeni Biriyle Eşleş" class="pixel-btn bg-emerald-600 hover:bg-emerald-500 px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 text-xs font-semibold text-white">
                 <span>🔄</span>
                 <span class="pixel-title text-[11px] sm:text-xs">Yeni</span>
             </button>
 
-            <!-- Ayağa Kalk Butonu (Sadece otururken görünür) -->
             <button type="button" id="btn-stand" class="hidden pixel-btn bg-slate-700 hover:bg-slate-600 px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 text-xs font-semibold text-slate-100">
                 <span>🧍</span>
                 <span class="pixel-title text-[11px] sm:text-xs">Kalk</span>
             </button>
 
-            <!-- Lobiye Dön Butonu -->
             <button type="button" id="btn-open-lobby" class="glass-panel pixel-btn hover:bg-[#262b38] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-slate-100">
                 <span>🏠</span>
                 <span class="pixel-title text-[11px] sm:text-xs">Lobiye Dön</span>
@@ -319,9 +366,7 @@
         <div class="w-full max-w-xl flex flex-col gap-1.5 pointer-events-auto">
 
             <!-- Canlı Sohbet Akışı -->
-            <div id="chat-feed" class="glass-panel px-2.5 py-2 max-h-24 sm:max-h-28 overflow-y-auto custom-scroll flex flex-col gap-1 text-xs sm:text-sm">
-                <!-- Mesajlar buraya eklenecek -->
-            </div>
+            <div id="chat-feed" class="glass-panel px-2.5 py-2 max-h-24 sm:max-h-28 overflow-y-auto custom-scroll flex flex-col gap-1 text-xs sm:text-sm"></div>
 
             <!-- Mekana Özel Sipariş & İkram Çekmecesi -->
             <div id="order-drawer" class="hidden glass-panel p-2.5 flex flex-col gap-2">
@@ -329,9 +374,7 @@
                     <span id="order-drawer-title" class="pixel-title text-xs font-bold text-amber-300">🍽️ MASA MENÜSÜ</span>
                     <button type="button" id="btn-close-order" class="text-xs text-slate-400 hover:text-white px-1.5">✕</button>
                 </div>
-                <div id="order-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto custom-scroll">
-                    <!-- Dinamik menü kartları -->
-                </div>
+                <div id="order-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto custom-scroll"></div>
             </div>
 
             <!-- Ortam Değiştirme (Işınlanma) Çekmecesi -->
@@ -340,9 +383,7 @@
                     <span class="pixel-title text-xs font-bold text-sky-300">🌍 ORTAM DEĞİŞTİR (IŞINLAN)</span>
                     <button type="button" id="btn-close-teleport" class="text-xs text-slate-400 hover:text-white px-1.5">✕</button>
                 </div>
-                <div id="teleport-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    <!-- Dinamik diğer ortam seçenekleri -->
-                </div>
+                <div id="teleport-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5"></div>
             </div>
 
             <!-- Dans Daveti Bildirim Çubuğu (Gece Kulübü) -->
@@ -449,9 +490,7 @@
             <!-- Ortam Seçimi -->
             <div class="flex flex-col gap-1.5">
                 <span class="text-xs font-medium text-slate-300">Ortam Atmosferi</span>
-                <div id="theme-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <!-- Dinamik ortam kartları -->
-                </div>
+                <div id="theme-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
             </div>
 
             <!-- KVKK ve Gizlilik Onayı -->
@@ -465,10 +504,15 @@
                 <p id="kvkk-warning" class="hidden text-[11px] text-rose-400">Devam etmek için lütfen KVKK ve Gizlilik onay kutusunu işaretleyin.</p>
             </div>
 
-            <!-- Eşleşme Başlat Butonu -->
-            <button type="button" id="btn-auto-match" class="pixel-btn w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold pixel-title text-xs sm:text-sm tracking-wide">
-                🎲 Gerçek Biriyle Eşleş ve Masaya Otur
-            </button>
+            <!-- Eşleşme Başlat Butonu & Gizlilik Güvencesi -->
+            <div class="flex flex-col gap-1.5">
+                <button type="button" id="btn-auto-match" class="pixel-btn w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold pixel-title text-xs sm:text-sm tracking-wide">
+                    🎲 Gerçek Biriyle Eşleş ve Masaya Otur
+                </button>
+                <p class="text-[11px] text-center text-slate-400">
+                    🔒 Hiçbir mesaj veya kişisel veri kaydedilmez; çıkış yaptığınızda her şey anında silinir.
+                </p>
+            </div>
 
             <!-- Eşleşme Yükleniyor Durumu -->
             <div id="matching-overlay" class="hidden bg-slate-900/95 border border-emerald-700/60 rounded p-3 text-center flex flex-col items-center gap-2">
@@ -545,7 +589,6 @@
                 <button type="button" id="btn-close-chalkboard" class="text-slate-400 hover:text-white px-2">✕</button>
             </div>
 
-            <!-- Tebeşir Renkleri ve Temizle -->
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-1.5">
                     <button type="button" data-chalk="#f8fafc" class="chalk-color-btn w-6 h-6 rounded border-2 border-amber-400 bg-slate-100" title="Beyaz Tebeşir"></button>
@@ -559,7 +602,6 @@
                 </button>
             </div>
 
-            <!-- Çizim Alanı -->
             <div class="border-2 border-amber-900/90 rounded overflow-hidden bg-[#17281e]">
                 <canvas id="chalkboard-canvas" width="320" height="180" class="w-full h-44 block cursor-crosshair touch-none"></canvas>
             </div>
@@ -581,8 +623,30 @@
         const sbClient = (!isPreviewSandbox && window.supabase)
             ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
             : null;
-        const CLIENT_ID = 'usr_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        const CLIENT_ID = (window.crypto && window.crypto.randomUUID)
+            ? window.crypto.randomUUID()
+            : 'usr_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        let authUserId = null;
+        let matchPollTimer = null;
         let lastChatSentAt = 0;
+
+        async function ensureAnonymousSession() {
+            if (!sbClient) return null;
+            try {
+                const { data: sData } = await sbClient.auth.getSession();
+                if (sData?.session?.user?.id) {
+                    authUserId = sData.session.user.id;
+                    return authUserId;
+                }
+                const { data, error } = await sbClient.auth.signInAnonymously();
+                if (!error && data?.user?.id) {
+                    authUserId = data.user.id;
+                }
+            } catch (e) {
+                console.warn('Anonim oturum başlatılamadı:', e);
+            }
+            return authUserId;
+        }
 
         let globalPresenceChannel = null;
         let queueChannel = null;
@@ -658,16 +722,16 @@
                 id: 'openworld',
                 name: 'Açık Dünya Meydanı',
                 icon: '🏙️',
-                desc: 'Park, Kafe ve AVM arasında özgürce gez, herkesle tanış!',
+                desc: 'OTUR BENİMLE parkı, STARBUKSH kafe ve BEN PİRO konseri!',
                 skyColor: 0x0f172a,
                 fogColor: 0x0f172a,
                 ambientLight: 0xe2e8f0,
                 isOpenWorld: true,
                 menu: [
-                    { id: 'street_coffee', icon: '🥤', name: 'Buzlu Karton Kahve', type: 'drink', color: 0xd97706, bites: 5, actionText: 'Yudumla', treatMsg: 'Meydan turuna eşlik etsin diye kahve aldım 🥤' },
-                    { id: 'mall_burger', icon: '🍔', name: 'AVM Gurme Burger', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'AVM katından sıcacık burger kaptım 🍔' },
-                    { id: 'park_waffle', icon: '🧇', name: 'Meyveli Waffle', type: 'food', color: 0xf43f5e, bites: 4, actionText: 'Ye', treatMsg: 'Park bankında yemelik waffle aldım 🧇' },
-                    { id: 'bubble_tea', icon: '🧋', name: 'Bubble Tea', type: 'drink', color: 0xa855f7, bites: 5, actionText: 'Yudumla', treatMsg: 'Renkli bir Bubble Tea ile geziyorum 🧋' }
+                    { id: 'street_coffee', icon: '🥤', name: 'STARBUKSH Buzlu Latte', type: 'drink', color: 0x006241, bites: 5, actionText: 'Yudumla', treatMsg: 'STARBUKSH kahvemle meydan turundayim' },
+                    { id: 'mall_burger', icon: '🍔', name: 'Meydan Burger', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'Konser oncesi sicak burger aldim' },
+                    { id: 'park_waffle', icon: '🧇', name: 'Park Waffle', type: 'food', color: 0xf43f5e, bites: 4, actionText: 'Ye', treatMsg: 'OTUR BENİMLE parkinda yemek icin waffle aldim' },
+                    { id: 'bubble_tea', icon: '🧋', name: 'Bubble Tea', type: 'drink', color: 0xa855f7, bites: 5, actionText: 'Yudumla', treatMsg: 'Bubble Tea ile geziyorum' }
                 ]
             }
         };
@@ -699,15 +763,25 @@
             isDancing: false,
             danceEndTime: 0,
             chalkboardDataUrl: null,
-            owPos: { x: 0, z: 2.5 },
-            owPlayers: {}
+            owPos: { x: 0, z: 3.5 },
+            owPlayers: {},
+            owSeatedBenchId: null,
+            owLovePartnerId: null,
+            owPairState: null,
+            owPendingInvite: null,
+            owJumpEndTime: 0,
+            owWaveEndTime: 0
         };
 
         let lastOwBroadcast = 0;
-        let lastSentOwPos = { x: 0, z: 2.5 };
+        let lastSentOwPos = { x: 0, z: 3.5 };
         const OW_MAX_PLAYERS_PER_SHARD = 25;
         const owInput = { x: 0, z: 0 };
         const owKeys = {};
+        const owBenches = [];
+        const owConcertNpcs = [];
+        const owConcertSpotlights = [];
+        const owConcertSpeakers = [];
 
         // ==========================================
         // 2. THREE.JS SAHNE, KAMERA VE KONTROLLER
@@ -764,6 +838,7 @@
             clubEqualizer: [],
             seaWaves: [],
             lanterns: [],
+            fountainDrops: [],
             chalkboardCanvas: null,
             chalkboardTexture: null,
             chalkboardLabelObj: null
@@ -785,7 +860,7 @@
             return tex;
         }
 
-        function createCharacterTexture(gender, profileIndex, isBlinking = false, isEating = false) {
+        function createCharacterTexture(gender, profileIndex, isBlinking = false, isEating = false, isWaving = false) {
             const profile = CHARACTER_PROFILES[gender][profileIndex % CHARACTER_PROFILES[gender].length];
             return createPixelTexture(32, 48, (ctx) => {
                 ctx.clearRect(0, 0, 32, 48);
@@ -796,9 +871,15 @@
 
                 px(9, 20, 14, 15, profile.top);
                 px(6, 21, 3, 12, profile.top);
-                px(23, 21, 3, 12, profile.top);
                 px(6, 32, 3, 3, profile.skin);
-                px(23, 32, 3, 3, profile.skin);
+
+                if (isWaving) {
+                    px(23, 10, 3, 12, profile.top);
+                    px(23, 7, 3, 3, profile.skin);
+                } else {
+                    px(23, 21, 3, 12, profile.top);
+                    px(23, 32, 3, 3, profile.skin);
+                }
 
                 if (profile.acc === 'scarf') {
                     px(10, 19, 12, 3, '#fbbf24');
@@ -951,7 +1032,10 @@
         }
 
         function applyChalkboardDataUrl(dataUrl) {
-            if (!dataUrl || !animatedObjects.chalkboardCanvas || !animatedObjects.chalkboardTexture) return;
+            if (typeof dataUrl !== 'string') return;
+            if (!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(dataUrl)) return;
+            if (dataUrl.length > 400000) return;
+            if (!animatedObjects.chalkboardCanvas || !animatedObjects.chalkboardTexture) return;
             state.chalkboardDataUrl = dataUrl;
             const img = new Image();
             img.onload = () => {
@@ -1217,88 +1301,253 @@
             tableGroup.add(cocktailLeg);
         }
 
-        function createZoneSign(text, bgColor, textColor, x, y, z) {
-            const tex = createPixelTexture(160, 40, (ctx) => {
+        function createZoneSign(text, bgColor, textColor, x, y, z, width = 2.8, height = 0.72, sansSerif = false) {
+            const tex = createPixelTexture(240, 56, (ctx) => {
                 ctx.fillStyle = bgColor;
-                ctx.fillRect(0, 0, 160, 40);
+                ctx.fillRect(0, 0, 240, 56);
                 ctx.strokeStyle = textColor;
                 ctx.lineWidth = 3;
-                ctx.strokeRect(2, 2, 156, 36);
+                ctx.strokeRect(3, 3, 234, 50);
                 ctx.fillStyle = textColor;
-                ctx.font = 'bold 18px monospace';
+                ctx.font = sansSerif ? 'bold 26px Arial, Helvetica, sans-serif' : 'bold 20px monospace';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(text, 80, 21);
+                ctx.fillText(text, 120, 29);
             });
             const sign = new THREE.Mesh(
-                new THREE.BoxGeometry(2.6, 0.65, 0.14),
+                new THREE.BoxGeometry(width, height, 0.16),
                 new THREE.MeshBasicMaterial({ map: tex })
             );
             sign.position.set(x, y, z);
             environmentGroup.add(sign);
+            return sign;
+        }
+
+        function createStreetLamp(x, z) {
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 2.7, 8), poleMat);
+            pole.position.set(x, 1.35, z);
+            environmentGroup.add(pole);
+
+            const bulb = new THREE.Mesh(
+                new THREE.BoxGeometry(0.26, 0.28, 0.26),
+                new THREE.MeshBasicMaterial({ color: 0xfef08a })
+            );
+            bulb.position.set(x, 2.78, z);
+            environmentGroup.add(bulb);
+
+            const lampLight = new THREE.PointLight(0xfde047, 0.9, 6.5);
+            lampLight.position.set(x, 2.65, z);
+            environmentGroup.add(lampLight);
+        }
+
+        function createOpenWorldBench(id, x, z, rotY = 0) {
+            const benchGroup = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.8 });
+            const ironMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.08, 0.58), woodMat);
+            seat.position.y = 0.44;
+            benchGroup.add(seat);
+
+            const back = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.48, 0.08), woodMat);
+            back.position.set(0, 0.72, -0.25);
+            benchGroup.add(back);
+
+            [[-0.8, 0.22, -0.2], [0.8, 0.22, -0.2], [-0.8, 0.22, 0.2], [0.8, 0.22, 0.2]].forEach(([lx, ly, lz]) => {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.44, 0.08), ironMat);
+                leg.position.set(lx, ly, lz);
+                benchGroup.add(leg);
+            });
+
+            benchGroup.position.set(x, 0, z);
+            benchGroup.rotation.y = rotY;
+            environmentGroup.add(benchGroup);
+
+            owBenches.push({
+                id,
+                x,
+                z,
+                rotY,
+                seats: [
+                    { x: x + Math.cos(rotY) * -0.45, z: z - Math.sin(rotY) * -0.45 },
+                    { x: x + Math.cos(rotY) * 0.45, z: z - Math.sin(rotY) * 0.45 }
+                ]
+            });
         }
 
         function buildOpenWorldScene() {
-            // Meydan Taş Zemin
+            owBenches.length = 0;
+            owConcertNpcs.length = 0;
+            owConcertSpotlights.length = 0;
+            owConcertSpeakers.length = 0;
+            animatedObjects.fountainDrops = [];
+
             const plazaTex = createPixelTexture(16, 16, (ctx) => {
                 ctx.fillStyle = '#1e293b';
                 ctx.fillRect(0, 0, 16, 16);
-                ctx.fillStyle = '#334155';
+                ctx.fillStyle = '#293548';
                 ctx.fillRect(0, 0, 7, 7);
                 ctx.fillRect(8, 8, 7, 7);
             });
             plazaTex.wrapS = plazaTex.wrapT = THREE.RepeatWrapping;
-            plazaTex.repeat.set(16, 16);
-            const ground = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), new THREE.MeshStandardMaterial({ map: plazaTex, roughness: 0.85 }));
+            plazaTex.repeat.set(18, 18);
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(38, 38), new THREE.MeshStandardMaterial({ map: plazaTex, roughness: 0.85 }));
             ground.rotation.x = -Math.PI / 2;
             ground.receiveShadow = true;
             environmentGroup.add(ground);
 
-            // Orta Süs Havuzu
-            const fountainRim = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.85, 0.42, 16), new THREE.MeshStandardMaterial({ color: 0x64748b }));
-            fountainRim.position.set(0, 0.21, -1.2);
+            const pathMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+            const hPath = new THREE.Mesh(new THREE.BoxGeometry(24, 0.03, 2.2), pathMat);
+            hPath.position.set(0, 0.016, 2.2);
+            environmentGroup.add(hPath);
+
+            const vPath = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.03, 18), pathMat);
+            vPath.position.set(0, 0.016, -2.5);
+            environmentGroup.add(vPath);
+
+            [[-4.2, 0.8], [4.2, 0.8], [-4.2, 3.8], [4.2, 3.8], [-8.5, 4.2], [8.5, 4.2], [-3.2, -5.2], [3.2, -5.2]].forEach(([lx, lz]) => {
+                createStreetLamp(lx, lz);
+            });
+
+            const fountainRim = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.8, 0.42, 16), new THREE.MeshStandardMaterial({ color: 0x64748b }));
+            fountainRim.position.set(0, 0.21, 2.2);
             environmentGroup.add(fountainRim);
 
-            const fountainWater = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.44, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.4 }));
-            fountainWater.position.set(0, 0.22, -1.2);
+            const fountainWater = new THREE.Mesh(new THREE.CylinderGeometry(1.48, 1.48, 0.44, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.45 }));
+            fountainWater.position.set(0, 0.22, 2.2);
             environmentGroup.add(fountainWater);
 
-            // 1. BÖLGE: ŞEHİR PARKI (Sol Taraf)
-            const grass = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.05, 12), new THREE.MeshStandardMaterial({ color: 0x14532d }));
-            grass.position.set(-8.5, 0.025, -1);
+            for (let d = 0; d < 8; d++) {
+                const drop = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.12, 0.12, 0.12),
+                    new THREE.MeshBasicMaterial({ color: 0xbae6fd })
+                );
+                drop.position.set(Math.cos(d) * 0.35, 0.6, 2.2 + Math.sin(d) * 0.35);
+                environmentGroup.add(drop);
+                animatedObjects.fountainDrops.push(drop);
+            }
+
+            createOpenWorldBench('plaza_west', -2.7, 2.2, Math.PI / 2);
+            createOpenWorldBench('plaza_east', 2.7, 2.2, -Math.PI / 2);
+
+            // 1. BÖLGE: OTUR BENİMLE PARKI
+            const grass = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.05, 13.5), new THREE.MeshStandardMaterial({ color: 0x14532d }));
+            grass.position.set(-9.2, 0.025, -1.2);
             environmentGroup.add(grass);
 
-            createZoneSign('🌳 ŞEHİR PARKI', '#064e3b', '#6ee7b7', -8.5, 2.8, -5.8);
+            const parkWalk = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 11.5), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+            parkWalk.position.set(-9.2, 0.032, -1.2);
+            environmentGroup.add(parkWalk);
 
-            [[-10.5, -4.5], [-6.5, -4.5], [-10.5, 2.5], [-6.5, 2.5]].forEach(([tx, tz]) => {
-                const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.3, 0.35), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
-                trunk.position.set(tx, 0.65, tz);
+            [-10.6, -7.8].forEach((px) => {
+                const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.8, 0.18), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+                post.position.set(px, 1.4, 5.1);
+                environmentGroup.add(post);
+            });
+            createZoneSign('OTUR BENİMLE', '#064e3b', '#fef3c7', -9.2, 2.75, 5.1, 3.3, 0.72, false);
+
+            const flowerColors = [0xf43f5e, 0xfacc15, 0xc084fc, 0x38bdf8];
+            [[-11.2, 2.2], [-7.2, 2.2], [-11.2, -2.5], [-7.2, -2.5]].forEach(([fx, fz], idx) => {
+                const bed = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.16, 1.2), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+                bed.position.set(fx, 0.09, fz);
+                environmentGroup.add(bed);
+
+                for (let f = 0; f < 5; f++) {
+                    const blossom = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.18, 0.18, 0.18),
+                        new THREE.MeshBasicMaterial({ color: flowerColors[(idx + f) % flowerColors.length] })
+                    );
+                    blossom.position.set(fx - 0.55 + f * 0.28, 0.24, fz + (f % 2 === 0 ? 0.18 : -0.18));
+                    environmentGroup.add(blossom);
+                }
+            });
+
+            [[-12.2, -5.5], [-6.4, -5.5], [-12.2, 0.2], [-6.4, 0.2], [-12.2, 4.0]].forEach(([tx, tz]) => {
+                const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.36, 1.35, 0.36), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+                trunk.position.set(tx, 0.67, tz);
                 environmentGroup.add(trunk);
 
-                const crown = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.1, 6), new THREE.MeshStandardMaterial({ color: 0x15803d }));
-                crown.position.set(tx, 2.1, tz);
+                const crown = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.15, 6), new THREE.MeshStandardMaterial({ color: 0x15803d }));
+                crown.position.set(tx, 2.15, tz);
                 environmentGroup.add(crown);
             });
 
-            // 2. BÖLGE: AVM BİNASI (Arka Orta)
-            const mallBody = new THREE.Mesh(new THREE.BoxGeometry(9.5, 4.4, 3.6), new THREE.MeshStandardMaterial({ color: 0x1e1b4b }));
-            mallBody.position.set(0, 2.2, -9.5);
-            environmentGroup.add(mallBody);
+            createOpenWorldBench('park_north', -9.2, -4.6, 0);
+            createOpenWorldBench('park_west', -11.3, -0.6, Math.PI / 2);
+            createOpenWorldBench('park_east', -7.1, -0.6, -Math.PI / 2);
 
-            const mallGlass = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 0.12), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.45 }));
-            mallGlass.position.set(0, 1.25, -7.65);
-            environmentGroup.add(mallGlass);
+            // 2. BÖLGE: RAP KONSER SAHNESİ — BEN PİRO
+            const stageBase = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.85, 3.8), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 }));
+            stageBase.position.set(0, 0.425, -9.2);
+            environmentGroup.add(stageBase);
 
-            createZoneSign('🛍️ MEYDAN AVM', '#312e81', '#f472b6', 0, 3.6, -7.6);
+            const stageBackdrop = new THREE.Mesh(new THREE.BoxGeometry(8.4, 3.6, 0.25), new THREE.MeshStandardMaterial({ color: 0x1e1b4b }));
+            stageBackdrop.position.set(0, 2.6, -10.9);
+            environmentGroup.add(stageBackdrop);
 
-            // 3. BÖLGE: AÇIK HAVA KAFESİ (Sağ Taraf)
-            const cafeDeck = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.06, 12), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
-            cafeDeck.position.set(8.5, 0.03, -1);
+            createZoneSign('BEN PİRO', '#111827', '#f59e0b', 0, 3.55, -10.72, 3.8, 0.88, true);
+
+            [-3.6, 3.6].forEach((sx) => {
+                const cab = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.6, 1.0), new THREE.MeshStandardMaterial({ color: 0x090d16 }));
+                cab.position.set(sx, 2.15, -9.6);
+                environmentGroup.add(cab);
+
+                [1.55, 2.65].forEach((wy) => {
+                    const woofer = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.36, 0.36, 0.12, 12),
+                        new THREE.MeshStandardMaterial({ color: 0x334155, emissive: 0x7c3aed, emissiveIntensity: 0.35 })
+                    );
+                    woofer.rotation.x = Math.PI / 2;
+                    woofer.position.set(sx, wy, -9.08);
+                    environmentGroup.add(woofer);
+                    owConcertSpeakers.push(woofer);
+                });
+            });
+
+            const piroTex = createCharacterTexture('male', 2, false, false, true);
+            const piroSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: piroTex, transparent: true }));
+            piroSprite.scale.set(1.3, 1.95, 1);
+            piroSprite.position.set(0, 1.78, -9.0);
+            environmentGroup.add(piroSprite);
+            owConcertNpcs.push({ sprite: piroSprite, baseY: 1.78, phase: 0, amp: 0.14 });
+
+            [0xa855f7, 0xf59e0b, 0xec4899].forEach((col, i) => {
+                const spot = new THREE.PointLight(col, 1.6, 11);
+                spot.position.set(-2.5 + i * 2.5, 4.1, -7.8);
+                environmentGroup.add(spot);
+                owConcertSpotlights.push(spot);
+            });
+
+            const npcConfigs = [
+                { x: -2.1, z: -6.3, g: 'female', p: 0, ph: 0.2 },
+                { x: -1.1, z: -6.7, g: 'male', p: 1, ph: 1.1 },
+                { x: -0.2, z: -6.1, g: 'female', p: 2, ph: 2.0 },
+                { x: 0.9, z: -6.6, g: 'male', p: 0, ph: 2.8 },
+                { x: 1.9, z: -6.2, g: 'female', p: 1, ph: 3.6 },
+                { x: 0.4, z: -5.4, g: 'male', p: 2, ph: 4.4 }
+            ];
+            npcConfigs.forEach((nc) => {
+                const nTex = createCharacterTexture(nc.g, nc.p, false, false, false);
+                const nSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: nTex, transparent: true }));
+                nSprite.scale.set(1.12, 1.68, 1);
+                nSprite.position.set(nc.x, 0.92, nc.z);
+                environmentGroup.add(nSprite);
+                owConcertNpcs.push({ sprite: nSprite, baseY: 0.92, phase: nc.ph, amp: 0.11 });
+            });
+
+            // 3. BÖLGE: STARBUKSH KAFESİ
+            const cafeDeck = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.06, 13.0), new THREE.MeshStandardMaterial({ color: 0x3f2312 }));
+            cafeDeck.position.set(9.2, 0.03, -1.2);
             environmentGroup.add(cafeDeck);
 
-            createZoneSign('☕ MEYDAN KAFE', '#78350f', '#fde68a', 8.5, 2.8, -5.8);
+            const cafeBuilding = new THREE.Mesh(new THREE.BoxGeometry(7.2, 3.6, 3.2), new THREE.MeshStandardMaterial({ color: 0x1f2937 }));
+            cafeBuilding.position.set(9.2, 1.8, -6.2);
+            environmentGroup.add(cafeBuilding);
 
-            [[7.2, -2.5], [10.2, -2.5], [7.2, 1.5], [10.2, 1.5]].forEach(([mx, mz]) => {
+            createZoneSign('STARBUKSH', '#006241', '#ffffff', 9.2, 3.15, -4.52, 4.1, 0.85, true);
+
+            [[7.5, -2.2], [10.9, -2.2], [7.5, 1.8], [10.9, 1.8]].forEach(([mx, mz], idx) => {
                 const mTop = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.08, 12), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
                 mTop.position.set(mx, 0.78, mz);
                 environmentGroup.add(mTop);
@@ -1306,6 +1555,8 @@
                 const mLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.76, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
                 mLeg.position.set(mx, 0.38, mz);
                 environmentGroup.add(mLeg);
+
+                createOpenWorldBench(`cafe_bench_${idx}`, mx, mz + 0.95, Math.PI);
             });
         }
 
@@ -1368,7 +1619,7 @@
             const t = THEMES[themeId] || THEMES.cafe;
 
             scene.background = new THREE.Color(t.skyColor);
-            scene.fog = new THREE.FogExp2(t.fogColor, themeId === 'openworld' ? 0.024 : 0.042);
+            scene.fog = new THREE.FogExp2(t.fogColor, themeId === 'openworld' ? 0.022 : 0.042);
             ambientLight.color = new THREE.Color(t.ambientLight);
 
             clearGroup(environmentGroup);
@@ -1379,16 +1630,21 @@
             animatedObjects.clubEqualizer = [];
             animatedObjects.seaWaves = [];
             animatedObjects.lanterns = [];
+            animatedObjects.fountainDrops = [];
             animatedObjects.chalkboardCanvas = null;
             animatedObjects.chalkboardTexture = null;
             animatedObjects.chalkboardLabelObj = null;
 
             const joyZone = document.getElementById('mobile-joystick-zone');
+            const owSocialBar = document.getElementById('ow-social-bar');
             if (themeId === 'openworld') {
                 buildOpenWorldScene();
                 joyZone.classList.remove('hidden');
+                owSocialBar.classList.remove('hidden');
             } else {
                 joyZone.classList.add('hidden');
+                owSocialBar.classList.add('hidden');
+                document.getElementById('ow-consent-banner').classList.add('hidden');
                 if (themeId === 'cafe') buildCafeScene();
                 else if (themeId === 'campfire') buildCampfireScene();
                 else if (themeId === 'beach') buildBeachScene();
@@ -1634,10 +1890,16 @@
             state.heldItems = [null, null];
             state.isDancing = false;
             state.owPlayers = {};
+            state.owSeatedBenchId = null;
+            state.owLovePartnerId = null;
+            state.owPairState = null;
+            state.owPendingInvite = null;
             owInput.x = 0;
             owInput.z = 0;
 
             document.getElementById('mobile-joystick-zone').classList.add('hidden');
+            document.getElementById('ow-social-bar').classList.add('hidden');
+            document.getElementById('ow-consent-banner').classList.add('hidden');
             document.getElementById('btn-stand').classList.add('hidden');
             document.getElementById('btn-report-partner').classList.add('hidden');
             document.getElementById('bottom-chat-bar').classList.add('hidden');
@@ -1710,7 +1972,6 @@
                 selfBtn.className = 'pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-2 py-1 text-[11px] font-semibold';
                 selfBtn.textContent = 'Al';
                 selfBtn.addEventListener('click', () => {
-                    giveTreatToSeat(state.mySeatIndex, item);
                     document.getElementById('order-drawer').classList.add('hidden');
                     if (state.theme === 'openworld') {
                         showOpenWorldBubble(CLIENT_ID, item.treatMsg);
@@ -1722,7 +1983,10 @@
                                 payload: { id: CLIENT_ID, name: state.playerName, text: item.treatMsg }
                             });
                         }
-                    } else if (roomChannel) {
+                        return;
+                    }
+                    giveTreatToSeat(state.mySeatIndex, item);
+                    if (roomChannel) {
                         roomChannel.send({
                             type: 'broadcast',
                             event: 'treat_event',
@@ -1774,7 +2038,7 @@
 
         function updateConsumeButton() {
             const btn = document.getElementById('btn-consume-item');
-            const myItem = state.mySeatIndex !== -1 ? state.heldItems[state.mySeatIndex] : null;
+            const myItem = (state.theme !== 'openworld' && state.mySeatIndex !== -1) ? state.heldItems[state.mySeatIndex] : null;
             if (!myItem || myItem.remaining <= 0) {
                 btn.classList.add('hidden');
                 return;
@@ -1917,17 +2181,120 @@
         }
 
         // ==========================================
-        // 8. AÇIK DÜNYA GİRİŞİ, JOYSTICK & KLAVYE
+        // 8. AÇIK DÜNYA GİRİŞİ, JOYSTICK, BANK & AŞK YAŞA / SARIL / EL ELE TUTUŞ
         // ==========================================
+        function getNearestBench(x, z, maxDist = 1.65) {
+            let best = null;
+            let bestDist = maxDist;
+            owBenches.forEach((b) => {
+                const d = Math.hypot(x - b.x, z - b.z);
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = b;
+                }
+            });
+            return best;
+        }
+
+        function getNearestOtherPlayer(x, z, maxDist = 2.4) {
+            let best = null;
+            let bestDist = maxDist;
+            Object.values(state.owPlayers).forEach((p) => {
+                if (p.id === CLIENT_ID) return;
+                const d = Math.hypot(x - p.x, z - p.z);
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = p;
+                }
+            });
+            return best;
+        }
+
+        function updateOpenWorldContextButtons() {
+            if (state.theme !== 'openworld') return;
+
+            const zoneEl = document.getElementById('ow-zone-banner');
+            const { x, z } = state.owPos;
+            if (x < -4.5) zoneEl.textContent = 'OTUR BENİMLE Parki';
+            else if (x > 4.5) zoneEl.textContent = 'STARBUKSH Kafe';
+            else if (z < -4.2) zoneEl.textContent = 'BEN PİRO Konser Alani';
+            else zoneEl.textContent = 'Meydan Merkezi';
+
+            const sitBtn = document.getElementById('btn-ow-sit');
+            if (state.owSeatedBenchId) {
+                sitBtn.classList.remove('hidden');
+                sitBtn.textContent = 'Kalk';
+            } else {
+                const nearBench = getNearestBench(x, z);
+                if (nearBench) {
+                    sitBtn.classList.remove('hidden');
+                    sitBtn.textContent = 'Otur';
+                } else {
+                    sitBtn.classList.add('hidden');
+                }
+            }
+
+            const jumpBtn = document.getElementById('btn-ow-jump');
+            const distToConcert = Math.hypot(x - 0, z - (-6.2));
+            if (distToConcert < 3.4) {
+                jumpBtn.classList.remove('hidden');
+            } else {
+                jumpBtn.classList.add('hidden');
+            }
+
+            const loveBtn = document.getElementById('btn-ow-love');
+            const hugBtn = document.getElementById('btn-ow-hug');
+            const handBtn = document.getElementById('btn-ow-hand');
+            const stopPairBtn = document.getElementById('btn-ow-stop-pair');
+
+            const nearPlayer = getNearestOtherPlayer(x, z);
+
+            if (state.owLovePartnerId) {
+                loveBtn.classList.add('hidden');
+                stopPairBtn.classList.remove('hidden');
+
+                const partnerObj = state.owPlayers[state.owLovePartnerId];
+                const isPartnerClose = partnerObj && Math.hypot(x - partnerObj.x, z - partnerObj.z) < 2.6;
+                if (isPartnerClose && !state.owPairState) {
+                    hugBtn.classList.remove('hidden');
+                    handBtn.classList.remove('hidden');
+                } else {
+                    hugBtn.classList.add('hidden');
+                    handBtn.classList.add('hidden');
+                }
+            } else {
+                hugBtn.classList.add('hidden');
+                handBtn.classList.add('hidden');
+                stopPairBtn.classList.add('hidden');
+                if (nearPlayer) {
+                    loveBtn.classList.remove('hidden');
+                } else {
+                    loveBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        function setPlayerWavingVisual(playerId, waving) {
+            const p = state.owPlayers[playerId];
+            if (!p || !p.sprite) return;
+            const tex = createCharacterTexture(p.gender, p.profileIndex, false, false, waving);
+            p.sprite.material.map = tex;
+            p.sprite.material.needsUpdate = true;
+        }
+
         function enterOpenWorld() {
             cancelMatchmaking();
             document.getElementById('lobby-modal').classList.add('hidden');
             clearGroup(avatarsGroup);
             state.owPlayers = {};
             state.mySeatIndex = 0;
+            state.owSeatedBenchId = null;
+            state.owLovePartnerId = null;
+            state.owPairState = null;
+            state.owPendingInvite = null;
 
-            const startX = Number(((Math.random() - 0.5) * 4).toFixed(2));
-            const startZ = Number((2.2 + Math.random() * 2).toFixed(2));
+            const startX = Number(((Math.random() - 0.5) * 3.2).toFixed(2));
+            const startZ = Number((3.8 + Math.random() * 1.4).toFixed(2));
             state.owPos = { x: startX, z: startZ };
             lastSentOwPos = { x: startX, z: startZ };
 
@@ -1950,18 +2317,17 @@
 
             const feed = document.getElementById('chat-feed');
             feed.innerHTML = '';
-            appendChatMessage('', '🏙️ Açık Dünya Meydanı’na hoş geldin! Joystick veya WASD/Ok tuşlarıyla Park, AVM ve Kafe arasında gezebilirsin.', false, true);
+            appendChatMessage('', 'Acik Dunya Meydanina hos geldin! OTUR BENİMLE parkinda oturabilir, STARBUKSH kafeye ugrayabilir veya BEN PİRO konserine katilabilirsin.', false, true);
 
             if (!sbClient) return;
             if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
 
-            // 25 kişilik otomatik bölge (shard) seçimi: Kotayı ve FPS'i korur
             const owCount = Object.values(activeUsersMap).filter(u => u && u.theme === 'openworld').length;
             const shardIndex = Math.floor(owCount / OW_MAX_PLAYERS_PER_SHARD) + 1;
-            const shardChannelName = `oturbenimle_openworld_${shardIndex}`;
+            const shardChannelName = `private_openworld_${shardIndex}`;
 
             openWorldChannel = sbClient.channel(shardChannelName, {
-                config: { presence: { key: CLIENT_ID } }
+                config: { private: true, presence: { key: CLIENT_ID } }
             });
 
             openWorldChannel
@@ -1977,6 +2343,10 @@
                     });
                     Object.keys(state.owPlayers).forEach((pid) => {
                         if (pid !== CLIENT_ID && !presentIds.has(pid)) {
+                            if (state.owLovePartnerId === pid) state.owLovePartnerId = null;
+                            if (state.owPairState && state.owPairState.partnerId === pid) {
+                                state.owPairState = null;
+                            }
                             removeOpenWorldPlayer(pid);
                         }
                     });
@@ -1989,6 +2359,46 @@
                     if (!payload || payload.id === CLIENT_ID) return;
                     showOpenWorldBubble(payload.id, payload.text);
                     appendChatMessage(payload.name, payload.text, false);
+                })
+                .on('broadcast', { event: 'ow_wave' }, ({ payload }) => {
+                    if (!payload || payload.id === CLIENT_ID) return;
+                    setPlayerWavingVisual(payload.id, true);
+                    showOpenWorldBubble(payload.id, 'Selam!');
+                    setTimeout(() => setPlayerWavingVisual(payload.id, false), 1800);
+                })
+                .on('broadcast', { event: 'ow_pair_invite' }, ({ payload }) => {
+                    if (!payload || payload.targetId !== CLIENT_ID) return;
+                    state.owPendingInvite = {
+                        fromId: payload.fromId,
+                        fromName: payload.fromName,
+                        type: payload.type
+                    };
+                    let label = 'el ele tutusmak istiyor';
+                    if (payload.type === 'love') label = 'ask yasamak istiyor';
+                    else if (payload.type === 'hug') label = 'sarilmak istiyor';
+                    document.getElementById('ow-consent-text').textContent = `${payload.fromName} seninle ${label}`;
+                    document.getElementById('ow-consent-banner').classList.remove('hidden');
+                })
+                .on('broadcast', { event: 'ow_pair_accept' }, ({ payload }) => {
+                    if (!payload || payload.targetId !== CLIENT_ID) return;
+                    state.owSeatedBenchId = null;
+                    if (payload.type === 'love') {
+                        state.owLovePartnerId = payload.fromId;
+                        appendChatMessage('', `${payload.fromName} ile ask yasamaya basladiniz! Saril ve El Ele Tutus butonlari acildi.`, false, true);
+                    } else {
+                        state.owLovePartnerId = payload.fromId;
+                        state.owPairState = { partnerId: payload.fromId, type: payload.type };
+                        const actionLabel = payload.type === 'hug' ? 'sarildi' : 'el ele tutustu';
+                        appendChatMessage('', `${payload.fromName} istegini kabul etti ve ${actionLabel}!`, false, true);
+                    }
+                })
+                .on('broadcast', { event: 'ow_pair_stop' }, ({ payload }) => {
+                    if (!payload) return;
+                    if (state.owLovePartnerId === payload.fromId || (state.owPairState && state.owPairState.partnerId === payload.fromId)) {
+                        state.owLovePartnerId = null;
+                        state.owPairState = null;
+                        appendChatMessage('', 'Birliktelik / temas sona erdi.', false, true);
+                    }
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
@@ -2054,6 +2464,134 @@
             window.addEventListener('keyup', (e) => {
                 owKeys[e.code] = false;
             });
+
+            document.getElementById('btn-ow-wave').addEventListener('click', () => {
+                state.owWaveEndTime = performance.now() + 1800;
+                setPlayerWavingVisual(CLIENT_ID, true);
+                showOpenWorldBubble(CLIENT_ID, 'Selam!');
+                setTimeout(() => setPlayerWavingVisual(CLIENT_ID, false), 1800);
+                if (openWorldChannel) {
+                    openWorldChannel.send({
+                        type: 'broadcast',
+                        event: 'ow_wave',
+                        payload: { id: CLIENT_ID, name: state.playerName }
+                    });
+                }
+            });
+
+            document.getElementById('btn-ow-sit').addEventListener('click', () => {
+                if (state.owSeatedBenchId) {
+                    state.owSeatedBenchId = null;
+                    state.owPos.z += 0.65;
+                    return;
+                }
+                const bench = getNearestBench(state.owPos.x, state.owPos.z);
+                if (!bench) return;
+                state.owPairState = null;
+                state.owSeatedBenchId = bench.id;
+                const d0 = Math.hypot(state.owPos.x - bench.seats[0].x, state.owPos.z - bench.seats[0].z);
+                const d1 = Math.hypot(state.owPos.x - bench.seats[1].x, state.owPos.z - bench.seats[1].z);
+                const chosenSeat = d0 <= d1 ? bench.seats[0] : bench.seats[1];
+                state.owPos.x = chosenSeat.x;
+                state.owPos.z = chosenSeat.z;
+                if (state.owPlayers[CLIENT_ID]) {
+                    state.owPlayers[CLIENT_ID].targetX = chosenSeat.x;
+                    state.owPlayers[CLIENT_ID].targetZ = chosenSeat.z;
+                }
+                if (openWorldChannel) {
+                    openWorldChannel.send({
+                        type: 'broadcast',
+                        event: 'ow_move',
+                        payload: {
+                            id: CLIENT_ID,
+                            name: state.playerName,
+                            gender: state.gender,
+                            profileIndex: state.profileIndex,
+                            x: Number(chosenSeat.x.toFixed(2)),
+                            z: Number(chosenSeat.z.toFixed(2))
+                        }
+                    });
+                }
+            });
+
+            document.getElementById('btn-ow-jump').addEventListener('click', () => {
+                state.owSeatedBenchId = null;
+                state.owJumpEndTime = performance.now() + 4500;
+            });
+
+            const sendPairInvite = (type) => {
+                const target = type === 'love'
+                    ? getNearestOtherPlayer(state.owPos.x, state.owPos.z)
+                    : (state.owPlayers[state.owLovePartnerId] || getNearestOtherPlayer(state.owPos.x, state.owPos.z));
+                if (!target) return;
+                let text = 'el ele tutusma';
+                if (type === 'love') text = 'ask yasama';
+                else if (type === 'hug') text = 'sarilma';
+                appendChatMessage('', `${target.name} adli kisiye ${text} istegi gonderildi.`, false, true);
+                if (openWorldChannel) {
+                    openWorldChannel.send({
+                        type: 'broadcast',
+                        event: 'ow_pair_invite',
+                        payload: {
+                            fromId: CLIENT_ID,
+                            fromName: state.playerName,
+                            targetId: target.id,
+                            type
+                        }
+                    });
+                }
+            };
+
+            document.getElementById('btn-ow-love').addEventListener('click', () => sendPairInvite('love'));
+            document.getElementById('btn-ow-hug').addEventListener('click', () => sendPairInvite('hug'));
+            document.getElementById('btn-ow-hand').addEventListener('click', () => sendPairInvite('hand'));
+
+            document.getElementById('btn-ow-accept-pair').addEventListener('click', () => {
+                document.getElementById('ow-consent-banner').classList.add('hidden');
+                const inv = state.owPendingInvite;
+                state.owPendingInvite = null;
+                if (!inv) return;
+                state.owSeatedBenchId = null;
+                state.owLovePartnerId = inv.fromId;
+                if (inv.type === 'love') {
+                    appendChatMessage('', `${inv.fromName} ile ask yasamaya basladiniz! Saril ve El Ele Tutus butonlari acildi.`, false, true);
+                } else {
+                    state.owPairState = { partnerId: inv.fromId, type: inv.type };
+                    const actionLabel = inv.type === 'hug' ? 'sarildiniz' : 'el ele tutustunuz';
+                    appendChatMessage('', `${inv.fromName} ile ${actionLabel}!`, false, true);
+                }
+                if (openWorldChannel) {
+                    openWorldChannel.send({
+                        type: 'broadcast',
+                        event: 'ow_pair_accept',
+                        payload: {
+                            fromId: CLIENT_ID,
+                            fromName: state.playerName,
+                            targetId: inv.fromId,
+                            type: inv.type
+                        }
+                    });
+                }
+            });
+
+            document.getElementById('btn-ow-decline-pair').addEventListener('click', () => {
+                document.getElementById('ow-consent-banner').classList.add('hidden');
+                state.owPendingInvite = null;
+            });
+
+            document.getElementById('btn-ow-stop-pair').addEventListener('click', () => {
+                const partnerId = state.owLovePartnerId || (state.owPairState && state.owPairState.partnerId);
+                state.owLovePartnerId = null;
+                state.owPairState = null;
+                appendChatMessage('', 'Birliktelik sonlandirildi.', false, true);
+                if (partnerId && openWorldChannel) {
+                    openWorldChannel.send({
+                        type: 'broadcast',
+                        event: 'ow_pair_stop',
+                        payload: { fromId: CLIENT_ID, targetId: partnerId }
+                    });
+                }
+            });
         }
 
         // ==========================================
@@ -2112,15 +2650,22 @@
 
         function cancelMatchmaking() {
             state.isMatching = false;
+            if (matchPollTimer) {
+                clearInterval(matchPollTimer);
+                matchPollTimer = null;
+            }
             document.getElementById('matching-overlay').classList.add('hidden');
             document.getElementById('btn-auto-match').classList.remove('hidden');
             if (queueChannel && sbClient) {
                 sbClient.removeChannel(queueChannel);
                 queueChannel = null;
             }
+            if (sbClient && authUserId) {
+                sbClient.from('match_queue').delete().eq('user_id', authUserId).then(() => {});
+            }
         }
 
-        function startRealMatchmaking() {
+        async function startRealMatchmaking() {
             const kvkkChecked = document.getElementById('kvkk-checkbox').checked;
             if (!kvkkChecked) {
                 document.getElementById('kvkk-warning').classList.remove('hidden');
@@ -2131,6 +2676,7 @@
             const rawName = document.getElementById('nickname-input').value.trim();
             state.playerName = rawName || (state.gender === 'female' ? 'Misafir Kadın' : 'Misafir Erkek');
 
+            await ensureAnonymousSession();
             updatePresenceLocation(state.theme);
 
             if (state.theme === 'openworld') {
@@ -2148,72 +2694,58 @@
             document.getElementById('btn-auto-match').classList.add('hidden');
             document.getElementById('matching-overlay').classList.remove('hidden');
 
-            const queueName = `queue_${state.theme}`;
-            if (queueChannel) sbClient.removeChannel(queueChannel);
-
-            queueChannel = sbClient.channel(queueName, {
-                config: { presence: { key: CLIENT_ID } }
-            });
-
-            let matched = false;
-
-            queueChannel
-                .on('broadcast', { event: 'match_found' }, ({ payload }) => {
-                    if (matched || !payload) return;
-                    if (payload.guestId === CLIENT_ID) {
-                        matched = true;
-                        const partnerProfile = {
-                            id: payload.hostId,
-                            name: payload.hostName,
-                            gender: payload.hostGender,
-                            profileIndex: payload.hostProfileIndex,
-                            isMe: false
-                        };
-                        enterMatchedRoom(payload.roomId, 1, partnerProfile);
-                    }
-                })
-                .on('presence', { event: 'sync' }, () => {
-                    if (matched) return;
-                    const pState = queueChannel.presenceState();
-                    const waiters = Object.values(pState).flat().filter(u => u && u.id);
-                    waiters.sort((a, b) => String(a.id).localeCompare(String(b.id)));
-
-                    if (waiters.length >= 2 && waiters[0].id === CLIENT_ID) {
-                        const guest = waiters[1];
-                        matched = true;
-                        const newRoomId = `room_${state.theme}_${CLIENT_ID}_${guest.id}`;
-                        queueChannel.send({
-                            type: 'broadcast',
-                            event: 'match_found',
-                            payload: {
-                                roomId: newRoomId,
-                                hostId: CLIENT_ID,
-                                hostName: state.playerName,
-                                hostGender: state.gender,
-                                hostProfileIndex: state.profileIndex,
-                                guestId: guest.id
-                            }
-                        });
-                        const partnerProfile = {
-                            id: guest.id,
-                            name: guest.name,
-                            gender: guest.gender,
-                            profileIndex: guest.profileIndex,
-                            isMe: false
-                        };
-                        enterMatchedRoom(newRoomId, 0, partnerProfile);
-                    }
-                })
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await queueChannel.track({
-                            id: CLIENT_ID,
-                            name: state.playerName,
-                            gender: state.gender,
-                            profileIndex: state.profileIndex
-                        });
-                    }
+            try {
+                const { data, error } = await sbClient.rpc('find_or_create_match', {
+                    p_theme: state.theme,
+                    p_name: state.playerName,
+                    p_gender: state.gender,
+                    p_profile_index: state.profileIndex
                 });
+
+                if (error) {
+                    cancelMatchmaking();
+                    return;
+                }
+
+                if (data?.matched && data?.room_id) {
+                    const partnerProfile = {
+                        id: 'partner_' + Date.now(),
+                        name: data.partner_name || 'Misafir',
+                        gender: data.partner_gender || 'male',
+                        profileIndex: data.partner_profile_index || 0,
+                        isMe: false
+                    };
+                    enterMatchedRoom(data.room_id, data.seat_index ?? 1, partnerProfile);
+                    return;
+                }
+
+                matchPollTimer = setInterval(async () => {
+                    if (!state.isMatching || !authUserId) return;
+                    const { data: rows } = await sbClient
+                        .from('match_queue')
+                        .select('*')
+                        .eq('user_id', authUserId)
+                        .not('room_id', 'is', null)
+                        .limit(1);
+
+                    if (rows && rows.length > 0) {
+                        const row = rows[0];
+                        clearInterval(matchPollTimer);
+                        matchPollTimer = null;
+                        await sbClient.from('match_queue').delete().eq('id', row.id);
+                        const partnerProfile = {
+                            id: 'partner_' + row.id,
+                            name: row.partner_name || 'Misafir',
+                            gender: row.partner_gender || 'male',
+                            profileIndex: row.partner_profile_index || 0,
+                            isMe: false
+                        };
+                        enterMatchedRoom(row.room_id, row.seat_index ?? 0, partnerProfile);
+                    }
+                }, 1400);
+            } catch (err) {
+                cancelMatchmaking();
+            }
         }
 
         function enterMatchedRoom(roomId, mySeatIdx, partnerProfile) {
@@ -2264,7 +2796,9 @@
             if (!sbClient) return;
             if (roomChannel) sbClient.removeChannel(roomChannel);
 
-            roomChannel = sbClient.channel(roomId);
+            roomChannel = sbClient.channel(roomId, {
+                config: { private: true }
+            });
             roomChannel
                 .on('broadcast', { event: 'chat_msg' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
@@ -2656,6 +3190,24 @@
             }
 
             if (state.theme === 'openworld' && state.owPlayers[CLIENT_ID]) {
+                animatedObjects.fountainDrops.forEach((drop, idx) => {
+                    const phase = (t * 2.4 + idx * 0.4) % 1;
+                    drop.position.y = 0.55 + Math.sin(phase * Math.PI) * 0.75;
+                    drop.position.x = Math.cos(idx * 0.8) * (0.2 + phase * 0.65);
+                    drop.position.z = 2.2 + Math.sin(idx * 0.8) * (0.2 + phase * 0.65);
+                });
+
+                owConcertSpeakers.forEach((w, idx) => {
+                    const pulse = 1 + Math.abs(Math.sin(t * 7 + idx)) * 0.16;
+                    w.scale.set(pulse, 1, pulse);
+                });
+                owConcertSpotlights.forEach((sp, idx) => {
+                    sp.intensity = 1.25 + Math.sin(t * 5 + idx * 1.8) * 0.55;
+                });
+                owConcertNpcs.forEach((npc) => {
+                    npc.sprite.position.y = npc.baseY + Math.abs(Math.sin(t * 5.2 + npc.phase)) * npc.amp;
+                });
+
                 let moveX = owInput.x;
                 let moveZ = owInput.z;
                 if (owKeys['KeyW'] || owKeys['ArrowUp']) moveZ -= 1;
@@ -2665,11 +3217,12 @@
 
                 const mag = Math.hypot(moveX, moveZ);
                 if (mag > 0.05) {
+                    if (state.owSeatedBenchId) state.owSeatedBenchId = null;
                     const speed = 3.8 * dt;
                     const nx = moveX / Math.max(1, mag);
                     const nz = moveZ / Math.max(1, mag);
-                    state.owPos.x = Math.max(-13, Math.min(13, state.owPos.x + nx * speed));
-                    state.owPos.z = Math.max(-6.5, Math.min(12, state.owPos.z + nz * speed));
+                    state.owPos.x = Math.max(-13.2, Math.min(13.2, state.owPos.x + nx * speed));
+                    state.owPos.z = Math.max(-5.8, Math.min(12.5, state.owPos.z + nz * speed));
 
                     const me = state.owPlayers[CLIENT_ID];
                     me.targetX = state.owPos.x;
@@ -2694,7 +3247,26 @@
                         });
                     }
                 } else {
-                    state.owPlayers[CLIENT_ID].sprite.position.y = 0.95 + Math.sin(t * 2.4) * 0.02;
+                    const me = state.owPlayers[CLIENT_ID];
+                    if (performance.now() < state.owJumpEndTime) {
+                        me.sprite.position.y = 0.95 + Math.abs(Math.sin(t * 7.5)) * 0.24;
+                    } else if (state.owSeatedBenchId) {
+                        me.sprite.position.y = 0.82;
+                    } else {
+                        me.sprite.position.y = 0.95 + Math.sin(t * 2.4) * 0.02;
+                    }
+                }
+
+                if (state.owPairState) {
+                    const partner = state.owPlayers[state.owPairState.partnerId];
+                    if (partner) {
+                        const offset = state.owPairState.type === 'hug' ? 0.42 : 0.72;
+                        state.owPos.x += (partner.x - offset - state.owPos.x) * 0.12;
+                        state.owPos.z += (partner.z - state.owPos.z) * 0.12;
+                        const me = state.owPlayers[CLIENT_ID];
+                        me.targetX = state.owPos.x;
+                        me.targetZ = state.owPos.z;
+                    }
                 }
 
                 Object.values(state.owPlayers).forEach((p) => {
@@ -2702,10 +3274,14 @@
                     p.z += (p.targetZ - p.z) * 0.16;
                     p.sprite.position.x = p.x;
                     p.sprite.position.z = p.z;
-                    p.labelObj.position.set(p.x, 2.08, p.z);
+                    p.labelObj.position.set(p.x, p.sprite.position.y + 1.13, p.z);
                 });
 
-                controls.target.lerp(new THREE.Vector3(state.owPos.x, 1.0, state.owPos.z), 0.12);
+                updateOpenWorldContextButtons();
+
+                const me = state.owPlayers[CLIENT_ID];
+                controls.target.x += (me.x - controls.target.x) * 0.12;
+                controls.target.z += (me.z - controls.target.z) * 0.12;
             } else {
                 avatarObjects.forEach((av, idx) => {
                     if (!av || !av.sprite) return;
@@ -2727,10 +3303,11 @@
             labelRenderer.render(scene, camera);
         }
 
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             renderThemeCards();
             updateGenderButtons();
             buildSceneForTheme('cafe');
+            await ensureAnonymousSession();
             initOnlineCounter();
             initChalkboardCanvas();
             initOpenWorldControls();
