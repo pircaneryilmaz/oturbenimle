@@ -33,7 +33,6 @@
             </button>
         </div>
 
-        <!-- Yönetici Giriş Ekranı -->
         <form id="login-form" class="flex flex-col gap-3 max-w-sm mx-auto w-full py-4">
             <div class="flex flex-col gap-1">
                 <label for="email-input" class="text-xs text-slate-300">Yönetici E-posta</label>
@@ -49,20 +48,26 @@
             </button>
         </form>
 
-        <!-- Yönetim Paneli İçeriği -->
         <div id="dashboard-view" class="hidden flex flex-col gap-4">
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
-                    <div class="text-xs text-slate-400">Anlık Çevrimiçi Oyuncu</div>
-                    <div id="stat-online" class="text-xl font-bold text-emerald-400 mt-1">0 Kişi</div>
+                    <div class="text-[11px] text-slate-400">Anlık Çevrimiçi</div>
+                    <div id="stat-online" class="text-lg font-bold text-emerald-400 mt-1">0 Kişi</div>
                 </div>
                 <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
-                    <div class="text-xs text-slate-400">Toplam Şikayet Kaydı</div>
-                    <div id="stat-reports" class="text-xl font-bold text-rose-400 mt-1">0 Kayıt</div>
+                    <div class="text-[11px] text-slate-400">En Çok Aynı Anda</div>
+                    <div id="stat-peak" class="text-lg font-bold text-amber-300 mt-1">0 Kişi</div>
+                </div>
+                <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
+                    <div class="text-[11px] text-slate-400">Tekil Ziyaretçi</div>
+                    <div id="stat-visits" class="text-lg font-bold text-sky-400 mt-1">0 Kişi</div>
+                </div>
+                <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
+                    <div class="text-[11px] text-slate-400">Şikayet Kaydı</div>
+                    <div id="stat-reports" class="text-lg font-bold text-rose-400 mt-1">0 Kayıt</div>
                 </div>
             </div>
 
-            <!-- Aktif Kullanıcılar -->
             <div class="flex flex-col gap-1.5">
                 <h2 class="text-xs font-bold text-slate-300">🟢 Şu An Sitede Aktif Olanlar</h2>
                 <div id="active-users-box" class="bg-[#0d1118] border border-slate-800 rounded p-3 text-xs text-slate-300 space-y-1.5 max-h-36 overflow-y-auto">
@@ -70,7 +75,6 @@
                 </div>
             </div>
 
-            <!-- Gelen Bildirimler -->
             <div class="flex flex-col gap-1.5">
                 <div class="flex items-center justify-between">
                     <h2 class="text-xs font-bold text-rose-300">⚠️ Gelen Şikayet ve Bildirimler</h2>
@@ -89,10 +93,11 @@
         const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const THEME_NAMES = {
-            cafe: 'Sıcak Kafe',
+            cafe: 'Kafe',
             campfire: 'Gece Kamp Ateşi',
             beach: 'Sahilde Bank',
-            club: 'Gece Kulübü'
+            club: 'Gece Kulübü',
+            openworld: 'Açık Dünya Meydanı'
         };
 
         let presenceChannel = null;
@@ -109,97 +114,115 @@
             document.getElementById('dashboard-view').classList.remove('hidden');
             document.getElementById('btn-logout').classList.remove('hidden');
             startPresenceListener();
+            fetchSiteStats();
             fetchReports();
+        }
+
+        async function fetchSiteStats() {
+            const { data } = await sb
+                .from('site_stats')
+                .select('total_visits, peak_online')
+                .eq('id', 1)
+                .single();
+
+            if (data) {
+                document.getElementById('stat-visits').textContent = `${data.total_visits || 0} Kişi`;
+                document.getElementById('stat-peak').textContent = `${data.peak_online || 0} Kişi`;
+            }
         }
 
         function startPresenceListener() {
             if (presenceChannel) sb.removeChannel(presenceChannel);
-            presenceChannel = sb.channel('oturbenimle_online');
-            presenceChannel
-                .on('presence', { event: 'sync' }, () => {
-                    const state = presenceChannel.presenceState();
-                    const users = Object.values(state).flat();
-                    document.getElementById('stat-online').textContent = `${users.length} Kişi`;
 
-                    const box = document.getElementById('active-users-box');
-                    box.innerHTML = '';
-                    if (users.length === 0) {
-                        box.textContent = 'Şu an aktif kullanıcı yok.';
-                        return;
-                    }
-                    users.forEach((u) => {
-                        const row = document.createElement('div');
-                        row.className = 'flex items-center justify-between border-b border-slate-800/80 pb-1';
-                        row.textContent = `• ${u.name || 'Misafir'} — ${THEME_NAMES[u.theme] || 'Lobi'}`;
-                        box.appendChild(row);
-                    });
-                })
+            presenceChannel = sb.channel('private_oturbenimle_online', {
+                config: { private: true, presence: { key: 'admin_monitor_' + Date.now() } }
+            });
+
+            const syncUsers = () => {
+                if (!presenceChannel) return;
+                const pState = presenceChannel.presenceState();
+                const users = Object.entries(pState)
+                    .filter(([key]) => !key.startsWith('admin_monitor_'))
+                    .map(([, arr]) => arr[0])
+                    .filter(Boolean);
+
+                document.getElementById('stat-online').textContent = `${users.length} Kişi`;
+                const box = document.getElementById('active-users-box');
+
+                if (users.length === 0) {
+                    box.innerHTML = '<span class="text-slate-500">Şu an aktif kullanıcı yok.</span>';
+                    return;
+                }
+
+                box.innerHTML = users.map(u => {
+                    const themeLabel = THEME_NAMES[u.theme] || u.theme || 'Lobi';
+                    const safeName = String(u.name || 'Misafir').replace(/[<>&"]/g, '');
+                    return `<div class="flex items-center justify-between border-b border-slate-800/70 pb-1 last:border-0">
+                        <span class="text-emerald-300 font-semibold">• ${safeName}</span>
+                        <span class="text-slate-400 text-[11px]">${themeLabel}</span>
+                    </div>`;
+                }).join('');
+            };
+
+            presenceChannel
+                .on('presence', { event: 'sync' }, syncUsers)
+                .on('presence', { event: 'join' }, syncUsers)
+                .on('presence', { event: 'leave' }, syncUsers)
                 .subscribe();
+
+            setInterval(syncUsers, 3500);
         }
 
         async function fetchReports() {
             const box = document.getElementById('reports-box');
-            box.textContent = 'Yükleniyor...';
-
             const { data, error } = await sb
                 .from('reports')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(50);
 
-            if (error || !data) {
-                box.textContent = 'Bildirimler yüklenemedi. RLS okuma yetkisini kontrol edin.';
+            if (error) {
+                box.innerHTML = '<span class="text-rose-400">Bildirimler yüklenemedi.</span>';
                 return;
             }
 
             document.getElementById('stat-reports').textContent = `${data.length} Kayıt`;
-            box.innerHTML = '';
 
             if (data.length === 0) {
-                box.textContent = 'Henüz bildirim kaydı bulunmuyor.';
+                box.innerHTML = '<span class="text-slate-500">Henüz şikayet kaydı yok.</span>';
                 return;
             }
 
-            data.forEach((item) => {
-                const card = document.createElement('div');
-                card.className = 'bg-[#131720] border border-slate-800 rounded p-2.5 flex flex-col gap-1';
-
-                const title = document.createElement('div');
-                title.className = 'font-bold text-rose-300';
-                title.textContent = `Şikayet Edilen: ${item.reported_name || 'Bilinmiyor'} — ${item.reason || ''}`;
-
-                const meta = document.createElement('div');
-                meta.className = 'text-[11px] text-slate-400';
-                meta.textContent = `Bildiren: ${item.reporter_name || 'Misafir'} • ${new Date(item.created_at).toLocaleString('tr-TR')}`;
-
-                card.appendChild(title);
-                card.appendChild(meta);
-
-                if (item.recent_chat) {
-                    const chat = document.createElement('div');
-                    chat.className = 'text-[11px] text-slate-300 bg-[#0b0e14] p-2 rounded border border-slate-800/80 mt-1';
-                    chat.textContent = item.recent_chat;
-                    card.appendChild(chat);
-                }
-
-                box.appendChild(card);
-            });
+            box.innerHTML = data.map(r => {
+                const dateStr = new Date(r.created_at).toLocaleString('tr-TR');
+                const safeReported = String(r.reported_name || '').replace(/[<>&"]/g, '');
+                const safeReporter = String(r.reporter_name || '').replace(/[<>&"]/g, '');
+                const safeReason = String(r.reason || '').replace(/[<>&"]/g, '');
+                const safeChat = String(r.recent_chat || '').replace(/[<>&"]/g, '');
+                return `<div class="bg-[#131823] border border-slate-800 rounded p-2.5 flex flex-col gap-1">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-rose-400 font-bold">Bildirilen: ${safeReported}</span>
+                        <span class="text-slate-500">${dateStr}</span>
+                    </div>
+                    <div class="text-amber-300 text-[11px]">Sebep: ${safeReason} (Bildiren: ${safeReporter})</div>
+                    ${safeChat ? `<div class="text-slate-400 text-[11px] bg-black/30 p-1.5 rounded mt-1 break-words">${safeChat}</div>` : ''}
+                </div>`;
+            }).join('');
         }
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const errEl = document.getElementById('login-error');
             const email = document.getElementById('email-input').value.trim();
             const password = document.getElementById('pass-input').value;
+            const errEl = document.getElementById('login-error');
+            errEl.classList.add('hidden');
 
             const { error } = await sb.auth.signInWithPassword({ email, password });
             if (error) {
                 errEl.classList.remove('hidden');
-            } else {
-                errEl.classList.add('hidden');
-                document.getElementById('pass-input').value = '';
-                showDashboard();
+                return;
             }
+            showDashboard();
         });
 
         document.getElementById('btn-logout').addEventListener('click', async () => {
@@ -207,7 +230,10 @@
             location.reload();
         });
 
-        document.getElementById('btn-refresh').addEventListener('click', fetchReports);
+        document.getElementById('btn-refresh').addEventListener('click', () => {
+            fetchSiteStats();
+            fetchReports();
+        });
 
         checkSession();
     </script>
