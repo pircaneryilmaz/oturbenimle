@@ -462,14 +462,16 @@
             <!-- Takma Ad & Karakter Seçimi -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="flex flex-col gap-1.5">
-                    <label for="nickname-input" class="text-xs font-medium text-slate-300">Takma Adın</label>
+                    <label for="nickname-input" class="text-xs font-medium text-slate-300">Takma Adın <span class="text-rose-400">*</span></label>
                     <input
                         id="nickname-input"
                         type="text"
                         maxlength="16"
+                        required
                         placeholder="Örn: Gezgin, Deniz..."
                         class="pixel-input px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500"
                     >
+                    <p id="nickname-warning" class="hidden text-[11px] text-rose-400">Lütfen devam etmeden önce bir takma ad girin.</p>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
@@ -2675,6 +2677,17 @@
         }
 
         async function startRealMatchmaking() {
+            const rawName = document.getElementById('nickname-input').value.trim();
+            if (!rawName || rawName.length < 2) {
+                document.getElementById('nickname-warning').textContent = !rawName
+                    ? 'Lütfen devam etmeden önce bir takma ad girin.'
+                    : 'Takma ad en az 2 karakter olmalıdır.';
+                document.getElementById('nickname-warning').classList.remove('hidden');
+                document.getElementById('nickname-input').focus();
+                return;
+            }
+            document.getElementById('nickname-warning').classList.add('hidden');
+
             const kvkkChecked = document.getElementById('kvkk-checkbox').checked;
             if (!kvkkChecked) {
                 document.getElementById('kvkk-warning').classList.remove('hidden');
@@ -2682,8 +2695,7 @@
             }
             document.getElementById('kvkk-warning').classList.add('hidden');
 
-            const rawName = document.getElementById('nickname-input').value.trim();
-            state.playerName = rawName || (state.gender === 'female' ? 'Misafir Kadın' : 'Misafir Erkek');
+            state.playerName = rawName.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, 16);
 
             await ensureAnonymousSession();
             updatePresenceLocation(state.theme);
@@ -2970,6 +2982,22 @@
 
         document.getElementById('btn-auto-match').addEventListener('click', startRealMatchmaking);
         document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmaking);
+        document.getElementById('nickname-input').addEventListener('input', () => {
+            if (document.getElementById('nickname-input').value.trim().length >= 2) {
+                document.getElementById('nickname-warning').classList.add('hidden');
+            }
+        });
+        document.getElementById('nickname-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                startRealMatchmaking();
+            }
+        });
+        document.getElementById('kvkk-checkbox').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.getElementById('kvkk-warning').classList.add('hidden');
+            }
+        });
 
         document.getElementById('btn-stand').addEventListener('click', () => standUp(true));
 
