@@ -289,6 +289,23 @@
         </div>
     </div>
 
+    <!-- 10 Saniyelik Moderasyon Uyarı Ekranı -->
+    <div id="admin-warning-modal" class="hidden fixed inset-0 z-50 bg-rose-950/95 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#160b0e] border-2 border-rose-500 rounded-md p-5 flex flex-col items-center text-center gap-4 shadow-2xl">
+            <div class="text-4xl">🚨</div>
+            <h2 class="pixel-title text-base sm:text-lg font-bold text-rose-400">MODERASYON UYARISI</h2>
+            <p id="admin-warning-text" class="text-sm sm:text-base font-bold text-white leading-relaxed">
+                KÜFÜR ETME! Küfür edersen banlanır, bir daha siteye giriş yapamazsın!
+            </p>
+            <div class="w-full bg-rose-950 border border-rose-700/70 rounded px-3 py-2 text-xs text-rose-200">
+                Kapatma butonu <span id="admin-warning-timer" class="font-bold text-amber-300">10</span> saniye sonra açılacak...
+            </div>
+            <button type="button" id="btn-close-admin-warning" disabled class="pixel-btn w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-xs sm:text-sm cursor-not-allowed">
+                Lütfen Bekleyin (10s)
+            </button>
+        </div>
+    </div>
+
     <!-- Üst HUD -->
     <header id="top-hud" class="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex items-center justify-between gap-1.5 sm:gap-2 pointer-events-none pt-[env(safe-area-inset-top)]">
         <div class="glass-panel px-2.5 py-1.5 sm:px-3.5 sm:py-2 flex items-center gap-2 pointer-events-auto min-w-0">
@@ -2514,7 +2531,6 @@
                     state.fireFuel = Math.min(1.35, state.fireFuel + 0.35);
                     spawnFallingFirewoodLog();
                     showOpenWorldBubble(payload.id, 'Odun attım! 🔥');
-                    appendChatMessage('', `🪵 ${payload.name} kamp ateşine odun attı! Ateş canlandı.`, false, true);
                 })
                 .on('broadcast', { event: 'xox_move' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
@@ -3057,7 +3073,6 @@
                 state.fireFuel = Math.min(1.35, state.fireFuel + 0.35);
                 spawnFallingFirewoodLog();
                 showOpenWorldBubble(CLIENT_ID, 'Odun attım! 🔥');
-                appendChatMessage('', `🪵 ${state.playerName} kamp ateşine odun attı! Ateş canlandı.`, false, true);
                 if (openWorldChannel) {
                     openWorldChannel.send({
                         type: 'broadcast',
@@ -3326,8 +3341,49 @@
         }
 
         // ==========================================
-        // 10. CANLI ÇEVRİMİÇİ SAYAÇ & EŞLEŞME
+        // 10. CANLI ÇEVRİMİÇİ SAYAÇ, UYARI & EŞLEŞME
         // ==========================================
+        let warningCountdownInterval = null;
+
+        function triggerAdminWarningModal(messageText, seconds = 10) {
+            const modal = document.getElementById('admin-warning-modal');
+            const textEl = document.getElementById('admin-warning-text');
+            const timerEl = document.getElementById('admin-warning-timer');
+            const closeBtn = document.getElementById('btn-close-admin-warning');
+
+            if (textEl && messageText) {
+                textEl.textContent = messageText;
+            }
+
+            let remaining = Math.max(1, Number(seconds) || 10);
+            timerEl.textContent = String(remaining);
+            closeBtn.disabled = true;
+            closeBtn.className = 'pixel-btn w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-xs sm:text-sm cursor-not-allowed';
+            closeBtn.textContent = `Lütfen Bekleyin (${remaining}s)`;
+            modal.classList.remove('hidden');
+
+            if (warningCountdownInterval) clearInterval(warningCountdownInterval);
+            warningCountdownInterval = setInterval(() => {
+                remaining -= 1;
+                if (remaining > 0) {
+                    timerEl.textContent = String(remaining);
+                    closeBtn.textContent = `Lütfen Bekleyin (${remaining}s)`;
+                } else {
+                    clearInterval(warningCountdownInterval);
+                    warningCountdownInterval = null;
+                    timerEl.textContent = '0';
+                    closeBtn.disabled = false;
+                    closeBtn.className = 'pixel-btn w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm cursor-pointer';
+                    closeBtn.textContent = 'Anladım, Kapat';
+                }
+            }, 1000);
+        }
+
+        document.getElementById('btn-close-admin-warning').addEventListener('click', () => {
+            if (document.getElementById('btn-close-admin-warning').disabled) return;
+            document.getElementById('admin-warning-modal').classList.add('hidden');
+        });
+
         async function recordAnonymousSiteStats(currentOnline) {
             if (!sbClient) return;
             try {
@@ -3383,6 +3439,25 @@
                     .on('presence', { event: 'sync' }, syncCount)
                     .on('presence', { event: 'join' }, syncCount)
                     .on('presence', { event: 'leave' }, syncCount)
+                    .on('broadcast', { event: 'admin_warning' }, ({ payload }) => {
+                        if (!payload) return;
+                        const matchesId = payload.targetId === CLIENT_ID;
+                        const matchesName = state.playerName && payload.targetName && payload.targetName === state.playerName;
+                        if (matchesId || matchesName) {
+                            triggerAdminWarningModal(payload.message, payload.seconds || 10);
+                        }
+                    })
+                    .on('broadcast', { event: 'admin_kick' }, ({ payload }) => {
+                        if (!payload) return;
+                        const matchesId = payload.targetId === CLIENT_ID;
+                        const matchesName = state.playerName && payload.targetName && payload.targetName === state.playerName;
+                        if (matchesId || matchesName) {
+                            standUp(false);
+                            cancelMatchmaking();
+                            document.getElementById('lobby-modal').classList.remove('hidden');
+                            renderThemeCards();
+                        }
+                    })
                     .subscribe(async (status) => {
                         if (status === 'SUBSCRIBED') {
                             await globalPresenceChannel.track({
@@ -3658,7 +3733,6 @@
                     state.fireFuel = Math.min(1.35, state.fireFuel + 0.35);
                     spawnFallingFirewoodLog();
                     showOpenWorldBubble(payload.senderId, 'Odun attım! 🔥');
-                    appendChatMessage('', `🪵 ${payload.name} ateşe odun attı!`, false, true);
                 })
                 .on('broadcast', { event: 'change_theme' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
@@ -3719,7 +3793,6 @@
                 }
             });
 
-            // En kalabalık ortamı belirle (varsayılan olarak Gece Kamp Ateşi öne çıkar)
             let hottestThemeId = 'campfire';
             let maxCount = themeCounts.campfire || 0;
             Object.entries(themeCounts).forEach(([tid, cnt]) => {
