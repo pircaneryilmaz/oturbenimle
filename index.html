@@ -6,10 +6,10 @@
     <title>oturbenimle — 3D Pixel Sosyal Masa</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Okunabilir Pixel Font (Pixelify Sans - Türkçe Karakter Destekli) -->
+    <!-- Geist Pixel Font + Yedek Pixel Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel:wght@400..700&family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
     <!-- Three.js & Eklentiler -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -18,9 +18,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
+        @font-face {
+            font-family: "Geist Pixel";
+            src: url("https://cdn.jsdelivr.net/gh/vercel/geist-font@main/fonts/GeistPixel/webfonts/GeistPixel-Square.woff2") format("woff2"),
+                 url("https://cdn.jsdelivr.net/gh/vercel/geist-font@main/fonts/GeistPixel/ttf/GeistPixel-Square.ttf") format("truetype");
+            font-weight: 400 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
+            font-variation-settings: "ELSH" 1;
         }
         html, body {
             margin: 0;
@@ -30,20 +41,23 @@
             height: 100dvh;
             overflow: hidden;
             background-color: #111318;
-            font-family: 'Pixelify Sans', sans-serif;
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
+            font-variation-settings: "ELSH" 1;
+            font-size: 15px;
             color: #f1f5f9;
             user-select: none;
             -webkit-user-select: none;
             touch-action: none;
+            -webkit-font-smoothing: none;
         }
 
         .pixel-title {
-            font-family: 'Pixelify Sans', sans-serif;
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
             letter-spacing: 0.03em;
         }
 
         .brand-logo {
-            font-family: 'Pixelify Sans', sans-serif;
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
             letter-spacing: 0.06em;
         }
 
@@ -65,7 +79,6 @@
             pointer-events: none;
         }
 
-        /* Sade & Düz Panel ve Buton Stilleri */
         .glass-panel {
             background: rgba(20, 23, 31, 0.94);
             border: 1px solid #2c3344;
@@ -92,7 +105,7 @@
             background: #141821;
             border: 1px solid #333c4f;
             border-radius: 4px;
-            font-family: 'Pixelify Sans', sans-serif;
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
         }
 
         .pixel-input:focus {
@@ -100,7 +113,6 @@
             border-color: #d97706;
         }
 
-        /* 3D Konuşma Balonu ve İsim Etiketi */
         .seat-label-wrapper {
             display: flex;
             flex-direction: column;
@@ -174,8 +186,8 @@
             border: 1px solid #10b981;
             border-radius: 4px;
             padding: 4px 10px;
-            font-family: 'Pixelify Sans', sans-serif;
-            font-size: 12px;
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
+            font-size: 13px;
             font-weight: 600;
             touch-action: manipulation;
         }
@@ -184,7 +196,24 @@
             background: #10b981;
         }
 
-        /* Özel Scrollbar */
+        .board-draw-badge {
+            pointer-events: auto;
+            cursor: pointer;
+            background: #d97706;
+            color: #fffbeb;
+            border: 1px solid #fbbf24;
+            border-radius: 4px;
+            padding: 3px 9px;
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
+            font-size: 13px;
+            font-weight: 700;
+            touch-action: manipulation;
+        }
+
+        .board-draw-badge:hover {
+            background: #f59e0b;
+        }
+
         .custom-scroll {
             touch-action: pan-y;
             -webkit-overflow-scrolling: touch;
@@ -263,7 +292,7 @@
             <!-- Mekana Özel Sipariş & İkram Çekmecesi -->
             <div id="order-drawer" class="hidden glass-panel p-2.5 flex flex-col gap-2">
                 <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
-                    <span id="order-drawer-title" class="pixel-title text-[11px] font-bold text-amber-300">🍽️ MASA MENÜSÜ</span>
+                    <span id="order-drawer-title" class="pixel-title text-xs font-bold text-amber-300">🍽️ MASA MENÜSÜ</span>
                     <button type="button" id="btn-close-order" class="text-xs text-slate-400 hover:text-white px-1.5">✕</button>
                 </div>
                 <div id="order-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto custom-scroll">
@@ -271,7 +300,27 @@
                 </div>
             </div>
 
-            <!-- Aksiyon Satırı (Menü & Yeme/İçme) -->
+            <!-- Ortam Değiştirme (Işınlanma) Çekmecesi -->
+            <div id="teleport-drawer" class="hidden glass-panel p-2.5 flex flex-col gap-2">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
+                    <span class="pixel-title text-xs font-bold text-sky-300">🌍 ORTAM DEĞİŞTİR (IŞINLAN)</span>
+                    <button type="button" id="btn-close-teleport" class="text-xs text-slate-400 hover:text-white px-1.5">✕</button>
+                </div>
+                <div id="teleport-items-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                    <!-- Dinamik diğer 3 ortam seçeneği -->
+                </div>
+            </div>
+
+            <!-- Dans Daveti Bildirim Çubuğu (Gece Kulübü) -->
+            <div id="dance-invite-banner" class="hidden glass-panel border-pink-500/80 p-2.5 flex items-center justify-between gap-2">
+                <span id="dance-invite-text" class="text-xs sm:text-sm text-pink-200 font-semibold">💃 Partnerin seni dansa davet etti!</span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" id="btn-accept-dance" class="pixel-btn bg-pink-600 hover:bg-pink-500 text-white px-2.5 py-1 text-xs font-bold">Kabul Et</button>
+                    <button type="button" id="btn-decline-dance" class="pixel-btn bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 text-xs">Reddet</button>
+                </div>
+            </div>
+
+            <!-- Aksiyon Satırı -->
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <button type="button" id="btn-toggle-menu" class="pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
@@ -279,7 +328,16 @@
                         <span class="pixel-title text-xs">Menü</span>
                     </button>
 
-                    <!-- Elimdeki İkramı Yudumla / Ye Butonu -->
+                    <button type="button" id="btn-toggle-teleport" class="pixel-btn bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                        <span>🌍</span>
+                        <span class="pixel-title text-xs">Ortam Değiştir</span>
+                    </button>
+
+                    <button type="button" id="btn-dance-invite" class="hidden pixel-btn bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                        <span>💃</span>
+                        <span class="pixel-title text-xs">Dans Et</span>
+                    </button>
+
                     <button type="button" id="btn-consume-item" class="hidden pixel-btn bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
                         <span id="consume-icon">☕</span>
                         <span id="consume-label" class="pixel-title text-xs">Yudumla (5/5)</span>
@@ -321,22 +379,26 @@
                 <div class="flex flex-col items-end gap-1.5 shrink-0">
                     <div class="bg-emerald-950/70 border border-emerald-700/60 rounded px-2.5 py-1 flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-                        <span id="online-count-text" class="text-[11px] font-medium text-emerald-300">1 kişi çevrimiçi</span>
+                        <span id="online-count-badge" class="text-[11px] font-medium text-emerald-300">1 kişi çevrimiçi</span>
                     </div>
-                    <button type="button" id="btn-close-lobby" class="hidden text-xs text-slate-400 hover:text-white border border-slate-700 rounded px-2 py-0.5">
-                        ✕ Kapat
-                    </button>
                 </div>
             </div>
 
-            <!-- Adın ve Cinsiyet Seçimi -->
+            <!-- Takma Ad & Karakter Seçimi -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="flex flex-col gap-1">
-                    <label for="player-name-input" class="text-xs font-medium text-slate-300">Takma Adın</label>
-                    <input id="player-name-input" type="text" maxlength="16" placeholder="Örn: Deniz" class="pixel-input px-3 py-2 text-sm text-white placeholder-slate-500">
+                <div class="flex flex-col gap-1.5">
+                    <label for="nickname-input" class="text-xs font-medium text-slate-300">Takma Adın</label>
+                    <input
+                        id="nickname-input"
+                        type="text"
+                        maxlength="16"
+                        placeholder="Örn: Gezgin, Deniz..."
+                        class="pixel-input px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500"
+                    >
                 </div>
-                <div class="flex flex-col gap-1">
-                    <span class="text-xs font-medium text-slate-300">Karakter Cinsiyeti</span>
+
+                <div class="flex flex-col gap-1.5">
+                    <span class="text-xs font-medium text-slate-300">Karakterin</span>
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" id="btn-gender-female" class="pixel-btn py-2 px-2.5 bg-amber-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5">
                             <span>👩</span>
@@ -425,7 +487,7 @@
         </div>
     </div>
 
-    <!-- Yönetim & Moderasyon Paneli Modalı -->
+    <!-- Yönetim & Moderasyon Paneli Modalı (Supabase Auth — Kodda Şifre/E-posta Yok) -->
     <div id="admin-modal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
         <div class="glass-panel w-full max-w-lg p-4 flex flex-col gap-3 max-h-[85vh]">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -433,18 +495,24 @@
                 <button type="button" id="btn-close-admin" class="text-slate-400 hover:text-white px-2">✕</button>
             </div>
 
-            <!-- Şifre Doğrulama Alanı -->
-            <div id="admin-auth-box" class="flex flex-col gap-2">
-                <label class="text-xs text-slate-300">Yönetici Şifresi:</label>
+            <!-- Yönetici Giriş Formu -->
+            <form id="admin-auth-box" class="flex flex-col gap-2">
+                <label class="text-xs text-slate-300">Yönetici E-posta ve Şifresi (Supabase Auth):</label>
+                <input id="admin-email-input" type="email" autocomplete="username" placeholder="Yönetici e-posta..." class="pixel-input w-full px-3 py-1.5 text-xs text-white" required>
                 <div class="flex gap-2">
-                    <input id="admin-pass-input" type="password" placeholder="Şifre..." class="pixel-input flex-1 px-3 py-1.5 text-xs text-white">
-                    <button type="button" id="btn-admin-login" class="pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 text-xs font-semibold">Giriş</button>
+                    <input id="admin-pass-input" type="password" autocomplete="current-password" placeholder="Şifre..." class="pixel-input flex-1 px-3 py-1.5 text-xs text-white" required>
+                    <button type="submit" id="btn-admin-login" class="pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 text-xs font-semibold">Giriş</button>
                 </div>
-                <p id="admin-auth-error" class="hidden text-xs text-rose-400">Hatalı yönetici şifresi.</p>
-            </div>
+                <p id="admin-auth-error" class="hidden text-xs text-rose-400">E-posta veya şifre hatalı.</p>
+            </form>
 
             <!-- Panel İçeriği -->
             <div id="admin-dashboard-box" class="hidden flex flex-col gap-3 overflow-y-auto custom-scroll pr-1">
+                <div class="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded px-2.5 py-1.5 text-[11px]">
+                    <span class="text-emerald-300">🔒 Güvenli Oturum Aktif</span>
+                    <button type="button" id="btn-admin-logout" class="text-rose-300 hover:underline">Çıkış Yap</button>
+                </div>
+
                 <div class="grid grid-cols-2 gap-2">
                     <div class="bg-slate-900 border border-slate-800 rounded p-2.5">
                         <div class="text-[11px] text-slate-400">Anlık Çevrimiçi</div>
@@ -493,13 +561,45 @@
         </div>
     </div>
 
+    <!-- Kafe Kara Tahta Çizim Modalı -->
+    <div id="chalkboard-modal" class="hidden fixed inset-0 z-40 bg-black/80 flex items-center justify-center p-3">
+        <div class="glass-panel w-full max-w-md p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="pixel-title text-sm font-bold text-amber-300">🎨 Kafe Tahtasına Çiz</h3>
+                <button type="button" id="btn-close-chalkboard" class="text-slate-400 hover:text-white px-2">✕</button>
+            </div>
+
+            <!-- Tebeşir Renkleri ve Temizle -->
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                    <button type="button" data-chalk="#f8fafc" class="chalk-color-btn w-6 h-6 rounded border-2 border-amber-400 bg-slate-100" title="Beyaz Tebeşir"></button>
+                    <button type="button" data-chalk="#fde047" class="chalk-color-btn w-6 h-6 rounded border border-slate-600 bg-yellow-300" title="Sarı Tebeşir"></button>
+                    <button type="button" data-chalk="#f472b6" class="chalk-color-btn w-6 h-6 rounded border border-slate-600 bg-pink-400" title="Pembe Tebeşir"></button>
+                    <button type="button" data-chalk="#38bdf8" class="chalk-color-btn w-6 h-6 rounded border border-slate-600 bg-sky-400" title="Mavi Tebeşir"></button>
+                    <button type="button" data-chalk="#4ade80" class="chalk-color-btn w-6 h-6 rounded border border-slate-600 bg-green-400" title="Yeşil Tebeşir"></button>
+                </div>
+                <button type="button" id="btn-clear-chalkboard" class="pixel-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 text-xs">
+                    🧹 Temizle
+                </button>
+            </div>
+
+            <!-- Çizim Alanı -->
+            <div class="border-2 border-amber-900/90 rounded overflow-hidden bg-[#17281e]">
+                <canvas id="chalkboard-canvas" width="320" height="180" class="w-full h-44 block cursor-crosshair touch-none"></canvas>
+            </div>
+
+            <button type="button" id="btn-save-chalkboard" class="pixel-btn w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold pixel-title text-sm">
+                OK — Tahtaya Aktar
+            </button>
+        </div>
+    </div>
+
     <script>
         // ==========================================
         // 0. SUPABASE GERÇEK ZAMANLI BAĞLANTI YAPILANDIRMASI
         // ==========================================
         const SUPABASE_URL = 'https://awgpooufynwlbiwhtsnp.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_lbDpjEAfBJUMLTuBSYBY_A_O8LXxXQ0';
-        const ADMIN_SECRET = 'pirlofener2026';
 
         // Canvas/iFrame önizleme ortamlarında WebSocket engeli olup olmadığını algıla
         const isPreviewSandbox = window.location.protocol === 'blob:' || window.location.hostname.includes('usercontent.goog');
@@ -507,959 +607,878 @@
             ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
             : null;
         const CLIENT_ID = 'usr_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        let lastChatSentAt = 0;
 
         let globalPresenceChannel = null;
         let queueChannel = null;
         let roomChannel = null;
-        let onlineUsersMap = {};
+        let activeUsersMap = {};
 
         // ==========================================
-        // 1. OYUN VERİLERİ, KARAKTER PROFİLLERİ VE MEKANLAR
+        // 1. TEMA, MEKAN MENÜLERİ VE KARAKTER PROFİLLERİ
         // ==========================================
         const THEMES = {
             cafe: {
                 id: 'cafe',
-                name: 'Kafe',
+                name: 'Sıcak Kafe',
                 icon: '☕',
-                desc: 'Sıcak kahve kokusu, tuğla duvarlar ve 2 kişilik samimi ahşap masa.',
-                bgHex: 0x1b130e,
-                fogHex: 0x1b130e,
+                desc: 'Kitap rafları, taze kahve ve loş avize ışığı',
+                skyColor: 0x161210,
+                fogColor: 0x161210,
+                ambientLight: 0xffedd5,
                 menu: [
-                    { id: 'latte', name: 'Sıcak Latte', icon: '☕', type: 'drink', maxUses: 5, color: 0xd97706 },
-                    { id: 'cake', name: 'Çikolatalı Kek', icon: '🍰', type: 'food', maxUses: 3, color: 0x5c2d16 },
-                    { id: 'tea', name: 'Demleme Çay', icon: '🍵', type: 'drink', maxUses: 5, color: 0xb45309 },
-                    { id: 'croissant', name: 'Taze Kruvasan', icon: '🥐', type: 'food', maxUses: 3, color: 0xf59e0b }
+                    { id: 'latte', icon: '☕', name: 'Sıcak Latte', type: 'drink', color: 0xd97706, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana sıcak latte ısmarlayayım dedim ☕' },
+                    { id: 'turkish_coffee', icon: '🫖', name: 'Türk Kahvesi', type: 'drink', color: 0x451a03, bites: 4, actionText: 'Yudumla', treatMsg: 'Sana köpüklü bir Türk kahvesi ısmarlayayım dedim 🫖' },
+                    { id: 'cheesecake', icon: '🍰', name: 'San Sebastian', type: 'food', color: 0xfde68a, bites: 4, actionText: 'Ye', treatMsg: 'Sana bir dilim San Sebastian ısmarlayayım dedim 🍰' },
+                    { id: 'croissant', icon: '🥐', name: 'Taze Kruvasan', type: 'food', color: 0xd97706, bites: 4, actionText: 'Ye', treatMsg: 'Sana sıcacık bir kruvasan ısmarlayayım dedim 🥐' }
                 ]
             },
             campfire: {
                 id: 'campfire',
-                name: 'Kamp Ateşi',
+                name: 'Gece Kamp Ateşi',
                 icon: '🔥',
-                desc: 'Orman içinde çıtırdayan kamp ateşi başında 2 kişilik sohbet.',
-                bgHex: 0x09131c,
-                fogHex: 0x09131c,
+                desc: 'Yıldızlı gökyüzü, çam ağaçları ve çıtırdayan ateş',
+                skyColor: 0x090d16,
+                fogColor: 0x090d16,
+                ambientLight: 0x93c5fd,
                 menu: [
-                    { id: 'cola', name: 'Soğuk Kola', icon: '🥤', type: 'drink', maxUses: 5, color: 0x991b1b },
-                    { id: 'beer', name: 'Soğuk Bira', icon: '🍺', type: 'drink', maxUses: 5, color: 0xfbbf24 },
-                    { id: 'peanuts', name: 'Tuzlu Fıstık', icon: '🥜', type: 'food', maxUses: 3, color: 0xd97706 },
-                    { id: 'seeds', name: 'Ay Çekirdeği', icon: '🌻', type: 'food', maxUses: 3, color: 0x475569 }
+                    { id: 'marshmallow', icon: '🍡', name: 'Közde Marshmallow', type: 'food', color: 0xf8fafc, bites: 3, actionText: 'Ye', treatMsg: 'Sana ateş başında marshmallow ısmarlayayım dedim 🍡' },
+                    { id: 'camp_tea', icon: '🍵', name: 'Demlik Kamp Çayı', type: 'drink', color: 0xb45309, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana tavşan kanı bir kamp çayı ısmarlayayım dedim 🍵' },
+                    { id: 'hot_choco', icon: '🍫', name: 'Sıcak Çikolata', type: 'drink', color: 0x5c2d16, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana sıcak çikolata ısmarlayayım dedim 🍫' },
+                    { id: 'roasted_corn', icon: '🌽', name: 'Közlenmiş Mısır', type: 'food', color: 0xfacc15, bites: 4, actionText: 'Ye', treatMsg: 'Sana közlenmiş mısır ısmarlayayım dedim 🌽' }
                 ]
             },
             beach: {
                 id: 'beach',
                 name: 'Sahilde Bank',
                 icon: '🌊',
-                desc: 'Üsküdar sahilinde Kız Kulesi manzarasına karşı 2 kişilik bank.',
-                bgHex: 0x0b192c,
-                fogHex: 0x0b192c,
+                desc: 'Kız Kulesi manzarası, deniz meltemi ve martılar',
+                skyColor: 0x101d2e,
+                fogColor: 0x101d2e,
+                ambientLight: 0xbae6fd,
                 menu: [
-                    { id: 'turkish_tea', name: 'İnce Belli Çay', icon: '🍵', type: 'drink', maxUses: 5, color: 0xb45309 },
-                    { id: 'simit', name: 'Çıtır Simit', icon: '🥯', type: 'food', maxUses: 3, color: 0xd97706 },
-                    { id: 'lemonade', name: 'Naneli Limonata', icon: '🍋', type: 'drink', maxUses: 5, color: 0xfef08a },
-                    { id: 'seeds_beach', name: 'Çekirdek Külahı', icon: '🌻', type: 'food', maxUses: 3, color: 0x64748b }
+                    { id: 'simit_tea', icon: '🥯', name: 'Çıtır Simit & Çay', type: 'food', color: 0xd97706, bites: 4, actionText: 'Ye', treatMsg: 'Sana Kız Kulesi manzarasına karşı simit ısmarlayayım dedim 🥯' },
+                    { id: 'lemonade', icon: '🍋', name: 'Naneli Limonata', type: 'drink', color: 0xfef08a, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana buz gibi naneli limonata ısmarlayayım dedim 🍋' },
+                    { id: 'ice_cream', icon: '🍦', name: 'Külah Dondurma', type: 'food', color: 0xfbcfe8, bites: 4, actionText: 'Ye', treatMsg: 'Sana sahilde külah dondurma ısmarlayayım dedim 🍦' },
+                    { id: 'turkish_tea', icon: '🫖', name: 'İnce Belli Çay', type: 'drink', color: 0x9a3412, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana deniz havasında ince belli çay ısmarlayayım dedim 🫖' }
                 ]
             },
             club: {
                 id: 'club',
                 name: 'Gece Kulübü',
                 icon: '🪩',
-                desc: 'Neon ışıklar, DJ kabini ve ritmik atmosferde 2 kişilik VIP loca.',
-                bgHex: 0x090414,
-                fogHex: 0x090414,
+                desc: 'Dans pisti, DJ kabini ve neon ışık şovu',
+                skyColor: 0x0b0714,
+                fogColor: 0x0b0714,
+                ambientLight: 0xe879f9,
                 menu: [
-                    { id: 'cocktail', name: 'Neon Kokteyl', icon: '🍸', type: 'drink', maxUses: 5, color: 0xec4899 },
-                    { id: 'energy', name: 'Enerji İçeceği', icon: '⚡', type: 'drink', maxUses: 5, color: 0x06b6d4 },
-                    { id: 'nuts_club', name: 'Karışık Çerez', icon: '🍿', type: 'food', maxUses: 3, color: 0xfbbf24 },
-                    { id: 'fruit_plate', name: 'Meyve Tabağı', icon: '🍓', type: 'food', maxUses: 3, color: 0xf43f5e }
+                    { id: 'neon_mojito', icon: '🍹', name: 'Neon Mojito', type: 'drink', color: 0x10b981, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana buz gibi bir Neon Mojito ısmarlayayım dedim 🍹' },
+                    { id: 'berry_mocktail', icon: '🍸', name: 'Orman Meyveli Kokteyl', type: 'drink', color: 0xec4899, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana orman meyveli özel kokteyl ısmarlayayım dedim 🍸' },
+                    { id: 'energy_shot', icon: '⚡', name: 'Dans Enerji İçeceği', type: 'drink', color: 0x38bdf8, bites: 4, actionText: 'Yudumla', treatMsg: 'Pist yorgunluğunu alsın diye sana enerji içeceği ısmarlayayım dedim ⚡' },
+                    { id: 'nachos', icon: '🌮', name: 'Çıtır Nachos Tabağı', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'Sana masa ortaya çıtır nachos ısmarlayayım dedim 🌮' }
                 ]
             }
         };
 
         const CHARACTER_PROFILES = {
             female: [
-                {
-                    style: 'Spor',
-                    names: ['Zeynep', 'Ece', 'Selin', 'Defne'],
-                    hairColor: '#5c3a21',
-                    hairHighlight: '#855834',
-                    hairStyle: 'ponytail',
-                    topColor: '#0d9488',
-                    topAccent: '#ccfbf1',
-                    bottomColor: '#1e293b',
-                    shoeColor: '#2dd4bf',
-                    accessory: 'headband'
-                },
-                {
-                    style: 'Klasik',
-                    names: ['İrem', 'Elif', 'Aslı', 'Ceren'],
-                    hairColor: '#3b2314',
-                    hairHighlight: '#6b4226',
-                    hairStyle: 'long',
-                    topColor: '#92400e',
-                    topAccent: '#fef3c7',
-                    bottomColor: '#1e3a8a',
-                    shoeColor: '#f8fafc',
-                    accessory: 'bag'
-                },
-                {
-                    style: 'Şık',
-                    names: ['Alara', 'Melis', 'Duru', 'Lara'],
-                    hairColor: '#9a3412',
-                    hairHighlight: '#ea580c',
-                    hairStyle: 'wavy',
-                    topColor: '#be185d',
-                    topAccent: '#fbcfe8',
-                    bottomColor: '#0f172a',
-                    shoeColor: '#f43f5e',
-                    accessory: 'none'
-                }
+                { style: 'Spor', hair: '#3b2314', hairStyle: 'ponytail', top: '#f43f5e', pants: '#334155', skin: '#f5cba7', shoes: '#f8fafc', acc: 'cap' },
+                { style: 'Klasik', hair: '#1e1b18', hairStyle: 'long', top: '#e2e8f0', pants: '#1e293b', skin: '#fad7a0', shoes: '#0f172a', acc: 'glasses' },
+                { style: 'Şık', hair: '#92400e', hairStyle: 'bob', top: '#8b5cf6', pants: '#0f172a', skin: '#f5cba7', shoes: '#c084fc', acc: 'scarf' }
             ],
             male: [
-                {
-                    style: 'Spor',
-                    names: ['Batu', 'Kaan', 'Arda', 'Ege'],
-                    hairColor: '#27272a',
-                    hairHighlight: '#52525b',
-                    hairStyle: 'short',
-                    topColor: '#2563eb',
-                    topAccent: '#dbeafe',
-                    bottomColor: '#1e293b',
-                    shoeColor: '#60a5fa',
-                    accessory: 'headband'
-                },
-                {
-                    style: 'Klasik',
-                    names: ['Ozan', 'Emir', 'Can', 'Burak'],
-                    hairColor: '#451a03',
-                    hairHighlight: '#78350f',
-                    hairStyle: 'short',
-                    topColor: '#b91c1c',
-                    topAccent: '#f8fafc',
-                    bottomColor: '#334155',
-                    shoeColor: '#e2e8f0',
-                    accessory: 'glasses'
-                },
-                {
-                    style: 'Şık',
-                    names: ['Kerem', 'Doruk', 'Sarp', 'Mert'],
-                    hairColor: '#18181b',
-                    hairHighlight: '#3f3f46',
-                    hairStyle: 'short',
-                    topColor: '#1e1b4b',
-                    topAccent: '#ffffff',
-                    bottomColor: '#0f172a',
-                    shoeColor: '#94a3b8',
-                    accessory: 'tie'
-                }
+                { style: 'Spor', hair: '#1e293b', hairStyle: 'short', top: '#0284c7', pants: '#334155', skin: '#e5b887', shoes: '#f8fafc', acc: 'headphones' },
+                { style: 'Klasik', hair: '#451a03', hairStyle: 'parted', top: '#059669', pants: '#1e293b', skin: '#f5cba7', shoes: '#451a03', acc: 'glasses' },
+                { style: 'Şık', hair: '#0f172a', hairStyle: 'spiky', top: '#d97706', pants: '#0f172a', skin: '#d4a373', shoes: '#1e293b', acc: 'watch' }
             ]
         };
 
         const state = {
-            playerName: 'Misafir',
-            playerGender: 'female',
-            playerProfile: null,
-            currentTheme: 'cafe',
-            inRoom: false,
+            playerName: '',
+            gender: 'female',
+            profileIndex: 0,
+            theme: 'cafe',
             roomId: null,
-            partnerId: null,
-            partnerName: null,
             mySeatIndex: -1,
-            seats: [],
-            interactiveProps: [],
-            myTreat: null,
-            partnerTreat: null,
-            isSearching: false,
-            recentMessages: []
+            seats: [null, null],
+            heldItems: [null, null],
+            isMatching: false,
+            recentMessages: [],
+            isDancing: false,
+            danceEndTime: 0,
+            chalkboardDataUrl: null
         };
 
         // ==========================================
-        // 2. THREE.JS SAHNE, KAMERA VE RENDERER KURULUMU
+        // 2. THREE.JS SAHNE, KAMERA VE KONTROLLER
         // ==========================================
-        const isMobileView = () => window.innerWidth < 640;
+        const container = document.getElementById('canvas-container');
+        const labelContainer = document.getElementById('label-container');
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1b130e);
+        scene.background = new THREE.Color(THEMES.cafe.skyColor);
+        scene.fog = new THREE.FogExp2(THEMES.cafe.fogColor, 0.042);
 
-        const camera = new THREE.PerspectiveCamera(
-            isMobileView() ? 60 : 55,
-            window.innerWidth / window.innerHeight,
-            0.1,
-            100
-        );
-        camera.position.set(0, 2.4, 3.6);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 3.6, 5.8);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
 
         const labelRenderer = new THREE.CSS2DRenderer();
         labelRenderer.setSize(window.innerWidth, window.innerHeight);
-        labelRenderer.domElement.style.position = 'absolute';
-        labelRenderer.domElement.style.top = '0';
-        labelRenderer.domElement.style.left = '0';
-        labelRenderer.domElement.style.pointerEvents = 'none';
-        document.getElementById('label-container').appendChild(labelRenderer.domElement);
+        labelContainer.appendChild(labelRenderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.07;
-        controls.minDistance = 1.6;
-        controls.maxDistance = 6.5;
-        controls.maxPolarAngle = Math.PI * 0.48;
-        controls.target.set(0, 1.0, 0);
+        controls.dampingFactor = 0.06;
+        controls.minDistance = 2.6;
+        controls.maxDistance = 10.5;
+        controls.maxPolarAngle = Math.PI / 2 - 0.06;
+        controls.target.set(0, 1.05, 0);
 
-        const roomGroup = new THREE.Group();
-        const seatsGroup = new THREE.Group();
-        const effectsGroup = new THREE.Group();
-        scene.add(roomGroup, seatsGroup, effectsGroup);
+        const ambientLight = new THREE.AmbientLight(0xffedd5, 0.75);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfff7ed, 0.8);
+        dirLight.position.set(4, 8, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        scene.add(dirLight);
+
+        const environmentGroup = new THREE.Group();
+        const tableGroup = new THREE.Group();
+        const treatsGroup = new THREE.Group();
+        const avatarsGroup = new THREE.Group();
+        scene.add(environmentGroup, tableGroup, treatsGroup, avatarsGroup);
+
+        const animatedObjects = {
+            fireLight: null,
+            flames: [],
+            clubLights: [],
+            clubEqualizer: [],
+            seaWaves: [],
+            lanterns: [],
+            chalkboardCanvas: null,
+            chalkboardTexture: null,
+            chalkboardLabelObj: null
+        };
 
         // ==========================================
-        // 3. YÜKSEK DETAYLI 48x64 OTURAN PIXEL-ART AVATAR ÇİZİCİ
+        // 3. PIXEL-ART TEXTURE & OTURAN KARAKTER OLUŞTURUCU
         // ==========================================
-        function createPixelAvatarTexture(profile) {
+        function createPixelTexture(width, height, drawFn) {
             const canvas = document.createElement('canvas');
-            canvas.width = 48;
-            canvas.height = 64;
+            canvas.width = width;
+            canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.imageSmoothingEnabled = false;
-
-            const px = (x, y, w, h, color) => {
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y, w, h);
-            };
-
-            const outline = '#11131a';
-            const skin = '#f5c29b';
-            const skinShadow = '#d99b72';
-            const cheek = '#f48fb1';
-
-            // Oturma Pozisyonu: Kalça/Üst Bacak Minderde, Alt Bacak ve Ayaklar Aşağı Sarkık
-            px(13, 41, 22, 8, outline);
-            px(14, 42, 20, 6, profile.bottomColor);
-            // Diz vurgusu (oturma kıvrımı)
-            px(15, 42, 6, 2, '#94a3b8');
-            px(27, 42, 6, 2, '#94a3b8');
-
-            // Aşağı inen alt bacaklar
-            px(14, 48, 7, 10, outline);
-            px(27, 48, 7, 10, outline);
-            px(15, 48, 5, 9, profile.bottomColor);
-            px(28, 48, 5, 9, profile.bottomColor);
-
-            // Ayakkabılar (Yere basan / hafif önde)
-            px(13, 57, 8, 5, outline);
-            px(27, 57, 8, 5, outline);
-            px(14, 58, 6, 2, profile.shoeColor);
-            px(28, 58, 6, 2, profile.shoeColor);
-            px(14, 60, 6, 1, '#ffffff');
-            px(28, 60, 6, 1, '#ffffff');
-
-            // Gövde (Üst Kıyafet)
-            px(14, 24, 20, 18, outline);
-            px(15, 25, 18, 16, profile.topColor);
-            // İç tişört / gömlek detayı
-            px(21, 25, 6, 15, profile.topAccent);
-
-            if (profile.accessory === 'tie') {
-                px(23, 26, 2, 10, '#dc2626');
-            } else if (profile.accessory === 'bag') {
-                for (let i = 0; i < 13; i++) {
-                    px(16 + i, 26 + i, 2, 2, '#78350f');
-                }
-            }
-
-            // Kollar ve Kucakta/Dizde Duran Eller
-            px(10, 25, 5, 15, outline);
-            px(33, 25, 5, 15, outline);
-            px(11, 26, 3, 9, profile.topColor);
-            px(34, 26, 3, 9, profile.topColor);
-            px(11, 35, 4, 4, skin);
-            px(33, 35, 4, 4, skin);
-
-            // Boyun
-            px(21, 21, 6, 4, outline);
-            px(22, 21, 4, 4, skinShadow);
-
-            // Kafa (Orantılı Pixel-Art Yüz)
-            px(14, 6, 20, 16, outline);
-            px(15, 7, 18, 14, skin);
-            px(15, 19, 18, 2, skinShadow);
-
-            // Gözler & Yanaklar
-            px(18, 13, 2, 3, '#1e293b');
-            px(28, 13, 2, 3, '#1e293b');
-            px(16, 16, 2, 1, cheek);
-            px(30, 16, 2, 1, cheek);
-
-            // Gözlük Aksesuarı
-            if (profile.accessory === 'glasses') {
-                px(16, 12, 6, 5, '#0f172a');
-                px(26, 12, 6, 5, '#0f172a');
-                px(17, 13, 4, 3, '#bae6fd');
-                px(27, 13, 4, 3, '#bae6fd');
-                px(22, 14, 4, 1, '#0f172a');
-            }
-
-            // Saç Katmanları (Gölge + Ana Ton + Işık Parıltısı)
-            px(13, 4, 22, 6, outline);
-            px(14, 5, 20, 5, profile.hairColor);
-            px(16, 6, 14, 2, profile.hairHighlight);
-            px(14, 9, 6, 3, profile.hairColor);
-            px(28, 9, 6, 3, profile.hairColor);
-
-            if (profile.hairStyle === 'ponytail') {
-                px(34, 6, 6, 9, outline);
-                px(35, 7, 4, 7, profile.hairColor);
-                px(36, 8, 2, 3, profile.hairHighlight);
-            } else if (profile.hairStyle === 'long' || profile.hairStyle === 'wavy') {
-                px(12, 9, 3, 18, outline);
-                px(33, 9, 3, 18, outline);
-                px(13, 9, 2, 17, profile.hairColor);
-                px(33, 9, 2, 17, profile.hairColor);
-            }
-
-            if (profile.accessory === 'headband') {
-                px(14, 8, 20, 2, '#f43f5e');
-            }
-
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.magFilter = THREE.NearestFilter;
-            texture.minFilter = THREE.NearestFilter;
-            return texture;
-        }
-
-        function createPixelTexture(drawFn, w = 32, h = 32) {
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = false;
-            drawFn(ctx, w, h);
+            drawFn(ctx, width, height);
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter;
             tex.minFilter = THREE.NearestFilter;
-            tex.wrapS = THREE.RepeatWrapping;
-            tex.wrapT = THREE.RepeatWrapping;
             return tex;
         }
 
-        // ==========================================
-        // 4. 3D MEKAN VE MASA OLUŞTURUCULAR (2 KİŞİLİK)
-        // ==========================================
-        function clearSceneObjects() {
-            while (roomGroup.children.length > 0) roomGroup.remove(roomGroup.children[0]);
-            while (seatsGroup.children.length > 0) seatsGroup.remove(seatsGroup.children[0]);
-            while (effectsGroup.children.length > 0) effectsGroup.remove(effectsGroup.children[0]);
+        function createCharacterTexture(gender, profileIndex, isBlinking = false, isEating = false) {
+            const profile = CHARACTER_PROFILES[gender][profileIndex % CHARACTER_PROFILES[gender].length];
+            return createPixelTexture(32, 48, (ctx) => {
+                ctx.clearRect(0, 0, 32, 48);
+                const px = (x, y, w, h, color) => {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, y, w, h);
+                };
 
-            // Eski CSS2D etiketlerini tamamen temizle
-            state.seats.forEach(seat => {
-                if (seat.bubbleTimeout) clearTimeout(seat.bubbleTimeout);
-                if (seat.labelObj && seat.labelObj.parent) {
-                    seat.labelObj.parent.remove(seat.labelObj);
+                // Gövde & Kollar (Oturur Pozisyonda)
+                px(9, 20, 14, 15, profile.top);
+                px(6, 21, 3, 12, profile.top);
+                px(23, 21, 3, 12, profile.top);
+                px(6, 32, 3, 3, profile.skin);
+                px(23, 32, 3, 3, profile.skin);
+
+                if (profile.acc === 'scarf') {
+                    px(10, 19, 12, 3, '#fbbf24');
+                    px(18, 22, 3, 7, '#fbbf24');
+                }
+                if (profile.acc === 'watch') {
+                    px(6, 31, 3, 2, '#94a3b8');
+                }
+
+                // Oturur Pozisyonda Bacaklar (Dizden bükülü öne uzanan uyluk + aşağı inen alt bacak)
+                px(9, 34, 14, 4, profile.pants);
+                px(9, 37, 6, 7, profile.pants);
+                px(17, 37, 6, 7, profile.pants);
+                px(15, 37, 2, 7, '#0f172a');
+
+                // Ayakkabılar
+                px(8, 44, 7, 3, profile.shoes);
+                px(17, 44, 7, 3, profile.shoes);
+
+                // Boyun & Kafa
+                px(14, 17, 4, 3, profile.skin);
+                px(9, 5, 14, 13, profile.skin);
+
+                // Saç Stilleri
+                px(8, 3, 16, 4, profile.hair);
+                if (profile.hairStyle === 'long') {
+                    px(7, 5, 2, 16, profile.hair);
+                    px(23, 5, 2, 16, profile.hair);
+                } else if (profile.hairStyle === 'ponytail') {
+                    px(23, 5, 4, 9, profile.hair);
+                    px(8, 5, 2, 7, profile.hair);
+                } else if (profile.hairStyle === 'bob') {
+                    px(7, 5, 2, 12, profile.hair);
+                    px(23, 5, 2, 12, profile.hair);
+                } else if (profile.hairStyle === 'spiky') {
+                    px(10, 1, 2, 2, profile.hair);
+                    px(15, 1, 2, 2, profile.hair);
+                    px(20, 1, 2, 2, profile.hair);
+                } else {
+                    px(8, 5, 2, 6, profile.hair);
+                    px(22, 5, 2, 6, profile.hair);
+                }
+
+                // Aksesuarlar (Şapka / Kulaklık)
+                if (profile.acc === 'cap') {
+                    px(8, 2, 16, 3, '#f59e0b');
+                    px(13, 4, 13, 2, '#d97706');
+                } else if (profile.acc === 'headphones') {
+                    px(7, 3, 18, 2, '#38bdf8');
+                    px(6, 7, 3, 6, '#0284c7');
+                    px(23, 7, 3, 6, '#0284c7');
+                }
+
+                // Gözler
+                if (isBlinking) {
+                    px(11, 11, 3, 1, '#1e293b');
+                    px(18, 11, 3, 1, '#1e293b');
+                } else {
+                    px(11, 10, 3, 3, '#0f172a');
+                    px(18, 10, 3, 3, '#0f172a');
+                    px(11, 10, 1, 1, '#ffffff');
+                    px(18, 10, 1, 1, '#ffffff');
+                }
+
+                // Gözlük
+                if (profile.acc === 'glasses') {
+                    px(10, 9, 5, 5, 'rgba(56, 189, 248, 0.25)');
+                    px(17, 9, 5, 5, 'rgba(56, 189, 248, 0.25)');
+                    px(15, 11, 2, 1, '#334155');
+                }
+
+                // Yanaklar & Ağız
+                px(10, 13, 2, 1, '#fda4af');
+                px(20, 13, 2, 1, '#fda4af');
+                if (isEating) {
+                    px(14, 15, 4, 2, '#991b1b');
+                } else {
+                    px(14, 15, 4, 1, '#be123c');
                 }
             });
-            labelRenderer.domElement.innerHTML = '';
-
-            state.seats = [];
-            state.interactiveProps = [];
-            state.myTreat = null;
-            state.partnerTreat = null;
-            updateConsumeButton();
         }
 
-        function buildEnvironment(themeKey) {
-            const theme = THEMES[themeKey];
-            scene.background = new THREE.Color(theme.bgHex);
-            scene.fog = new THREE.FogExp2(theme.fogHex, 0.045);
-
-            // Genel Ortam Işığı
-            const ambient = new THREE.AmbientLight(0xffffff, themeKey === 'club' ? 0.55 : 0.75);
-            roomGroup.add(ambient);
-
-            const dirLight = new THREE.DirectionalLight(0xffedd5, themeKey === 'club' ? 0.5 : 0.9);
-            dirLight.position.set(4, 8, 5);
-            dirLight.castShadow = true;
-            roomGroup.add(dirLight);
-
-            if (themeKey === 'cafe') {
-                buildCafeScene();
-            } else if (themeKey === 'campfire') {
-                buildCampfireScene();
-            } else if (themeKey === 'beach') {
-                buildBeachScene();
-            } else if (themeKey === 'club') {
-                buildClubScene();
+        // ==========================================
+        // 4. 4 FARKLI 3D ORTAM VE 2 KİŞİLİK MASA OLUŞTURUCU
+        // ==========================================
+        function clearGroup(group) {
+            while (group.children.length > 0) {
+                const obj = group.children[0];
+                if (obj.isCSS2DObject && obj.element && obj.element.parentNode) {
+                    obj.element.parentNode.removeChild(obj.element);
+                }
+                group.remove(obj);
             }
+        }
+
+        const SEAT_CONFIGS = [
+            { x: -1.18, z: 0, rotY: Math.PI / 2 },
+            { x: 1.18, z: 0, rotY: -Math.PI / 2 }
+        ];
+
+        function buildChairMesh(woodColor, cushionColor) {
+            const chair = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: woodColor, roughness: 0.85 });
+            const cushMat = new THREE.MeshStandardMaterial({ color: cushionColor, roughness: 0.7 });
+
+            // Oturak & Minder
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.08, 0.62), woodMat);
+            seat.position.y = 0.45;
+            seat.castShadow = true;
+            chair.add(seat);
+
+            const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.05, 0.54), cushMat);
+            cushion.position.y = 0.50;
+            chair.add(cushion);
+
+            // Sırtlık
+            const back = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.64, 0.08), woodMat);
+            back.position.set(0, 0.80, -0.27);
+            back.castShadow = true;
+            chair.add(back);
+
+            // 4 Sandalye Ayağı (Yere tam basan)
+            const legPositions = [
+                [-0.24, 0.225, -0.24],
+                [0.24, 0.225, -0.24],
+                [-0.24, 0.225, 0.24],
+                [0.24, 0.225, 0.24]
+            ];
+            legPositions.forEach(([lx, ly, lz]) => {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.08), woodMat);
+                leg.position.set(lx, ly, lz);
+                leg.castShadow = true;
+                chair.add(leg);
+            });
+
+            return chair;
+        }
+
+        function createChalkboardTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 180;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#17281e';
+            ctx.fillRect(0, 0, 320, 180);
+
+            ctx.fillStyle = '#fef3c7';
+            ctx.font = 'bold 18px monospace';
+            ctx.fillText('☕ GÜNÜN MENÜSÜ', 20, 34);
+            ctx.font = '14px monospace';
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillText('• Sıcak Latte & Türk Kahvesi', 20, 66);
+            ctx.fillText('• San Sebastian Cheesecake', 20, 92);
+            ctx.fillStyle = '#fde047';
+            ctx.fillText('✨ Tahtaya dokun, çizim bırak!', 20, 145);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            return { canvas, tex };
+        }
+
+        function applyChalkboardDataUrl(dataUrl) {
+            if (!dataUrl || !animatedObjects.chalkboardCanvas || !animatedObjects.chalkboardTexture) return;
+            state.chalkboardDataUrl = dataUrl;
+            const img = new Image();
+            img.onload = () => {
+                const ctx = animatedObjects.chalkboardCanvas.getContext('2d');
+                ctx.clearRect(0, 0, 320, 180);
+                ctx.drawImage(img, 0, 0, 320, 180);
+                animatedObjects.chalkboardTexture.needsUpdate = true;
+            };
+            img.src = dataUrl;
         }
 
         function buildCafeScene() {
-            // Ahşap Zemin
-            const floorTex = createPixelTexture((ctx, w, h) => {
-                ctx.fillStyle = '#3b2416';
-                ctx.fillRect(0, 0, w, h);
-                ctx.fillStyle = '#2a180e';
-                ctx.fillRect(0, 15, w, 1);
-                ctx.fillRect(0, 31, w, 1);
-                ctx.fillRect(15, 0, 1, 16);
-                ctx.fillRect(7, 16, 1, 16);
+            const floorTex = createPixelTexture(16, 16, (ctx) => {
+                ctx.fillStyle = '#451a03';
+                ctx.fillRect(0, 0, 16, 16);
+                ctx.fillStyle = '#78350f';
+                ctx.fillRect(0, 0, 8, 8);
+                ctx.fillRect(8, 8, 8, 8);
             });
-            floorTex.repeat.set(8, 8);
-            const floor = new THREE.Mesh(
-                new THREE.PlaneGeometry(16, 16),
-                new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.85 })
-            );
+            floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+            floorTex.repeat.set(10, 10);
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(18, 18), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.9 }));
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
-            roomGroup.add(floor);
+            environmentGroup.add(floor);
 
-            // Tuğla Arka Duvar & Pencere
-            const wallTex = createPixelTexture((ctx, w, h) => {
-                ctx.fillStyle = '#4a2518';
-                ctx.fillRect(0, 0, w, h);
-                ctx.fillStyle = '#361910';
-                for (let y = 0; y < h; y += 8) {
-                    ctx.fillRect(0, y, w, 1);
-                    const off = (y / 8) % 2 === 0 ? 0 : 8;
-                    for (let x = off; x < w; x += 16) ctx.fillRect(x, y, 1, 8);
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x291d18, roughness: 0.95 });
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 6, 0.3), wallMat);
+            backWall.position.set(0, 3, -5.5);
+            environmentGroup.add(backWall);
+
+            // Arka Duvarda Etkileşimli Kafe Kara Tahtası
+            const boardFrame = new THREE.Mesh(
+                new THREE.BoxGeometry(3.2, 1.9, 0.14),
+                new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 })
+            );
+            boardFrame.position.set(0, 2.55, -5.28);
+            environmentGroup.add(boardFrame);
+
+            const { canvas: cbCanvas, tex: cbTex } = createChalkboardTexture();
+            animatedObjects.chalkboardCanvas = cbCanvas;
+            animatedObjects.chalkboardTexture = cbTex;
+
+            const boardSurface = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.96, 1.66),
+                new THREE.MeshStandardMaterial({ map: cbTex, roughness: 0.85 })
+            );
+            boardSurface.position.set(0, 2.55, -5.20);
+            boardSurface.userData = { isChalkboard: true };
+            environmentGroup.add(boardSurface);
+
+            // Tahta Üstünde "🎨 Çiz" Etkileşimli Buton Etiketi
+            const drawWrap = document.createElement('div');
+            const drawBtn = document.createElement('button');
+            drawBtn.type = 'button';
+            drawBtn.className = 'board-draw-badge';
+            drawBtn.textContent = '🎨 Çiz';
+            drawBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openChalkboardModal();
+            });
+            drawWrap.appendChild(drawBtn);
+            const boardLabel = new THREE.CSS2DObject(drawWrap);
+            boardLabel.position.set(0, 3.62, -5.18);
+            environmentGroup.add(boardLabel);
+            animatedObjects.chalkboardLabelObj = boardLabel;
+
+            if (state.chalkboardDataUrl) {
+                applyChalkboardDataUrl(state.chalkboardDataUrl);
+            }
+
+            // Kitaplıklar
+            [-3.5, 3.5].forEach((bx) => {
+                const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.4, 0.45), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+                shelf.position.set(bx, 1.7, -5.15);
+                environmentGroup.add(shelf);
+                const bookColors = [0xdc2626, 0x2563eb, 0x16a34a, 0xd97706, 0x9333ea];
+                for (let row = 0; row < 3; row++) {
+                    for (let b = 0; b < 5; b++) {
+                        const book = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.24, 0.55, 0.3),
+                            new THREE.MeshStandardMaterial({ color: bookColors[(row + b) % bookColors.length] })
+                        );
+                        book.position.set(bx - 0.7 + b * 0.35, 0.85 + row * 0.95, -5.0);
+                        environmentGroup.add(book);
+                    }
                 }
             });
-            wallTex.repeat.set(6, 3);
-            const backWall = new THREE.Mesh(
-                new THREE.BoxGeometry(12, 5, 0.3),
-                new THREE.MeshStandardMaterial({ map: wallTex })
-            );
-            backWall.position.set(0, 2.5, -4);
-            roomGroup.add(backWall);
 
-            // Sıcak Gün Batımı Penceresi
-            const winFrame = new THREE.Mesh(
-                new THREE.BoxGeometry(3.2, 2.2, 0.36),
-                new THREE.MeshStandardMaterial({ color: 0x1e130c })
-            );
-            winFrame.position.set(0, 2.4, -3.96);
-            roomGroup.add(winFrame);
-
-            const winGlass = new THREE.Mesh(
-                new THREE.PlaneGeometry(2.9, 1.9),
-                new THREE.MeshBasicMaterial({ color: 0xfdba74 })
-            );
-            winGlass.position.set(0, 2.4, -3.77);
-            roomGroup.add(winGlass);
-
-            // 2 Kişilik Yuvarlak Ahşap Kafe Masası
-            const tableTop = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.85, 0.85, 0.08, 16),
-                new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.6 })
-            );
+            // 2 Kişilik Kafe Masası
+            const tableTop = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.1, 1.15), new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.7 }));
             tableTop.position.set(0, 0.78, 0);
             tableTop.castShadow = true;
             tableTop.receiveShadow = true;
-            roomGroup.add(tableTop);
+            tableGroup.add(tableTop);
 
-            const tableLeg = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.1, 0.14, 0.78, 10),
-                new THREE.MeshStandardMaterial({ color: 0x292524 })
-            );
-            tableLeg.position.set(0, 0.39, 0);
-            roomGroup.add(tableLeg);
+            const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.75, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+            tableLeg.position.set(0, 0.38, 0);
+            tableGroup.add(tableLeg);
 
-            // Masa Üstü Mum / Sıcak Işık
-            const warmLamp = new THREE.PointLight(0xffb74d, 1.2, 6);
-            warmLamp.position.set(0, 2.2, 0);
-            roomGroup.add(warmLamp);
+            const tableBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.06, 0.7), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+            tableBase.position.set(0, 0.03, 0);
+            tableGroup.add(tableBase);
 
-            // 2 Sandalye (Karşılıklı)
-            createSeat(0, -1.25, 0, Math.PI, 'chair');
-            createSeat(1, 1.25, 0, 0, 'chair');
+            const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.14, 8), new THREE.MeshStandardMaterial({ color: 0xfef3c7, emissive: 0xf59e0b, emissiveIntensity: 0.5 }));
+            candle.position.set(0, 0.9, 0);
+            tableGroup.add(candle);
+
+            const warmLamp = new THREE.PointLight(0xfbbf24, 1.35, 9);
+            warmLamp.position.set(0, 2.8, 0);
+            environmentGroup.add(warmLamp);
         }
 
         function buildCampfireScene() {
-            // Orman Çimen Zemini
-            const grassTex = createPixelTexture((ctx, w, h) => {
-                ctx.fillStyle = '#14331d';
-                ctx.fillRect(0, 0, w, h);
-                ctx.fillStyle = '#1e462a';
-                ctx.fillRect(4, 6, 3, 2);
-                ctx.fillRect(20, 18, 3, 2);
-                ctx.fillStyle = '#fbbf24';
-                ctx.fillRect(12, 24, 1, 1);
-            });
-            grassTex.repeat.set(10, 10);
-            const ground = new THREE.Mesh(
-                new THREE.PlaneGeometry(20, 20),
-                new THREE.MeshStandardMaterial({ map: grassTex, roughness: 0.95 })
-            );
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshStandardMaterial({ color: 0x14261c, roughness: 1 }));
             ground.rotation.x = -Math.PI / 2;
             ground.receiveShadow = true;
-            roomGroup.add(ground);
+            environmentGroup.add(ground);
 
-            // Kamp Ateşi Taş Çemberi
-            for (let i = 0; i < 10; i++) {
-                const angle = (i / 10) * Math.PI * 2;
-                const stone = new THREE.Mesh(
-                    new THREE.DodecahedronGeometry(0.14, 0),
-                    new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 })
-                );
-                stone.position.set(Math.cos(angle) * 0.65, 0.08, Math.sin(angle) * 0.65);
-                roomGroup.add(stone);
+            const starGeo = new THREE.BufferGeometry();
+            const starVerts = [];
+            for (let i = 0; i < 180; i++) {
+                starVerts.push((Math.random() - 0.5) * 40, 5 + Math.random() * 14, -8 - Math.random() * 18);
             }
+            starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVerts, 3));
+            const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xfef08a, size: 0.15 }));
+            environmentGroup.add(stars);
 
-            // Odunlar ve Ateş Alevi
-            const log1 = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.07, 0.07, 0.9, 6),
-                new THREE.MeshStandardMaterial({ color: 0x451a03 })
-            );
-            log1.position.set(0, 0.1, 0);
-            log1.rotation.set(0, 0.5, Math.PI / 2.2);
-            roomGroup.add(log1);
+            const treeCoords = [[-4.5, -4], [4.5, -4], [-5.5, 1], [5.5, 1], [-2.5, -6], [2.8, -6.2]];
+            treeCoords.forEach(([tx, tz]) => {
+                const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+                trunk.position.set(tx, 0.7, tz);
+                environmentGroup.add(trunk);
 
-            const fireGroup = new THREE.Group();
-            const outerFlame = new THREE.Mesh(
-                new THREE.ConeGeometry(0.32, 0.75, 6),
-                new THREE.MeshBasicMaterial({ color: 0xf97316 })
-            );
-            outerFlame.position.y = 0.42;
-            const innerFlame = new THREE.Mesh(
-                new THREE.ConeGeometry(0.18, 0.48, 6),
-                new THREE.MeshBasicMaterial({ color: 0xfef08a })
-            );
-            innerFlame.position.y = 0.32;
-            fireGroup.add(outerFlame, innerFlame);
-            fireGroup.userData.isFire = true;
-            roomGroup.add(fireGroup);
-            state.interactiveProps.push(fireGroup);
-
-            const fireLight = new THREE.PointLight(0xff7b00, 1.8, 8);
-            fireLight.position.set(0, 0.9, 0);
-            fireLight.userData.isFireLight = true;
-            roomGroup.add(fireLight);
-
-            // Çevre Çam Ağaçları
-            const treePositions = [[-3.5, -3.2], [3.6, -3.0], [-4.2, 1.5], [4.0, 1.8], [0, -4.5]];
-            treePositions.forEach(([tx, tz]) => {
-                const tree = new THREE.Group();
-                const trunk = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.15, 0.2, 1.1, 6),
-                    new THREE.MeshStandardMaterial({ color: 0x3e2723 })
-                );
-                trunk.position.y = 0.55;
-                tree.add(trunk);
-
-                for (let layer = 0; layer < 3; layer++) {
-                    const cone = new THREE.Mesh(
-                        new THREE.ConeGeometry(1.1 - layer * 0.25, 1.3, 6),
-                        new THREE.MeshStandardMaterial({ color: layer % 2 === 0 ? 0x14532d : 0x166534 })
+                for (let tier = 0; tier < 3; tier++) {
+                    const leaves = new THREE.Mesh(
+                        new THREE.ConeGeometry(1.3 - tier * 0.28, 1.3, 6),
+                        new THREE.MeshStandardMaterial({ color: 0x064e3b })
                     );
-                    cone.position.y = 1.4 + layer * 0.75;
-                    tree.add(cone);
+                    leaves.position.set(tx, 1.8 + tier * 0.85, tz);
+                    environmentGroup.add(leaves);
                 }
-                tree.position.set(tx, 0, tz);
-                roomGroup.add(tree);
             });
 
-            // 2 Kamp Sandalyesi (Ateşin iki yanında)
-            createSeat(0, -1.45, 0.15, Math.PI * 0.85, 'camp');
-            createSeat(1, 1.45, 0.15, -Math.PI * 0.85, 'camp');
+            const stoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 });
+            for (let i = 0; i < 10; i++) {
+                const angle = (i / 10) * Math.PI * 2;
+                const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16, 0), stoneMat);
+                stone.position.set(Math.cos(angle) * 0.65, 0.1, Math.sin(angle) * 0.65);
+                tableGroup.add(stone);
+            }
+
+            const flameColors = [0xf97316, 0xfacc15, 0xef4444];
+            for (let i = 0; i < 4; i++) {
+                const flame = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.24, 0.55, 0.24),
+                    new THREE.MeshBasicMaterial({ color: flameColors[i % flameColors.length] })
+                );
+                flame.position.set((Math.random() - 0.5) * 0.2, 0.35, (Math.random() - 0.5) * 0.2);
+                tableGroup.add(flame);
+                animatedObjects.flames.push(flame);
+            }
+
+            const fireLight = new THREE.PointLight(0xf97316, 1.8, 10);
+            fireLight.position.set(0, 1.1, 0);
+            environmentGroup.add(fireLight);
+            animatedObjects.fireLight = fireLight;
         }
 
         function buildBeachScene() {
-            // Üsküdar Sahil Kaldırımı
-            const stoneTex = createPixelTexture((ctx, w, h) => {
-                ctx.fillStyle = '#334155';
-                ctx.fillRect(0, 0, w, h);
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(0, 15, w, 1);
-                ctx.fillRect(15, 0, 1, w);
-            });
-            stoneTex.repeat.set(8, 4);
-            const promenade = new THREE.Mesh(
-                new THREE.BoxGeometry(16, 0.3, 6),
-                new THREE.MeshStandardMaterial({ map: stoneTex })
-            );
-            promenade.position.set(0, -0.15, 1.5);
-            roomGroup.add(promenade);
+            const sand = new THREE.Mesh(new THREE.PlaneGeometry(24, 12), new THREE.MeshStandardMaterial({ color: 0xd6b88d, roughness: 0.95 }));
+            sand.rotation.x = -Math.PI / 2;
+            sand.position.z = 2;
+            sand.receiveShadow = true;
+            environmentGroup.add(sand);
 
-            // Boğaz Denizi
-            const sea = new THREE.Mesh(
-                new THREE.PlaneGeometry(30, 18),
-                new THREE.MeshStandardMaterial({ color: 0x0c4a6e, roughness: 0.35 })
-            );
+            const sea = new THREE.Mesh(new THREE.PlaneGeometry(36, 20), new THREE.MeshStandardMaterial({ color: 0x0369a1, roughness: 0.35 }));
             sea.rotation.x = -Math.PI / 2;
-            sea.position.set(0, -0.25, -9);
-            roomGroup.add(sea);
+            sea.position.set(0, -0.04, -10);
+            environmentGroup.add(sea);
 
-            // Sahil Korkuluğu
-            for (let x = -5; x <= 5; x += 1.25) {
-                const post = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.04, 0.04, 0.85, 6),
-                    new THREE.MeshStandardMaterial({ color: 0x0f172a })
-                );
-                post.position.set(x, 0.42, -1.35);
-                roomGroup.add(post);
+            for (let w = 0; w < 4; w++) {
+                const wave = new THREE.Mesh(new THREE.BoxGeometry(18, 0.03, 0.18), new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.55 }));
+                wave.position.set(0, 0.01, -3.8 - w * 1.4);
+                environmentGroup.add(wave);
+                animatedObjects.seaWaves.push(wave);
             }
-            const rail = new THREE.Mesh(
-                new THREE.BoxGeometry(11, 0.06, 0.06),
-                new THREE.MeshStandardMaterial({ color: 0x0f172a })
-            );
-            rail.position.set(0, 0.82, -1.35);
-            roomGroup.add(rail);
 
-            // Karşıda Kız Kulesi Silüeti ve Işıkları
-            const towerGroup = new THREE.Group();
-            const island = new THREE.Mesh(
-                new THREE.BoxGeometry(3.2, 0.35, 1.6),
-                new THREE.MeshStandardMaterial({ color: 0x475569 })
-            );
-            towerGroup.add(island);
+            // Uzakta Kız Kulesi Silüeti
+            const towerBase = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 1.4), new THREE.MeshStandardMaterial({ color: 0x94a3b8 }));
+            towerBase.position.set(0, 0.2, -13);
+            environmentGroup.add(towerBase);
 
-            const body = new THREE.Mesh(
-                new THREE.BoxGeometry(1.4, 1.3, 1.1),
-                new THREE.MeshStandardMaterial({ color: 0xf8fafc })
-            );
-            body.position.y = 0.8;
-            towerGroup.add(body);
+            const towerBody = new THREE.Mesh(new THREE.BoxGeometry(0.75, 1.9, 0.75), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+            towerBody.position.set(0, 1.35, -13);
+            environmentGroup.add(towerBody);
 
-            const spire = new THREE.Mesh(
-                new THREE.BoxGeometry(0.55, 1.5, 0.55),
-                new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
-            );
-            spire.position.y = 1.9;
-            towerGroup.add(spire);
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.85, 6), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
+            roof.position.set(0, 2.7, -13);
+            environmentGroup.add(roof);
 
-            const roof = new THREE.Mesh(
-                new THREE.ConeGeometry(0.45, 0.85, 4),
-                new THREE.MeshStandardMaterial({ color: 0x991b1b })
-            );
-            roof.position.y = 3.05;
-            roof.rotation.y = Math.PI / 4;
-            towerGroup.add(roof);
+            // Ortak Ahşap Sahil Bankı (4 Ayaklı)
+            const benchWoodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.8 });
+            const benchIronMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
 
-            const towerLight = new THREE.PointLight(0xfde68a, 1.4, 8);
-            towerLight.position.set(0, 2.5, 0.8);
-            towerGroup.add(towerLight);
+            const benchSeat = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.1, 0.72), benchWoodMat);
+            benchSeat.position.set(0, 0.48, 0);
+            benchSeat.castShadow = true;
+            tableGroup.add(benchSeat);
 
-            towerGroup.position.set(0.3, -0.1, -11.5);
-            roomGroup.add(towerGroup);
+            const benchBack = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.56, 0.09), benchWoodMat);
+            benchBack.position.set(0, 0.82, -0.32);
+            benchBack.castShadow = true;
+            tableGroup.add(benchBack);
 
-            // 2 Kişilik Sahil Bankı (Manzaraya Dönük - Ayaklı)
-            const benchSeat = new THREE.Mesh(
-                new THREE.BoxGeometry(2.3, 0.08, 0.65),
-                new THREE.MeshStandardMaterial({ color: 0x92400e })
-            );
-            benchSeat.position.set(0, 0.48, 0.4);
-            roomGroup.add(benchSeat);
-
-            const benchBack = new THREE.Mesh(
-                new THREE.BoxGeometry(2.3, 0.55, 0.08),
-                new THREE.MeshStandardMaterial({ color: 0x78350f })
-            );
-            benchBack.position.set(0, 0.78, 0.7);
-            roomGroup.add(benchBack);
-
-            // Bankın 4 Döküm Ayağı
-            const benchLegPositions = [
-                [-1.02, 0.14], [1.02, 0.14],
-                [-1.02, 0.66], [1.02, 0.66]
-            ];
-            benchLegPositions.forEach(([lx, lz]) => {
-                const leg = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.08, 0.48, 0.08),
-                    new THREE.MeshStandardMaterial({ color: 0x1e293b })
-                );
-                leg.position.set(lx, 0.24, lz);
-                roomGroup.add(leg);
+            [[-1.25, 0.24, -0.26], [1.25, 0.24, -0.26], [-1.25, 0.24, 0.26], [1.25, 0.24, 0.26]].forEach(([bx, by, bz]) => {
+                const bLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.48, 0.1), benchIronMat);
+                bLeg.position.set(bx, by, bz);
+                tableGroup.add(bLeg);
             });
-
-            // Bankın Sol ve Sağ Oturma Noktaları
-            createSeat(0, -0.58, 0.35, 0, 'bench');
-            createSeat(1, 0.58, 0.35, 0, 'bench');
         }
 
         function buildClubScene() {
-            // Neon Işıklı Gece Kulübü Zemini
-            const clubFloorTex = createPixelTexture((ctx, w, h) => {
-                ctx.fillStyle = '#0f0722';
-                ctx.fillRect(0, 0, w, h);
-                ctx.fillStyle = '#3b0764';
-                ctx.fillRect(0, 0, w, 1);
-                ctx.fillRect(0, 0, 1, h);
-                ctx.fillStyle = '#ec4899';
-                ctx.fillRect(15, 15, 2, 2);
+            const floorTex = createPixelTexture(16, 16, (ctx) => {
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, 16, 16);
+                ctx.fillStyle = '#1e1b4b';
+                ctx.fillRect(1, 1, 6, 6);
+                ctx.fillRect(9, 9, 6, 6);
+                ctx.fillStyle = '#312e81';
+                ctx.fillRect(9, 1, 6, 6);
+                ctx.fillRect(1, 9, 6, 6);
             });
-            clubFloorTex.repeat.set(10, 10);
-            const floor = new THREE.Mesh(
-                new THREE.PlaneGeometry(16, 16),
-                new THREE.MeshStandardMaterial({ map: clubFloorTex, roughness: 0.3 })
-            );
+            floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+            floorTex.repeat.set(10, 10);
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(18, 18), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.4 }));
             floor.rotation.x = -Math.PI / 2;
-            roomGroup.add(floor);
+            floor.receiveShadow = true;
+            environmentGroup.add(floor);
 
-            // DJ Kabini ve Neon Ekran
-            const djBooth = new THREE.Mesh(
-                new THREE.BoxGeometry(3.4, 1.1, 0.9),
-                new THREE.MeshStandardMaterial({ color: 0x1e1b4b })
-            );
-            djBooth.position.set(0, 0.55, -3.6);
-            roomGroup.add(djBooth);
+            // DJ Kabini & Ekolayzer Barları
+            const djBooth = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.1, 0.9), new THREE.MeshStandardMaterial({ color: 0x1e1b4b }));
+            djBooth.position.set(0, 0.55, -4.6);
+            environmentGroup.add(djBooth);
 
-            const neonScreen = new THREE.Mesh(
-                new THREE.BoxGeometry(3.2, 0.25, 0.94),
-                new THREE.MeshBasicMaterial({ color: 0xec4899 })
-            );
-            neonScreen.position.set(0, 0.9, -3.6);
-            roomGroup.add(neonScreen);
+            const eqColors = [0xec4899, 0x8b5cf6, 0x06b6d4, 0x10b981, 0xf59e0b];
+            for (let i = 0; i < 9; i++) {
+                const bar = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.28, 1.2, 0.14),
+                    new THREE.MeshBasicMaterial({ color: eqColors[i % eqColors.length] })
+                );
+                bar.position.set(-1.4 + i * 0.35, 1.7, -4.7);
+                environmentGroup.add(bar);
+                animatedObjects.clubEqualizer.push(bar);
+            }
 
-            // Kulüp Neon Spot Işıkları
-            const pinkLight = new THREE.PointLight(0xec4899, 1.8, 9);
-            pinkLight.position.set(-2.5, 3.0, -1.5);
-            pinkLight.userData.isClubLight = true;
-            roomGroup.add(pinkLight);
+            // Neon Spot Işıkları
+            [0xec4899, 0x06b6d4, 0xa855f7].forEach((col, idx) => {
+                const light = new THREE.PointLight(col, 1.5, 11);
+                light.position.set(-2.5 + idx * 2.5, 3.2, -1);
+                environmentGroup.add(light);
+                animatedObjects.clubLights.push(light);
+            });
 
-            const cyanLight = new THREE.PointLight(0x06b6d4, 1.8, 9);
-            cyanLight.position.set(2.5, 3.0, -1.5);
-            cyanLight.userData.isClubLight = true;
-            roomGroup.add(cyanLight);
+            // VIP Kokteyl Masası
+            const cocktailTop = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x1e1b4b, emissive: 0x4c1d95, emissiveIntensity: 0.4 }));
+            cocktailTop.position.set(0, 0.78, 0);
+            tableGroup.add(cocktailTop);
 
-            // VIP Loca Cam Masa
-            const vipTable = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.75, 0.75, 0.08, 16),
-                new THREE.MeshStandardMaterial({ color: 0x1e1b4b, emissive: 0x3b0764, emissiveIntensity: 0.5 })
-            );
-            vipTable.position.set(0, 0.72, 0);
-            roomGroup.add(vipTable);
+            const cocktailLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.76, 10), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            cocktailLeg.position.set(0, 0.38, 0);
+            tableGroup.add(cocktailLeg);
+        }
 
-            const vipBase = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.12, 0.25, 0.72, 8),
-                new THREE.MeshStandardMaterial({ color: 0x090514 })
-            );
-            vipBase.position.set(0, 0.36, 0);
-            roomGroup.add(vipBase);
+        function createTreatMesh(item) {
+            const group = new THREE.Group();
+            if (item.type === 'drink') {
+                const cup = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.07, 0.055, 0.16, 10),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 })
+                );
+                cup.position.y = 0.08;
+                group.add(cup);
 
-            createSeat(0, -1.2, 0, Math.PI, 'vip');
-            createSeat(1, 1.2, 0, 0, 'vip');
+                const liquid = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.062, 0.062, 0.02, 10),
+                    new THREE.MeshStandardMaterial({ color: item.color })
+                );
+                liquid.position.y = 0.155;
+                group.add(liquid);
+            } else {
+                const plate = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.13, 0.1, 0.025, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xf1f5f9 })
+                );
+                plate.position.y = 0.015;
+                group.add(plate);
+
+                const food = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.12, 0.09, 0.12),
+                    new THREE.MeshStandardMaterial({ color: item.color })
+                );
+                food.position.y = 0.065;
+                group.add(food);
+            }
+            return group;
+        }
+
+        function renderTreatsOnTable() {
+            clearGroup(treatsGroup);
+            const tableY = state.theme === 'beach' ? 0.54 : 0.84;
+            const seatOffsets = [
+                { x: -0.34, z: 0.14 },
+                { x: 0.34, z: -0.14 }
+            ];
+
+            state.heldItems.forEach((item, idx) => {
+                if (!item || item.remaining <= 0) return;
+                const mesh = createTreatMesh(item);
+                const scale = 0.55 + (item.remaining / item.maxBites) * 0.45;
+                mesh.scale.set(scale, scale, scale);
+                mesh.position.set(seatOffsets[idx].x, tableY, seatOffsets[idx].z);
+                treatsGroup.add(mesh);
+            });
+        }
+
+        function buildSceneForTheme(themeId) {
+            state.theme = themeId;
+            const t = THEMES[themeId] || THEMES.cafe;
+
+            scene.background = new THREE.Color(t.skyColor);
+            scene.fog = new THREE.FogExp2(t.fogColor, 0.042);
+            ambientLight.color = new THREE.Color(t.ambientLight);
+
+            clearGroup(environmentGroup);
+            clearGroup(tableGroup);
+            animatedObjects.fireLight = null;
+            animatedObjects.flames = [];
+            animatedObjects.clubLights = [];
+            animatedObjects.clubEqualizer = [];
+            animatedObjects.seaWaves = [];
+            animatedObjects.lanterns = [];
+            animatedObjects.chalkboardCanvas = null;
+            animatedObjects.chalkboardTexture = null;
+            animatedObjects.chalkboardLabelObj = null;
+
+            if (themeId === 'cafe') buildCafeScene();
+            else if (themeId === 'campfire') buildCampfireScene();
+            else if (themeId === 'beach') buildBeachScene();
+            else if (themeId === 'club') buildClubScene();
+
+            if (themeId !== 'beach') {
+                const chairColors = {
+                    cafe: [0x78350f, 0xb45309],
+                    campfire: [0x5c2d16, 0x92400e],
+                    club: [0x1e1b4b, 0xec4899]
+                };
+                const [woodCol, cushCol] = chairColors[themeId] || chairColors.cafe;
+                SEAT_CONFIGS.forEach((cfg) => {
+                    const chair = buildChairMesh(woodCol, cushCol);
+                    chair.position.set(cfg.x, 0, cfg.z);
+                    chair.rotation.y = cfg.rotY;
+                    tableGroup.add(chair);
+                });
+            }
+
+            document.getElementById('room-theme-icon').textContent = t.icon;
+            document.getElementById('hud-theme-name').textContent = `${t.name} • 2 Kişilik Masa`;
+
+            const danceBtn = document.getElementById('btn-dance-invite');
+            if (themeId === 'club' && state.mySeatIndex !== -1) {
+                danceBtn.classList.remove('hidden');
+            } else {
+                danceBtn.classList.add('hidden');
+                document.getElementById('dance-invite-banner').classList.add('hidden');
+            }
+
+            renderTreatsOnTable();
+            renderAvatars();
         }
 
         // ==========================================
-        // 5. SANDALYE, AVATAR VE KONUŞMA BALONU SİSTEMİ
+        // 5. AVATARLAR, KONUŞMA BALONLARI VE ETİKETLER
         // ==========================================
-        function createSeat(index, x, z, rotY, styleType) {
-            const seatGroup = new THREE.Group();
-            seatGroup.position.set(x, 0, z);
-            seatGroup.rotation.y = rotY;
+        const avatarObjects = [null, null];
 
-            // Sandalye 3D Modeli (4 Ayaklı + Oturak + Sırtlık)
-            const chairMesh = new THREE.Group();
-            if (styleType !== 'bench') {
-                const seatColor = styleType === 'vip' ? 0x701a75 : (styleType === 'camp' ? 0x1e3a8a : 0x5c2d16);
-                const legColor = styleType === 'vip' ? 0x1e1b4b : (styleType === 'camp' ? 0x334155 : 0x29150b);
+        function renderAvatars() {
+            clearGroup(avatarsGroup);
+            avatarObjects[0] = null;
+            avatarObjects[1] = null;
 
-                // Oturak Minderi / Tablası
-                const base = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.56, 0.08, 0.56),
-                    new THREE.MeshStandardMaterial({ color: seatColor })
-                );
-                base.position.y = 0.45;
-                base.castShadow = true;
-                base.receiveShadow = true;
-                chairMesh.add(base);
+            SEAT_CONFIGS.forEach((cfg, idx) => {
+                const occupant = state.seats[idx];
+                const posX = state.theme === 'beach' ? (idx === 0 ? -0.68 : 0.68) : cfg.x;
+                const posZ = state.theme === 'beach' ? 0.06 : cfg.z;
 
-                // 4 Sandalye Ayağı
-                const legOffsets = [
-                    [-0.22, -0.22], [0.22, -0.22],
-                    [-0.22, 0.22],  [0.22, 0.22]
-                ];
-                legOffsets.forEach(([lx, lz]) => {
-                    const leg = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.06, 0.45, 0.06),
-                        new THREE.MeshStandardMaterial({ color: legColor })
-                    );
-                    leg.position.set(lx, 0.225, lz);
-                    leg.castShadow = true;
-                    chairMesh.add(leg);
-                });
+                if (occupant) {
+                    const tex = createCharacterTexture(occupant.gender, occupant.profileIndex, false, false);
+                    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+                    const sprite = new THREE.Sprite(mat);
+                    sprite.scale.set(1.22, 1.82, 1);
+                    sprite.position.set(posX, 1.08, posZ);
+                    avatarsGroup.add(sprite);
 
-                // Sırtlık
-                const back = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.56, 0.54, 0.07),
-                    new THREE.MeshStandardMaterial({ color: seatColor })
-                );
-                back.position.set(0, 0.74, -0.24);
-                back.castShadow = true;
-                chairMesh.add(back);
-            }
-            seatGroup.add(chairMesh);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'seat-label-wrapper';
 
-            // Boş Sandalye Üzerinde Süzülen 3D Yeşil Ok
-            const arrowMesh = new THREE.Mesh(
-                new THREE.ConeGeometry(0.14, 0.3, 4),
-                new THREE.MeshBasicMaterial({ color: 0x10b981 })
-            );
-            arrowMesh.position.set(0, 1.25, 0);
-            arrowMesh.rotation.x = Math.PI;
-            seatGroup.add(arrowMesh);
+                    const bubbleEl = document.createElement('div');
+                    bubbleEl.className = 'speech-bubble hidden';
+                    wrapper.appendChild(bubbleEl);
 
-            // Oturan Pixel-Art Avatar Sprite (Kalçası sandalye oturağının y=0.49 hizasında)
-            const avatarMat = new THREE.SpriteMaterial({ transparent: true });
-            const avatarSprite = new THREE.Sprite(avatarMat);
-            avatarSprite.scale.set(1.02, 1.36, 1);
-            avatarSprite.position.set(0, 0.90, 0.06);
-            avatarSprite.visible = false;
-            seatGroup.add(avatarSprite);
+                    const badgeEl = document.createElement('div');
+                    badgeEl.className = 'name-badge' + (occupant.isMe ? ' me' : '');
+                    badgeEl.textContent = occupant.name;
+                    wrapper.appendChild(badgeEl);
 
-            // CSS2D İsim Etiketi + Konuşma Balonu Konteyneri
-            const wrapperEl = document.createElement('div');
-            wrapperEl.className = 'seat-label-wrapper';
+                    const labelObj = new THREE.CSS2DObject(wrapper);
+                    labelObj.position.set(posX, 2.22, posZ);
+                    avatarsGroup.add(labelObj);
 
-            const bubbleEl = document.createElement('div');
-            bubbleEl.className = 'speech-bubble hidden';
-            wrapperEl.appendChild(bubbleEl);
+                    avatarObjects[idx] = {
+                        sprite,
+                        baseX: posX,
+                        baseY: 1.08,
+                        baseZ: posZ,
+                        bubbleEl,
+                        bubbleTimeout: null,
+                        occupant
+                    };
+                } else {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'seat-label-wrapper';
 
-            const badgeEl = document.createElement('div');
-            badgeEl.className = 'sit-prompt-badge';
-            badgeEl.textContent = '🪑 Otur';
-            badgeEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (!seatObj.occupant) sitAtSeat(index);
+                    const sitBtn = document.createElement('button');
+                    sitBtn.type = 'button';
+                    sitBtn.className = 'sit-prompt-badge';
+                    sitBtn.textContent = state.mySeatIndex === -1 ? '🪑 Buraya Otur' : '⏳ Partner Bekleniyor...';
+                    sitBtn.addEventListener('click', () => {
+                        if (state.mySeatIndex === -1) sitAtSeat(idx);
+                    });
+                    wrapper.appendChild(sitBtn);
+
+                    const labelObj = new THREE.CSS2DObject(wrapper);
+                    labelObj.position.set(posX, 1.35, posZ);
+                    avatarsGroup.add(labelObj);
+                }
             });
-            wrapperEl.appendChild(badgeEl);
+        }
 
-            const labelObj = new THREE.CSS2DObject(wrapperEl);
-            labelObj.position.set(0, 1.72, 0.06);
-            seatGroup.add(labelObj);
+        function showSpeechBubble(seatIdx, text, isTyping = false) {
+            const av = avatarObjects[seatIdx];
+            if (!av || !av.bubbleEl) return;
+            if (av.bubbleTimeout) clearTimeout(av.bubbleTimeout);
 
-            seatsGroup.add(seatGroup);
+            av.bubbleEl.textContent = text;
+            av.bubbleEl.classList.remove('hidden', 'typing');
+            if (isTyping) av.bubbleEl.classList.add('typing');
 
-            const seatObj = {
-                index,
-                group: seatGroup,
-                chairMesh,
-                arrowMesh,
-                avatarSprite,
-                labelObj,
-                bubbleEl,
-                badgeEl,
-                occupant: null,
-                bubbleTimeout: null,
-                eatAnimTime: 0
+            if (!isTyping) {
+                av.bubbleTimeout = setTimeout(() => {
+                    if (av.bubbleEl) av.bubbleEl.classList.add('hidden');
+                }, 6500);
+            }
+        }
+
+        function sitAtSeat(seatIdx) {
+            if (state.seats[seatIdx]) return;
+            state.mySeatIndex = seatIdx;
+            state.seats[seatIdx] = {
+                id: CLIENT_ID,
+                name: state.playerName,
+                gender: state.gender,
+                profileIndex: state.profileIndex,
+                isMe: true
             };
 
-            state.seats.push(seatObj);
-            return seatObj;
-        }
-
-        function assignSeatOccupant(seatIndex, occupantData) {
-            const seat = state.seats[seatIndex];
-            if (!seat) return;
-
-            seat.occupant = occupantData;
-            if (occupantData) {
-                seat.avatarSprite.material.map = createPixelAvatarTexture(occupantData.profile);
-                seat.avatarSprite.material.needsUpdate = true;
-                seat.avatarSprite.visible = true;
-                seat.arrowMesh.visible = false;
-
-                seat.badgeEl.className = occupantData.isMe ? 'name-badge me' : 'name-badge';
-                seat.badgeEl.textContent = occupantData.isMe
-                    ? `${occupantData.name} (Sen)`
-                    : `${occupantData.name} • ${occupantData.profile.style}`;
-            } else {
-                seat.avatarSprite.visible = false;
-                seat.arrowMesh.visible = true;
-                seat.bubbleEl.classList.add('hidden');
-                seat.badgeEl.className = 'sit-prompt-badge';
-                seat.badgeEl.textContent = '🪑 Otur';
-            }
-        }
-
-        function sitAtSeat(seatIndex) {
-            if (state.mySeatIndex === seatIndex) return;
-            if (state.mySeatIndex !== -1) {
-                assignSeatOccupant(state.mySeatIndex, null);
-            }
-
-            state.mySeatIndex = seatIndex;
-            assignSeatOccupant(seatIndex, {
-                name: state.playerName,
-                isMe: true,
-                profile: state.playerProfile
-            });
-
-            // 3. Şahıs Omuz Üstü / Çapraz Kamera Konumu
-            const mySeat = state.seats[seatIndex];
-            const seatPos = mySeat.group.position.clone();
-            const isBeach = state.currentTheme === 'beach';
-
-            if (isBeach) {
-                camera.position.set(seatPos.x - 0.9, 2.1, 2.8);
-                controls.target.set(0.1, 1.15, -1.5);
-            } else {
-                const signX = seatPos.x < 0 ? -1 : 1;
-                camera.position.set(seatPos.x + signX * 1.45, 2.35, 2.75);
-                controls.target.set(0, 1.15, 0);
-            }
-
             document.getElementById('btn-stand').classList.remove('hidden');
-            document.getElementById('btn-report-partner').classList.remove('hidden');
             document.getElementById('bottom-chat-bar').classList.remove('hidden');
+            if (state.theme === 'club') {
+                document.getElementById('btn-dance-invite').classList.remove('hidden');
+            }
+            renderAvatars();
         }
 
-        function standUp(returnToLobby = false, notifyRoom = true) {
-            if (notifyRoom && roomChannel && state.inRoom) {
+        function standUp(notifyRoom = true) {
+            if (notifyRoom && roomChannel) {
                 roomChannel.send({
                     type: 'broadcast',
-                    event: 'peer_left',
+                    event: 'player_left',
                     payload: { senderId: CLIENT_ID, name: state.playerName }
                 });
             }
-
             if (roomChannel && sbClient) {
                 sbClient.removeChannel(roomChannel);
                 roomChannel = null;
             }
 
-            if (state.mySeatIndex !== -1) {
-                assignSeatOccupant(state.mySeatIndex, null);
-                state.mySeatIndex = -1;
-            }
-            state.roomId = null;
-            state.partnerId = null;
-            state.partnerName = null;
-            state.recentMessages = [];
+            state.mySeatIndex = -1;
+            state.seats = [null, null];
+            state.heldItems = [null, null];
+            state.isDancing = false;
 
             document.getElementById('btn-stand').classList.add('hidden');
             document.getElementById('btn-report-partner').classList.add('hidden');
             document.getElementById('bottom-chat-bar').classList.add('hidden');
-            document.getElementById('order-drawer').classList.add('hidden');
-
-            if (returnToLobby) {
-                state.inRoom = false;
-                clearSceneObjects();
-                openLobbyModal(false);
-            }
+            document.getElementById('btn-dance-invite').classList.add('hidden');
+            document.getElementById('dance-invite-banner').classList.add('hidden');
+            updateConsumeButton();
+            renderTreatsOnTable();
+            renderAvatars();
         }
 
         // ==========================================
-        // 6. KONUŞMA BALONLARI VE GERÇEK ZAMANLI SOHBET
+        // 6. SOHBET, MENÜ, ORTAM DEĞİŞTİRME VE DANS
         // ==========================================
-        function showSpeechBubble(seatIndex, text, isTyping = false) {
-            const seat = state.seats[seatIndex];
-            if (!seat || !seat.occupant) return;
-
-            if (seat.bubbleTimeout) clearTimeout(seat.bubbleTimeout);
-
-            seat.bubbleEl.textContent = text;
-            seat.bubbleEl.classList.remove('hidden', 'typing');
-            if (isTyping) {
-                seat.bubbleEl.classList.add('typing');
-            } else {
-                seat.bubbleTimeout = setTimeout(() => {
-                    seat.bubbleEl.classList.add('hidden');
-                }, 6500);
-            }
-        }
-
         function appendChatMessage(senderName, text, isMe = false, isSystem = false) {
             const feed = document.getElementById('chat-feed');
             const row = document.createElement('div');
@@ -1468,7 +1487,16 @@
                 row.textContent = text;
             } else {
                 row.className = 'bg-slate-900/70 rounded px-2.5 py-1 border-l-2 ' + (isMe ? 'border-amber-500' : 'border-emerald-500');
-                row.innerHTML = `<span class="font-semibold ${isMe ? 'text-amber-300' : 'text-emerald-300'}">${escapeHtml(senderName)}:</span> <span class="text-slate-100">${escapeHtml(text)}</span>`;
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'font-semibold ' + (isMe ? 'text-amber-300' : 'text-emerald-300');
+                nameSpan.textContent = `${senderName}: `;
+
+                const msgSpan = document.createElement('span');
+                msgSpan.className = 'text-slate-100';
+                msgSpan.textContent = text;
+
+                row.appendChild(nameSpan);
+                row.appendChild(msgSpan);
                 state.recentMessages.push(`${senderName}: ${text}`);
                 if (state.recentMessages.length > 10) state.recentMessages.shift();
             }
@@ -1477,494 +1505,599 @@
         }
 
         function escapeHtml(str) {
-            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
-        // ==========================================
-        // 7. MEKANA ÖZEL MENÜ, ISMARLAMA VE YEME/İÇME
-        // ==========================================
-        function renderAdminStats() {
-            const onlineEl = document.getElementById('admin-stat-online');
-            const usersListEl = document.getElementById('admin-users-list');
-            const users = Object.values(onlineUsersMap);
-            const count = Math.max(1, users.length);
-
-            if (onlineEl) onlineEl.textContent = `${count} Kişi`;
-            if (usersListEl) {
-                if (!users.length) {
-                    usersListEl.innerHTML = '<div class="text-slate-500">Şu an aktif kullanıcı görünmüyor.</div>';
-                } else {
-                    usersListEl.innerHTML = users.map(u => `
-                        <div class="flex items-center justify-between bg-slate-950/70 px-2 py-1 rounded border border-slate-800/80">
-                            <span class="text-slate-200 font-medium">${escapeHtml(u.name || 'Misafir')}</span>
-                            <span class="text-[11px] text-amber-300">${escapeHtml(THEMES[u.theme]?.name || 'Lobi')} • ${escapeHtml(u.status || 'Aktif')}</span>
-                        </div>
-                    `).join('');
-                }
-            }
-        }
-
-        async function submitUserReport() {
-            const reason = document.getElementById('report-reason-select').value;
-            const note = document.getElementById('report-note-input').value.trim();
-            const fullReason = note ? `${reason} — ${note}` : reason;
-
-            const reportRecord = {
-                reporter_name: state.playerName || 'Misafir',
-                reported_name: state.partnerName || 'Bilinmeyen Kullanıcı',
-                reason: fullReason,
-                recent_chat: state.recentMessages.join(' | '),
-                created_at: new Date().toISOString()
-            };
-
-            const existing = JSON.parse(localStorage.getItem('oturbenimle_reports') || '[]');
-            existing.unshift(reportRecord);
-            localStorage.setItem('oturbenimle_reports', JSON.stringify(existing.slice(0, 50)));
-
-            if (sbClient) {
-                try {
-                    await sbClient.from('reports').insert([reportRecord]);
-                } catch (_) {}
-            }
-
-            document.getElementById('report-note-input').value = '';
-            document.getElementById('report-modal').classList.add('hidden');
-            standUp(true, true);
-        }
-
-        function createTreatMesh(item, xOffset) {
-            const group = new THREE.Group();
-            if (item.type === 'drink') {
-                const cup = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.065, 0.05, 0.14, 8),
-                    new THREE.MeshStandardMaterial({ color: item.color, roughness: 0.3 })
-                );
-                cup.position.y = 0.07;
-                group.add(cup);
-            } else {
-                const plate = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.11, 0.08, 0.025, 10),
-                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 })
-                );
-                plate.position.y = 0.0125;
-                const food = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.09, 0.06, 0.09),
-                    new THREE.MeshStandardMaterial({ color: item.color, roughness: 0.7 })
-                );
-                food.position.y = 0.05;
-                group.add(plate, food);
-            }
-            const baseY = state.currentTheme === 'beach' ? 0.52 : (state.currentTheme === 'campfire' ? 0.15 : 0.82);
-            group.position.set(xOffset, baseY, state.currentTheme === 'beach' ? 0.25 : 0);
-            roomGroup.add(group);
-            return group;
-        }
-
-        function renderOrderDrawer() {
-            const theme = THEMES[state.currentTheme];
+        function renderMenuDrawer() {
+            const t = THEMES[state.theme] || THEMES.cafe;
+            document.getElementById('order-drawer-title').textContent = `${t.icon} ${t.name.toUpperCase()} MENÜSÜ`;
             const grid = document.getElementById('order-items-grid');
-            const partnerSeat = state.seats[state.mySeatIndex === 0 ? 1 : 0];
-            const partnerName = partnerSeat?.occupant?.name || 'Arkadaşına';
-
-            document.getElementById('order-drawer-title').textContent = `${theme.icon} ${theme.name.toUpperCase()} MENÜSÜ`;
             grid.innerHTML = '';
 
-            theme.menu.forEach(item => {
+            const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
+            const hasPartner = Boolean(state.seats[partnerIdx]);
+
+            t.menu.forEach((item) => {
                 const card = document.createElement('div');
-                card.className = 'bg-slate-900 border border-slate-700 p-2 flex items-center justify-between gap-2';
-                card.innerHTML = `
-                    <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="text-base">${item.icon}</span>
-                        <span class="text-xs font-bold text-white truncate">${item.name}</span>
-                    </div>
-                    <div class="flex items-center gap-1 shrink-0">
-                        <button type="button" data-action="self" class="pixel-btn bg-amber-400 hover:bg-amber-300 text-slate-950 px-2 py-1 text-[10px] font-bold">Kendine</button>
-                        <button type="button" data-action="treat" class="pixel-btn bg-pink-500 hover:bg-pink-400 text-white px-2 py-1 text-[10px] font-bold">🎁 ${escapeHtml(partnerName)}</button>
-                    </div>
-                `;
+                card.className = 'bg-slate-900/90 border border-slate-800 rounded p-2 flex items-center justify-between gap-2';
 
-                card.querySelector('[data-action="self"]').addEventListener('click', () => {
-                    orderItemForMe(item);
+                const info = document.createElement('div');
+                info.className = 'flex items-center gap-1.5 min-w-0';
+                info.innerHTML = `<span class="text-base">${item.icon}</span><span class="text-xs font-medium text-slate-200 truncate">${escapeHtml(item.name)}</span>`;
+
+                const actions = document.createElement('div');
+                actions.className = 'flex items-center gap-1 shrink-0';
+
+                const selfBtn = document.createElement('button');
+                selfBtn.type = 'button';
+                selfBtn.className = 'pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-2 py-1 text-[11px] font-semibold';
+                selfBtn.textContent = 'Al';
+                selfBtn.addEventListener('click', () => {
+                    giveTreatToSeat(state.mySeatIndex, item);
                     document.getElementById('order-drawer').classList.add('hidden');
+                    if (roomChannel) {
+                        roomChannel.send({
+                            type: 'broadcast',
+                            event: 'treat_event',
+                            payload: { senderId: CLIENT_ID, target: 'self', itemId: item.id, senderName: state.playerName }
+                        });
+                    }
                 });
+                actions.appendChild(selfBtn);
 
-                card.querySelector('[data-action="treat"]').addEventListener('click', () => {
-                    treatPartnerItem(item);
-                    document.getElementById('order-drawer').classList.add('hidden');
-                });
+                if (hasPartner) {
+                    const giftBtn = document.createElement('button');
+                    giftBtn.type = 'button';
+                    giftBtn.className = 'pixel-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 text-[11px] font-semibold';
+                    giftBtn.textContent = 'İkram';
+                    giftBtn.addEventListener('click', () => {
+                        giveTreatToSeat(partnerIdx, item);
+                        document.getElementById('order-drawer').classList.add('hidden');
+                        showSpeechBubble(state.mySeatIndex, item.treatMsg, false);
+                        appendChatMessage(state.playerName, item.treatMsg, true);
+                        if (roomChannel) {
+                            roomChannel.send({
+                                type: 'broadcast',
+                                event: 'treat_event',
+                                payload: { senderId: CLIENT_ID, target: 'partner', itemId: item.id, senderName: state.playerName }
+                            });
+                        }
+                    });
+                    actions.appendChild(giftBtn);
+                }
 
+                card.appendChild(info);
+                card.appendChild(actions);
                 grid.appendChild(card);
             });
         }
 
-        function orderItemForMe(item) {
-            if (state.myTreat && state.myTreat.mesh) {
-                roomGroup.remove(state.myTreat.mesh);
-            }
-            const xOff = state.mySeatIndex === 0 ? -0.35 : 0.35;
-            const mesh = createTreatMesh(item, xOff);
-            state.myTreat = { item, remaining: item.maxUses, mesh };
-            updateConsumeButton();
-        }
-
-        function treatPartnerItem(item) {
-            const partnerSeatIndex = state.mySeatIndex === 0 ? 1 : 0;
-            const partnerSeat = state.seats[partnerSeatIndex];
-            if (!partnerSeat || !partnerSeat.occupant) return;
-
-            if (state.partnerTreat && state.partnerTreat.mesh) {
-                roomGroup.remove(state.partnerTreat.mesh);
-            }
-            const xOff = partnerSeatIndex === 0 ? -0.35 : 0.35;
-            const mesh = createTreatMesh(item, xOff);
-            state.partnerTreat = { item, mesh };
-
-            const partnerName = partnerSeat.occupant.name;
-            const msg = `${partnerName} sana ${item.name.toLowerCase()} ısmarlayayım dedim ${item.icon}`;
-            showSpeechBubble(state.mySeatIndex, msg, false);
-            appendChatMessage(`${state.playerName} (Sen)`, msg, true);
-
-            if (roomChannel) {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'treat_item',
-                    payload: { senderId: CLIENT_ID, item }
-                });
+        function giveTreatToSeat(seatIdx, item) {
+            if (seatIdx < 0 || seatIdx > 1) return;
+            state.heldItems[seatIdx] = {
+                ...item,
+                remaining: item.bites,
+                maxBites: item.bites
+            };
+            renderTreatsOnTable();
+            if (seatIdx === state.mySeatIndex) {
+                updateConsumeButton();
             }
         }
 
         function updateConsumeButton() {
             const btn = document.getElementById('btn-consume-item');
-            if (!state.myTreat || state.myTreat.remaining <= 0) {
+            const myItem = state.mySeatIndex !== -1 ? state.heldItems[state.mySeatIndex] : null;
+            if (!myItem || myItem.remaining <= 0) {
                 btn.classList.add('hidden');
                 return;
             }
-            const { item, remaining } = state.myTreat;
-            const verb = item.type === 'drink' ? 'Yudumla' : 'Ye';
-            document.getElementById('consume-icon').textContent = item.icon;
-            document.getElementById('consume-label').textContent = `${verb} (${remaining}/${item.maxUses})`;
             btn.classList.remove('hidden');
+            document.getElementById('consume-icon').textContent = myItem.icon;
+            document.getElementById('consume-label').textContent = `${myItem.actionText} (${myItem.remaining}/${myItem.maxBites})`;
         }
 
-        function consumeMyTreat() {
-            if (!state.myTreat || state.myTreat.remaining <= 0) return;
-            state.myTreat.remaining -= 1;
+        function consumeSeatItem(seatIdx) {
+            const item = state.heldItems[seatIdx];
+            if (!item || item.remaining <= 0) return;
 
-            // Karakterin sessizce eğilip yudumlama / yeme animasyonu
-            const mySeat = state.seats[state.mySeatIndex];
-            if (mySeat) mySeat.eatAnimTime = 0.55;
+            item.remaining -= 1;
+            const av = avatarObjects[seatIdx];
+            if (av && av.occupant) {
+                const eatTex = createCharacterTexture(av.occupant.gender, av.occupant.profileIndex, false, true);
+                av.sprite.material.map = eatTex;
+                av.sprite.material.needsUpdate = true;
+                setTimeout(() => {
+                    if (avatarObjects[seatIdx]) {
+                        const normTex = createCharacterTexture(av.occupant.gender, av.occupant.profileIndex, false, false);
+                        avatarObjects[seatIdx].sprite.material.map = normTex;
+                        avatarObjects[seatIdx].sprite.material.needsUpdate = true;
+                    }
+                }, 650);
+            }
 
-            if (roomChannel) {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'consume_anim',
-                    payload: { senderId: CLIENT_ID }
+            if (item.remaining <= 0) {
+                state.heldItems[seatIdx] = null;
+            }
+            renderTreatsOnTable();
+            if (seatIdx === state.mySeatIndex) {
+                updateConsumeButton();
+            }
+        }
+
+        function renderTeleportDrawer() {
+            const grid = document.getElementById('teleport-items-grid');
+            grid.innerHTML = '';
+
+            Object.values(THEMES).forEach((t) => {
+                if (t.id === state.theme) return;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'pixel-btn bg-slate-900 hover:bg-indigo-950/80 border border-slate-700 p-2 flex items-center gap-2 text-left';
+                btn.innerHTML = `<span class="text-lg">${t.icon}</span><div><div class="text-xs font-bold text-slate-100">${escapeHtml(t.name)}</div><div class="text-[10px] text-slate-400">Işınlan</div></div>`;
+                btn.addEventListener('click', () => {
+                    document.getElementById('teleport-drawer').classList.add('hidden');
+                    buildSceneForTheme(t.id);
+                    appendChatMessage('', `✨ ${state.playerName} ortamı "${t.name}" olarak değiştirdi!`, false, true);
+                    if (roomChannel) {
+                        roomChannel.send({
+                            type: 'broadcast',
+                            event: 'change_theme',
+                            payload: { senderId: CLIENT_ID, themeId: t.id, senderName: state.playerName }
+                        });
+                    }
                 });
-            }
+                grid.appendChild(btn);
+            });
+        }
 
-            const ratio = state.myTreat.remaining / state.myTreat.item.maxUses;
-            if (state.myTreat.mesh) {
-                state.myTreat.mesh.scale.setScalar(Math.max(0.25, ratio));
-            }
-
-            if (state.myTreat.remaining <= 0) {
-                if (state.myTreat.mesh) roomGroup.remove(state.myTreat.mesh);
-                state.myTreat = null;
-            }
-            updateConsumeButton();
+        function startDanceAnimation() {
+            state.isDancing = true;
+            state.danceEndTime = performance.now() + 10000;
         }
 
         // ==========================================
-        // 8. GERÇEK ZAMANLI ÇOK OYUNCULU EŞLEŞME (SUPABASE REALTIME)
+        // 7. KAFE KARA TAHTA ÇİZİM SİSTEMİ
         // ==========================================
-        function pickRandomProfile(gender) {
-            const list = CHARACTER_PROFILES[gender] || CHARACTER_PROFILES.female;
-            const base = list[Math.floor(Math.random() * list.length)];
-            return { ...base };
+        let chalkColor = '#f8fafc';
+        let isDrawingChalk = false;
+        let lastChalkPos = null;
+
+        function openChalkboardModal() {
+            document.getElementById('chalkboard-modal').classList.remove('hidden');
+        }
+
+        function initChalkboardCanvas() {
+            const canvas = document.getElementById('chalkboard-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#17281e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 3.5;
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: ((clientX - rect.left) / rect.width) * canvas.width,
+                    y: ((clientY - rect.top) / rect.height) * canvas.height
+                };
+            };
+
+            const startDraw = (e) => {
+                e.preventDefault();
+                isDrawingChalk = true;
+                lastChalkPos = getPos(e);
+            };
+            const moveDraw = (e) => {
+                if (!isDrawingChalk) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                ctx.strokeStyle = chalkColor;
+                ctx.beginPath();
+                ctx.moveTo(lastChalkPos.x, lastChalkPos.y);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                lastChalkPos = pos;
+            };
+            const endDraw = () => {
+                isDrawingChalk = false;
+                lastChalkPos = null;
+            };
+
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', moveDraw);
+            window.addEventListener('mouseup', endDraw);
+            canvas.addEventListener('touchstart', startDraw, { passive: false });
+            canvas.addEventListener('touchmove', moveDraw, { passive: false });
+            window.addEventListener('touchend', endDraw);
+        }
+
+        // ==========================================
+        // 8. GERÇEK ZAMANLI EŞLEŞME, CANLI ODA & BİLDİRİM
+        // ==========================================
+        function initOnlineCounter() {
+            if (!sbClient) return;
+            try {
+                globalPresenceChannel = sbClient.channel('oturbenimle_online', {
+                    config: { presence: { key: CLIENT_ID } }
+                });
+
+                const syncCount = () => {
+                    const pState = globalPresenceChannel.presenceState();
+                    activeUsersMap = {};
+                    Object.entries(pState).forEach(([key, arr]) => {
+                        if (arr && arr.length > 0) activeUsersMap[key] = arr[0];
+                    });
+                    const count = Math.max(1, Object.keys(activeUsersMap).length);
+                    document.getElementById('online-count-badge').textContent = `${count} kişi çevrimiçi`;
+                };
+
+                globalPresenceChannel
+                    .on('presence', { event: 'sync' }, syncCount)
+                    .subscribe(async (status) => {
+                        if (status === 'SUBSCRIBED') {
+                            await globalPresenceChannel.track({
+                                id: CLIENT_ID,
+                                name: state.playerName || 'Misafir',
+                                theme: state.theme,
+                                joinedAt: new Date().toISOString()
+                            });
+                        }
+                    });
+            } catch (err) {
+                console.warn('Presence devre dışı:', err);
+            }
         }
 
         function cancelMatchmaking() {
-            state.isSearching = false;
-            if (queueChannel) {
+            state.isMatching = false;
+            document.getElementById('matching-overlay').classList.add('hidden');
+            document.getElementById('btn-auto-match').classList.remove('hidden');
+            if (queueChannel && sbClient) {
                 sbClient.removeChannel(queueChannel);
                 queueChannel = null;
             }
-            document.getElementById('matching-overlay').classList.add('hidden');
-            const matchBtn = document.getElementById('btn-auto-match');
-            matchBtn.disabled = false;
-            matchBtn.classList.remove('opacity-50');
         }
 
-        function startMatchmaking() {
+        function startRealMatchmaking() {
             const kvkkChecked = document.getElementById('kvkk-checkbox').checked;
-            const warningEl = document.getElementById('kvkk-warning');
             if (!kvkkChecked) {
-                warningEl.classList.remove('hidden');
+                document.getElementById('kvkk-warning').classList.remove('hidden');
                 return;
             }
-            warningEl.classList.add('hidden');
+            document.getElementById('kvkk-warning').classList.add('hidden');
 
-            if (state.isSearching) return;
+            const rawName = document.getElementById('nickname-input').value.trim();
+            state.playerName = rawName || (state.gender === 'female' ? 'Misafir Kadın' : 'Misafir Erkek');
 
-            const rawName = document.getElementById('player-name-input').value.trim();
-            state.playerName = rawName || 'Misafir';
-            state.playerProfile = pickRandomProfile(state.playerGender);
-            state.isSearching = true;
-
-            const matchOverlay = document.getElementById('matching-overlay');
-            const statusText = document.getElementById('matching-status-text');
-            const matchBtn = document.getElementById('btn-auto-match');
-
-            matchBtn.disabled = true;
-            matchBtn.classList.add('opacity-50');
-            matchOverlay.classList.remove('hidden');
-
-            // Önizleme (Canvas) ortamında WebSocket kapalı olduğu için önizleme modunda çalıştır
-            if (!sbClient) {
-                statusText.textContent = 'Önizleme ortamı tespit edildi — masa hazırlanıyor...';
-                setTimeout(() => {
-                    if (!state.isSearching) return;
-                    state.isSearching = false;
-                    matchOverlay.classList.add('hidden');
-                    matchBtn.disabled = false;
-                    matchBtn.classList.remove('opacity-50');
-                    const demoPartnerGender = state.playerGender === 'female' ? 'male' : 'female';
-                    const demoProfile = pickRandomProfile(demoPartnerGender);
-                    const demoName = demoProfile.names[Math.floor(Math.random() * demoProfile.names.length)];
-                    enterMultiplayerRoom('preview_room', 0, {
-                        id: 'preview_peer',
-                        name: demoName,
-                        profile: demoProfile
-                    });
-                }, 1200);
-                return;
-            }
-
-            // Global presence bilgisini güncelle
             if (globalPresenceChannel) {
                 globalPresenceChannel.track({
                     id: CLIENT_ID,
                     name: state.playerName,
-                    theme: state.currentTheme,
-                    status: 'Eşleşme Arıyor'
+                    theme: state.theme,
+                    joinedAt: new Date().toISOString()
                 });
             }
 
-            statusText.textContent = `${THEMES[state.currentTheme].name} ortamında gerçek kullanıcı bekleniyor...`;
-
-            if (queueChannel) {
-                sbClient.removeChannel(queueChannel);
-                queueChannel = null;
+            // Önizleme sandbox ortamında doğrudan masaya otur
+            if (!sbClient) {
+                const demoRoom = 'preview_' + Date.now();
+                enterMatchedRoom(demoRoom, 0, null);
+                return;
             }
 
-            const themeQueueName = `queue_${state.currentTheme}`;
-            queueChannel = sbClient.channel(themeQueueName, {
+            state.isMatching = true;
+            document.getElementById('btn-auto-match').classList.add('hidden');
+            document.getElementById('matching-overlay').classList.remove('hidden');
+
+            const queueName = `queue_${state.theme}`;
+            if (queueChannel) sbClient.removeChannel(queueChannel);
+
+            queueChannel = sbClient.channel(queueName, {
                 config: { presence: { key: CLIENT_ID } }
             });
 
             let matched = false;
 
-            const finalizeMatch = (roomId, mySeatIdx, partner) => {
-                if (matched) return;
-                matched = true;
-                state.isSearching = false;
-                statusText.textContent = `${partner.name} ile eşleştin! Masaya geçiliyor...`;
-
-                setTimeout(() => {
-                    if (queueChannel) {
-                        sbClient.removeChannel(queueChannel);
-                        queueChannel = null;
-                    }
-                    matchOverlay.classList.add('hidden');
-                    matchBtn.disabled = false;
-                    matchBtn.classList.remove('opacity-50');
-                    enterMultiplayerRoom(roomId, mySeatIdx, partner);
-                }, 450);
-            };
-
-            const tryPairFromPresence = () => {
-                if (matched || !state.isSearching) return;
-                const presenceState = queueChannel.presenceState();
-                const waiters = [];
-                Object.keys(presenceState).forEach(key => {
-                    const entry = presenceState[key]?.[0];
-                    if (entry && entry.id) waiters.push(entry);
-                });
-
-                // Sıraya giriş zamanına göre deterministik eşleştirme
-                waiters.sort((a, b) => (a.joinedAt - b.joinedAt) || a.id.localeCompare(b.id));
-                const myIdx = waiters.findIndex(w => w.id === CLIENT_ID);
-                if (myIdx === -1) return;
-
-                const partnerIdx = myIdx % 2 === 0 ? myIdx + 1 : myIdx - 1;
-                if (partnerIdx >= 0 && partnerIdx < waiters.length) {
-                    const partner = waiters[partnerIdx];
-                    const pairIds = [CLIENT_ID, partner.id].sort();
-                    const roomId = `room_${state.currentTheme}_${pairIds[0]}_${pairIds[1]}`;
-                    const mySeatIdx = pairIds[0] === CLIENT_ID ? 0 : 1;
-
-                    // Diğer cihaza eşleşmenin kesinleştiğini anında bildir
-                    queueChannel.send({
-                        type: 'broadcast',
-                        event: 'match_found',
-                        payload: {
-                            targetId: partner.id,
-                            roomId,
-                            seatForTarget: mySeatIdx === 0 ? 1 : 0,
-                            initiator: {
-                                id: CLIENT_ID,
-                                name: state.playerName,
-                                gender: state.playerGender,
-                                profile: state.playerProfile
-                            }
-                        }
-                    });
-
-                    finalizeMatch(roomId, mySeatIdx, partner);
-                }
-            };
-
             queueChannel
                 .on('broadcast', { event: 'match_found' }, ({ payload }) => {
-                    if (payload.targetId === CLIENT_ID && !matched && state.isSearching) {
-                        finalizeMatch(payload.roomId, payload.seatForTarget, payload.initiator);
+                    if (matched || !payload) return;
+                    if (payload.guestId === CLIENT_ID) {
+                        matched = true;
+                        const partnerProfile = {
+                            id: payload.hostId,
+                            name: payload.hostName,
+                            gender: payload.hostGender,
+                            profileIndex: payload.hostProfileIndex,
+                            isMe: false
+                        };
+                        enterMatchedRoom(payload.roomId, 1, partnerProfile);
                     }
                 })
-                .on('presence', { event: 'sync' }, tryPairFromPresence)
-                .on('presence', { event: 'join' }, tryPairFromPresence)
+                .on('presence', { event: 'sync' }, () => {
+                    if (matched) return;
+                    const pState = queueChannel.presenceState();
+                    const waiters = Object.values(pState).flat().filter(u => u && u.id);
+                    waiters.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+                    if (waiters.length >= 2 && waiters[0].id === CLIENT_ID) {
+                        const guest = waiters[1];
+                        matched = true;
+                        const newRoomId = `room_${state.theme}_${CLIENT_ID}_${guest.id}`;
+                        queueChannel.send({
+                            type: 'broadcast',
+                            event: 'match_found',
+                            payload: {
+                                roomId: newRoomId,
+                                hostId: CLIENT_ID,
+                                hostName: state.playerName,
+                                hostGender: state.gender,
+                                hostProfileIndex: state.profileIndex,
+                                guestId: guest.id
+                            }
+                        });
+                        const partnerProfile = {
+                            id: guest.id,
+                            name: guest.name,
+                            gender: guest.gender,
+                            profileIndex: guest.profileIndex,
+                            isMe: false
+                        };
+                        enterMatchedRoom(newRoomId, 0, partnerProfile);
+                    }
+                })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
                         await queueChannel.track({
                             id: CLIENT_ID,
                             name: state.playerName,
-                            gender: state.playerGender,
-                            profile: state.playerProfile,
-                            joinedAt: Date.now()
+                            gender: state.gender,
+                            profileIndex: state.profileIndex
                         });
-                        setTimeout(tryPairFromPresence, 300);
                     }
                 });
         }
 
-        function enterMultiplayerRoom(roomId, mySeatIdx, partnerData) {
-            clearSceneObjects();
-            state.inRoom = true;
+        function enterMatchedRoom(roomId, mySeatIdx, partnerProfile) {
+            cancelMatchmaking();
+            document.getElementById('lobby-modal').classList.add('hidden');
+
             state.roomId = roomId;
-            state.partnerId = partnerData.id;
-            state.partnerName = partnerData.name;
             state.recentMessages = [];
+            state.heldItems = [null, null];
+            state.seats = [null, null];
 
-            const theme = THEMES[state.currentTheme];
-            buildEnvironment(state.currentTheme);
+            buildSceneForTheme(state.theme);
 
-            document.getElementById('room-theme-icon').textContent = theme.icon;
-            document.getElementById('hud-theme-name').textContent = `${theme.name} • 2 Kişilik Masa`;
-            document.getElementById('chat-feed').innerHTML = '';
+            state.mySeatIndex = mySeatIdx;
+            state.seats[mySeatIdx] = {
+                id: CLIENT_ID,
+                name: state.playerName,
+                gender: state.gender,
+                profileIndex: state.profileIndex,
+                isMe: true
+            };
 
             const partnerSeatIdx = mySeatIdx === 0 ? 1 : 0;
-            sitAtSeat(mySeatIdx);
-            assignSeatOccupant(partnerSeatIdx, {
-                name: partnerData.name,
-                isMe: false,
-                profile: partnerData.profile
-            });
-
-            if (globalPresenceChannel) {
-                globalPresenceChannel.track({
-                    id: CLIENT_ID,
-                    name: state.playerName,
-                    theme: state.currentTheme,
-                    status: 'Masada Sohbette'
-                });
+            if (partnerProfile) {
+                state.seats[partnerSeatIdx] = partnerProfile;
+                document.getElementById('btn-report-partner').classList.remove('hidden');
             }
 
-            // Oda İçi Gerçek Zamanlı Mesajlaşma ve İkram Kanalı
-            if (sbClient) {
-                roomChannel = sbClient.channel(roomId);
-                roomChannel
-                    .on('broadcast', { event: 'chat_msg' }, ({ payload }) => {
-                        if (payload.senderId === CLIENT_ID) return;
-                        showSpeechBubble(partnerSeatIdx, payload.text, false);
-                        appendChatMessage(payload.name, payload.text, false);
-                    })
-                    .on('broadcast', { event: 'treat_item' }, ({ payload }) => {
-                        if (payload.senderId === CLIENT_ID) return;
-                        const item = payload.item;
-                        if (state.myTreat && state.myTreat.mesh) {
-                            roomGroup.remove(state.myTreat.mesh);
-                        }
-                        const xOff = state.mySeatIndex === 0 ? -0.35 : 0.35;
-                        const mesh = createTreatMesh(item, xOff);
-                        state.myTreat = { item, remaining: item.maxUses, mesh };
-                        updateConsumeButton();
-
-                        const giftMsg = `${state.playerName} sana ${item.name.toLowerCase()} ısmarlayayım dedim ${item.icon}`;
-                        showSpeechBubble(partnerSeatIdx, giftMsg, false);
-                        appendChatMessage(partnerData.name, giftMsg, false);
-                    })
-                    .on('broadcast', { event: 'consume_anim' }, ({ payload }) => {
-                        if (payload.senderId === CLIENT_ID) return;
-                        const pSeat = state.seats[partnerSeatIdx];
-                        if (pSeat) pSeat.eatAnimTime = 0.55;
-                    })
-                    .on('broadcast', { event: 'peer_left' }, ({ payload }) => {
-                        if (payload.senderId === CLIENT_ID) return;
-                        assignSeatOccupant(partnerSeatIdx, null);
-                        appendChatMessage('Sistem', `${payload.name} masadan ayrıldı. "Yeni" butonuna basarak yeni biriyle eşleşebilirsin.`, false, true);
-                    })
-                    .subscribe();
+            document.getElementById('btn-stand').classList.remove('hidden');
+            document.getElementById('bottom-chat-bar').classList.remove('hidden');
+            if (state.theme === 'club') {
+                document.getElementById('btn-dance-invite').classList.remove('hidden');
             }
 
-            closeLobbyModal();
-            appendChatMessage('Sistem', `${partnerData.name} ile eşleştin! Sohbete başlayabilirsin.`, false, true);
-        }
-
-        function openLobbyModal(allowClose = false) {
-            const modal = document.getElementById('lobby-modal');
-            const closeBtn = document.getElementById('btn-close-lobby');
-            modal.classList.remove('hidden');
-            if (allowClose && state.inRoom) {
-                closeBtn.classList.remove('hidden');
+            const feed = document.getElementById('chat-feed');
+            feed.innerHTML = '';
+            if (partnerProfile) {
+                appendChatMessage('', `✨ ${partnerProfile.name} ile masaya oturdunuz!`, false, true);
             } else {
-                closeBtn.classList.add('hidden');
+                appendChatMessage('', '🪑 Masaya oturdun. Sohbete başlayabilirsin!', false, true);
             }
+
+            renderAvatars();
+            connectRoomChannel(roomId);
         }
 
-        function closeLobbyModal() {
-            document.getElementById('lobby-modal').classList.add('hidden');
+        function connectRoomChannel(roomId) {
+            if (!sbClient) return;
+            if (roomChannel) sbClient.removeChannel(roomChannel);
+
+            roomChannel = sbClient.channel(roomId);
+            roomChannel
+                .on('broadcast', { event: 'chat_msg' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
+                    showSpeechBubble(partnerIdx, payload.text, false);
+                    appendChatMessage(payload.name, payload.text, false);
+                })
+                .on('broadcast', { event: 'treat_event' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    const t = THEMES[state.theme] || THEMES.cafe;
+                    const item = t.menu.find(m => m.id === payload.itemId);
+                    if (!item) return;
+                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
+                    if (payload.target === 'partner') {
+                        giveTreatToSeat(state.mySeatIndex, item);
+                        showSpeechBubble(partnerIdx, item.treatMsg, false);
+                        appendChatMessage(payload.senderName, item.treatMsg, false);
+                    } else {
+                        giveTreatToSeat(partnerIdx, item);
+                    }
+                })
+                .on('broadcast', { event: 'consume_event' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
+                    consumeSeatItem(partnerIdx);
+                })
+                .on('broadcast', { event: 'chalkboard_update' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    applyChalkboardDataUrl(payload.dataUrl);
+                    appendChatMessage('', `🎨 ${payload.senderName} kafe tahtasına yeni bir çizim bıraktı!`, false, true);
+                })
+                .on('broadcast', { event: 'change_theme' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    const t = THEMES[payload.themeId];
+                    if (!t) return;
+                    buildSceneForTheme(payload.themeId);
+                    appendChatMessage('', `✨ ${payload.senderName} ortamı "${t.name}" olarak değiştirdi!`, false, true);
+                })
+                .on('broadcast', { event: 'dance_invite' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    document.getElementById('dance-invite-text').textContent = `💃 ${payload.senderName} seni dansa davet etti!`;
+                    document.getElementById('dance-invite-banner').classList.remove('hidden');
+                })
+                .on('broadcast', { event: 'dance_accept' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    startDanceAnimation();
+                    appendChatMessage('', `🪩 ${payload.senderName} dans davetini kabul etti! (10 sn dans)`, false, true);
+                })
+                .on('broadcast', { event: 'player_left' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
+                    state.seats[partnerIdx] = null;
+                    state.heldItems[partnerIdx] = null;
+                    document.getElementById('btn-report-partner').classList.add('hidden');
+                    renderTreatsOnTable();
+                    renderAvatars();
+                    appendChatMessage('', `👋 ${payload.name} masadan ayrıldı.`, false, true);
+                })
+                .subscribe();
         }
 
+        async function submitUserReport() {
+            const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
+            const partner = state.seats[partnerIdx];
+            const reason = document.getElementById('report-reason-select').value;
+            const note = document.getElementById('report-note-input').value.trim();
+
+            if (sbClient && partner) {
+                try {
+                    await sbClient.from('reports').insert({
+                        reporter_name: state.playerName,
+                        reported_name: partner.name,
+                        reason: note ? `${reason} (${note})` : reason,
+                        recent_chat: state.recentMessages.join(' | ')
+                    });
+                } catch (err) {
+                    console.warn('Bildirim gönderilemedi:', err);
+                }
+            }
+
+            document.getElementById('report-modal').classList.add('hidden');
+            document.getElementById('report-note-input').value = '';
+            standUp(true);
+            document.getElementById('lobby-modal').classList.remove('hidden');
+        }
+
+        function renderAdminStats() {
+            const users = Object.values(activeUsersMap);
+            document.getElementById('admin-stat-online').textContent = `${Math.max(1, users.length)} Kişi`;
+            const listEl = document.getElementById('admin-users-list');
+            listEl.innerHTML = '';
+            if (users.length === 0) {
+                listEl.textContent = 'Şu an aktif kullanıcı listesi boş.';
+                return;
+            }
+            users.forEach((u) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between border-b border-slate-800 pb-1';
+                row.textContent = `• ${u.name || 'Misafir'} (${THEMES[u.theme]?.name || 'Kafe'})`;
+                listEl.appendChild(row);
+            });
+        }
+
+        async function loadAdminReports() {
+            const listEl = document.getElementById('admin-reports-list');
+            if (!sbClient) {
+                listEl.textContent = 'Canlı ortamda Supabase bağlantısı üzerinden bildirimler yüklenir.';
+                return;
+            }
+            listEl.textContent = 'Yükleniyor...';
+            const { data, error } = await sbClient
+                .from('reports')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(20);
+
+            if (error || !data) {
+                listEl.textContent = 'Kayıtlar alınamadı (Supabase RLS politikalarını kontrol edin).';
+                return;
+            }
+
+            document.getElementById('admin-stat-reports').textContent = `${data.length} Kayıt`;
+            listEl.innerHTML = '';
+            if (data.length === 0) {
+                listEl.textContent = 'Henüz şikayet bildirimi yok.';
+                return;
+            }
+
+            data.forEach((rep) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-950 border border-slate-800 rounded p-2 space-y-1';
+                const header = document.createElement('div');
+                header.className = 'font-bold text-rose-300';
+                header.textContent = `${rep.reported_name || 'Bilinmiyor'} — ${rep.reason || ''}`;
+                const meta = document.createElement('div');
+                meta.className = 'text-[11px] text-slate-400';
+                meta.textContent = `Bildiren: ${rep.reporter_name || 'Misafir'} • ${new Date(rep.created_at).toLocaleString('tr-TR')}`;
+                card.appendChild(header);
+                card.appendChild(meta);
+                if (rep.recent_chat) {
+                    const chatLog = document.createElement('div');
+                    chatLog.className = 'text-[11px] text-slate-300 bg-slate-900 p-1 rounded';
+                    chatLog.textContent = rep.recent_chat;
+                    card.appendChild(chatLog);
+                }
+                listEl.appendChild(card);
+            });
+        }
+
+        // ==========================================
+        // 9. LOBİ UI VE ETKİLEŞİM DİNLEYİCİLERİ
+        // ==========================================
         function renderThemeCards() {
             const grid = document.getElementById('theme-grid');
             grid.innerHTML = '';
-            Object.values(THEMES).forEach(theme => {
-                const isSelected = state.currentTheme === theme.id;
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = `pixel-btn p-2.5 text-left flex flex-col gap-1 ${
-                    isSelected
-                        ? 'bg-amber-950/50 border-amber-500/80 text-white'
-                        : 'bg-[#161a24] hover:bg-[#1e2433] text-slate-200'
-                }`;
-                btn.innerHTML = `
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-base">${theme.icon}</span>
-                        <span class="font-semibold text-xs sm:text-sm ${isSelected ? 'text-amber-200' : 'text-white'}">${theme.name}</span>
+
+            Object.values(THEMES).forEach((t) => {
+                const isSelected = state.theme === t.id;
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'pixel-btn p-2.5 text-left flex items-start gap-2.5 ' +
+                    (isSelected ? 'bg-amber-950/80 border-amber-500 text-white' : 'bg-[#161b26] hover:bg-[#1e2433] text-slate-300');
+
+                card.innerHTML = `
+                    <span class="text-xl shrink-0">${t.icon}</span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-slate-100">${escapeHtml(t.name)}</div>
+                        <div class="text-[11px] text-slate-400 leading-tight mt-0.5">${escapeHtml(t.desc)}</div>
                     </div>
-                    <p class="text-[11px] text-slate-400 leading-snug">${theme.desc}</p>
                 `;
-                btn.addEventListener('click', () => {
-                    state.currentTheme = theme.id;
+                card.addEventListener('click', () => {
+                    state.theme = t.id;
                     renderThemeCards();
+                    buildSceneForTheme(t.id);
                 });
-                grid.appendChild(btn);
+                grid.appendChild(card);
             });
         }
 
         function updateGenderButtons() {
             const fBtn = document.getElementById('btn-gender-female');
             const mBtn = document.getElementById('btn-gender-male');
-            if (state.playerGender === 'female') {
+            if (state.gender === 'female') {
                 fBtn.className = 'pixel-btn py-2 px-2.5 bg-amber-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5';
                 mBtn.className = 'pixel-btn py-2 px-2.5 bg-[#1a202c] text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5';
             } else {
@@ -1973,147 +2106,118 @@
             }
         }
 
-        function initOnlineCounter() {
-            const el = document.getElementById('online-count-text');
-            if (!sbClient) {
-                onlineUsersMap[CLIENT_ID] = {
-                    id: CLIENT_ID,
-                    name: state.playerName,
-                    theme: state.currentTheme,
-                    status: 'Önizleme Modu'
-                };
-                el.textContent = '1 kişi çevrimiçi';
-                renderAdminStats();
-                return;
-            }
-
-            try {
-                globalPresenceChannel = sbClient.channel('oturbenimle_global_online', {
-                    config: { presence: { key: CLIENT_ID } }
-                });
-
-                const syncOnline = () => {
-                    const pState = globalPresenceChannel.presenceState();
-                    onlineUsersMap = {};
-                    Object.keys(pState).forEach(k => {
-                        if (pState[k]?.[0]) onlineUsersMap[k] = pState[k][0];
-                    });
-                    const count = Math.max(1, Object.keys(onlineUsersMap).length);
-                    el.textContent = `${count} kişi çevrimiçi`;
-                    renderAdminStats();
-                };
-
-                globalPresenceChannel
-                    .on('presence', { event: 'sync' }, syncOnline)
-                    .on('presence', { event: 'join' }, syncOnline)
-                    .on('presence', { event: 'leave' }, syncOnline)
-                    .subscribe(async (status) => {
-                        if (status === 'SUBSCRIBED') {
-                            await globalPresenceChannel.track({
-                                id: CLIENT_ID,
-                                name: state.playerName,
-                                theme: state.currentTheme,
-                                status: 'Lobide'
-                            });
-                        }
-                    });
-            } catch (_) {
-                el.textContent = '1 kişi çevrimiçi';
-            }
-        }
-
-        async function loadAdminReports() {
-            const reportsList = document.getElementById('admin-reports-list');
-            const statReports = document.getElementById('admin-stat-reports');
-            let reports = JSON.parse(localStorage.getItem('oturbenimle_reports') || '[]');
-
-            try {
-                const { data, error } = await sbClient
-                    .from('reports')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(30);
-                if (!error && Array.isArray(data)) {
-                    reports = data;
-                }
-            } catch (_) {}
-
-            statReports.textContent = `${reports.length} Kayıt`;
-            if (!reports.length) {
-                reportsList.innerHTML = '<div class="text-slate-500">Henüz bildirilmiş bir şikayet yok.</div>';
-                return;
-            }
-
-            reportsList.innerHTML = reports.map(r => `
-                <div class="bg-slate-950/90 border border-rose-900/50 rounded p-2 space-y-1">
-                    <div class="flex justify-between text-[11px]">
-                        <span class="text-rose-300 font-bold">Bildirilen: ${escapeHtml(r.reported_name)}</span>
-                        <span class="text-slate-400">${new Date(r.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <div class="text-amber-200 text-[11px]">Sebep: ${escapeHtml(r.reason)} (Bildiren: ${escapeHtml(r.reporter_name)})</div>
-                    ${r.recent_chat ? `<div class="text-[10px] text-slate-400 bg-slate-900 p-1 rounded">Son Sohbet: ${escapeHtml(r.recent_chat)}</div>` : ''}
-                </div>
-            `).join('');
-        }
-
-        // ==========================================
-        // 9. OLAY DİNLEYİCİLERİ VE ANİMASYON DÖNGÜSÜ
-        // ==========================================
         document.getElementById('btn-gender-female').addEventListener('click', () => {
-            state.playerGender = 'female';
+            state.gender = 'female';
+            state.profileIndex = (state.profileIndex + 1) % CHARACTER_PROFILES.female.length;
             updateGenderButtons();
         });
 
         document.getElementById('btn-gender-male').addEventListener('click', () => {
-            state.playerGender = 'male';
+            state.gender = 'male';
+            state.profileIndex = (state.profileIndex + 1) % CHARACTER_PROFILES.male.length;
             updateGenderButtons();
         });
 
-        document.getElementById('btn-auto-match').addEventListener('click', startMatchmaking);
+        document.getElementById('btn-auto-match').addEventListener('click', startRealMatchmaking);
         document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmaking);
 
-        document.getElementById('btn-next-match').addEventListener('click', () => {
-            standUp(true, true);
-            startMatchmaking();
-        });
-
-        document.getElementById('btn-stand').addEventListener('click', () => {
-            standUp(true, true);
-        });
+        document.getElementById('btn-stand').addEventListener('click', () => standUp(true));
 
         document.getElementById('btn-open-lobby').addEventListener('click', () => {
-            standUp(true, true);
+            standUp(true);
+            document.getElementById('lobby-modal').classList.remove('hidden');
         });
 
-        document.getElementById('btn-close-lobby').addEventListener('click', closeLobbyModal);
+        document.getElementById('btn-next-match').addEventListener('click', () => {
+            standUp(true);
+            document.getElementById('lobby-modal').classList.remove('hidden');
+            startRealMatchmaking();
+        });
 
-        // Menü & İkram Butonları
+        // Menü & İkram Çekmecesi
         document.getElementById('btn-toggle-menu').addEventListener('click', () => {
             const drawer = document.getElementById('order-drawer');
+            document.getElementById('teleport-drawer').classList.add('hidden');
             if (drawer.classList.contains('hidden')) {
-                renderOrderDrawer();
+                renderMenuDrawer();
                 drawer.classList.remove('hidden');
             } else {
                 drawer.classList.add('hidden');
             }
         });
-
         document.getElementById('btn-close-order').addEventListener('click', () => {
             document.getElementById('order-drawer').classList.add('hidden');
         });
 
-        document.getElementById('btn-consume-item').addEventListener('click', consumeMyTreat);
+        // Ortam Değiştirme Çekmecesi
+        document.getElementById('btn-toggle-teleport').addEventListener('click', () => {
+            const drawer = document.getElementById('teleport-drawer');
+            document.getElementById('order-drawer').classList.add('hidden');
+            if (drawer.classList.contains('hidden')) {
+                renderTeleportDrawer();
+                drawer.classList.remove('hidden');
+            } else {
+                drawer.classList.add('hidden');
+            }
+        });
+        document.getElementById('btn-close-teleport').addEventListener('click', () => {
+            document.getElementById('teleport-drawer').classList.add('hidden');
+        });
 
-        // Sohbet Gönderme
+        // Dans Daveti Butonları
+        document.getElementById('btn-dance-invite').addEventListener('click', () => {
+            appendChatMessage('', '💃 Partnerine dans daveti gönderdin!', false, true);
+            if (roomChannel) {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'dance_invite',
+                    payload: { senderId: CLIENT_ID, senderName: state.playerName }
+                });
+            }
+        });
+        document.getElementById('btn-accept-dance').addEventListener('click', () => {
+            document.getElementById('dance-invite-banner').classList.add('hidden');
+            startDanceAnimation();
+            appendChatMessage('', '🪩 Dans başladı! (10 saniye)', false, true);
+            if (roomChannel) {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'dance_accept',
+                    payload: { senderId: CLIENT_ID, senderName: state.playerName }
+                });
+            }
+        });
+        document.getElementById('btn-decline-dance').addEventListener('click', () => {
+            document.getElementById('dance-invite-banner').classList.add('hidden');
+        });
+
+        // Yudumla / Ye Butonu
+        document.getElementById('btn-consume-item').addEventListener('click', () => {
+            if (state.mySeatIndex === -1) return;
+            consumeSeatItem(state.mySeatIndex);
+            if (roomChannel) {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'consume_event',
+                    payload: { senderId: CLIENT_ID }
+                });
+            }
+        });
+
+        // Sohbet Gönderme (XSS ve Rate-Limit Korumalı)
         document.getElementById('chat-form').addEventListener('submit', (e) => {
             e.preventDefault();
+            const now = Date.now();
+            if (now - lastChatSentAt < 750) return;
+
             const input = document.getElementById('chat-input');
-            const text = input.value.trim();
+            const text = input.value.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 140);
             if (!text || state.mySeatIndex === -1) return;
 
+            lastChatSentAt = now;
             input.value = '';
             showSpeechBubble(state.mySeatIndex, text, false);
-            appendChatMessage(`${state.playerName} (Sen)`, text, true);
+            appendChatMessage(state.playerName, text, true);
 
             if (roomChannel) {
                 roomChannel.send({
@@ -2126,13 +2230,71 @@
 
         // Bildir (Şikayet) Modal Kontrolleri
         document.getElementById('btn-report-partner').addEventListener('click', () => {
-            document.getElementById('report-target-name').textContent = state.partnerName || 'Kullanıcı';
+            const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
+            const partner = state.seats[partnerIdx];
+            if (!partner) return;
+            document.getElementById('report-target-name').textContent = partner.name;
             document.getElementById('report-modal').classList.remove('hidden');
         });
         document.getElementById('btn-close-report').addEventListener('click', () => {
             document.getElementById('report-modal').classList.add('hidden');
         });
         document.getElementById('btn-submit-report').addEventListener('click', submitUserReport);
+
+        // Yönetim Paneli Kontrolleri (Supabase Auth Tabanlı — Kaynak Kodda Şifre Yok)
+        async function openAdminModal() {
+            document.getElementById('admin-modal').classList.remove('hidden');
+            if (sbClient) {
+                const { data } = await sbClient.auth.getSession();
+                if (data?.session) {
+                    document.getElementById('admin-auth-box').classList.add('hidden');
+                    document.getElementById('admin-dashboard-box').classList.remove('hidden');
+                    renderAdminStats();
+                    loadAdminReports();
+                    return;
+                }
+            }
+            document.getElementById('admin-auth-box').classList.remove('hidden');
+            document.getElementById('admin-dashboard-box').classList.add('hidden');
+        }
+        document.getElementById('btn-secret-admin').addEventListener('click', openAdminModal);
+        document.getElementById('btn-close-admin').addEventListener('click', () => {
+            document.getElementById('admin-modal').classList.add('hidden');
+        });
+        document.getElementById('admin-auth-box').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('admin-auth-error');
+            const email = document.getElementById('admin-email-input').value.trim();
+            const password = document.getElementById('admin-pass-input').value;
+
+            if (!sbClient) {
+                errEl.textContent = 'Canlı ortamda Supabase Auth ile giriş yapılabilir.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const { error } = await sbClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                errEl.textContent = 'E-posta veya şifre hatalı.';
+                errEl.classList.remove('hidden');
+            } else {
+                errEl.classList.add('hidden');
+                document.getElementById('admin-pass-input').value = '';
+                document.getElementById('admin-auth-box').classList.add('hidden');
+                document.getElementById('admin-dashboard-box').classList.remove('hidden');
+                renderAdminStats();
+                loadAdminReports();
+            }
+        });
+        document.getElementById('btn-admin-logout').addEventListener('click', async () => {
+            if (sbClient) await sbClient.auth.signOut();
+            document.getElementById('admin-dashboard-box').classList.add('hidden');
+            document.getElementById('admin-auth-box').classList.remove('hidden');
+        });
+        document.getElementById('btn-refresh-reports').addEventListener('click', () => {
+            renderAdminStats();
+            loadAdminReports();
+        });
 
         // KVKK Modal Kontrolleri
         document.getElementById('btn-open-kvkk').addEventListener('click', () => {
@@ -2147,32 +2309,62 @@
             document.getElementById('kvkk-modal').classList.add('hidden');
         });
 
-        // Yönetim Paneli Kontrolleri
-        function openAdminModal() {
-            document.getElementById('admin-modal').classList.remove('hidden');
-        }
-        document.getElementById('btn-secret-admin').addEventListener('click', openAdminModal);
-        document.getElementById('btn-close-admin').addEventListener('click', () => {
-            document.getElementById('admin-modal').classList.add('hidden');
+        // Kafe Kara Tahta Kontrolleri
+        document.querySelectorAll('.chalk-color-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                chalkColor = btn.dataset.chalk;
+                document.querySelectorAll('.chalk-color-btn').forEach(b => b.classList.remove('border-2', 'border-amber-400'));
+                btn.classList.add('border-2', 'border-amber-400');
+            });
         });
-        document.getElementById('btn-admin-login').addEventListener('click', () => {
-            const pass = document.getElementById('admin-pass-input').value;
-            if (pass === ADMIN_SECRET) {
-                document.getElementById('admin-auth-error').classList.add('hidden');
-                document.getElementById('admin-auth-box').classList.add('hidden');
-                document.getElementById('admin-dashboard-box').classList.remove('hidden');
-                renderAdminStats();
-                loadAdminReports();
-            } else {
-                document.getElementById('admin-auth-error').classList.remove('hidden');
+        document.getElementById('btn-clear-chalkboard').addEventListener('click', () => {
+            const canvas = document.getElementById('chalkboard-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#17281e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+        document.getElementById('btn-close-chalkboard').addEventListener('click', () => {
+            document.getElementById('chalkboard-modal').classList.add('hidden');
+        });
+        document.getElementById('btn-save-chalkboard').addEventListener('click', () => {
+            const canvas = document.getElementById('chalkboard-canvas');
+            const dataUrl = canvas.toDataURL('image/png');
+            applyChalkboardDataUrl(dataUrl);
+            document.getElementById('chalkboard-modal').classList.add('hidden');
+            appendChatMessage('', '🎨 Çizimin kafe duvarındaki tahtaya aktarıldı!', false, true);
+            if (roomChannel) {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'chalkboard_update',
+                    payload: { senderId: CLIENT_ID, senderName: state.playerName, dataUrl }
+                });
             }
         });
-        document.getElementById('btn-refresh-reports').addEventListener('click', () => {
-            renderAdminStats();
-            loadAdminReports();
+
+        // 3D Sahne Üzerinde Tahtaya Tıklama
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        let downPos = { x: 0, y: 0 };
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            downPos = { x: e.clientX, y: e.clientY };
         });
 
-        // Pencere Boyutlandırma & Mobil Klavye Uyumu
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+            if (dist > 8 || state.theme !== 'cafe') return;
+
+            pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            const hits = raycaster.intersectObjects(environmentGroup.children, true);
+            if (hits.some(h => h.object.userData && h.object.userData.isChalkboard)) {
+                openChalkboardModal();
+            }
+        });
+
+        // Pencere Boyutlandırma
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -2180,40 +2372,53 @@
             labelRenderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Animasyon Döngüsü
+        // ==========================================
+        // 10. ANİMASYON DÖNGÜSÜ VE BAŞLANGIÇ
+        // ==========================================
         const clock = new THREE.Clock();
+
         function animate() {
             requestAnimationFrame(animate);
-            const dt = clock.getDelta();
-            const elapsed = clock.getElapsedTime();
+            const t = clock.getElapsedTime();
 
-            // Boş sandalye okları ve karakter yeme/nefes animasyonları
-            state.seats.forEach((seat, idx) => {
-                if (seat.arrowMesh && seat.arrowMesh.visible) {
-                    seat.arrowMesh.position.y = 1.25 + Math.sin(elapsed * 3 + idx) * 0.08;
-                    seat.arrowMesh.rotation.y += dt * 1.8;
-                }
-                if (seat.avatarSprite && seat.avatarSprite.visible) {
-                    if (seat.eatAnimTime > 0) {
-                        seat.eatAnimTime = Math.max(0, seat.eatAnimTime - dt);
-                        const dip = Math.sin((1 - seat.eatAnimTime / 0.55) * Math.PI) * 0.08;
-                        seat.avatarSprite.position.y = 0.90 - dip;
-                    } else {
-                        seat.avatarSprite.position.y = 0.90 + Math.sin(elapsed * 2.2 + idx) * 0.015;
-                    }
-                }
+            // Kamp Ateşi Alev Titreşimi
+            if (animatedObjects.fireLight) {
+                animatedObjects.fireLight.intensity = 1.6 + Math.sin(t * 14) * 0.25;
+                animatedObjects.flames.forEach((f, idx) => {
+                    f.scale.y = 0.85 + Math.sin(t * 12 + idx) * 0.25;
+                });
+            }
+
+            // Sahil Dalgaları
+            animatedObjects.seaWaves.forEach((w, idx) => {
+                w.position.z = -3.8 - idx * 1.4 + Math.sin(t * 1.8 + idx) * 0.35;
             });
 
-            // Ortam efektleri (Kamp ateşi titreşimi ve kulüp ışıkları)
-            roomGroup.children.forEach(obj => {
-                if (obj.userData?.isFire) {
-                    obj.scale.set(1 + Math.sin(elapsed * 12) * 0.07, 1 + Math.cos(elapsed * 15) * 0.1, 1);
-                }
-                if (obj.userData?.isFireLight) {
-                    obj.intensity = 1.7 + Math.sin(elapsed * 14) * 0.25;
-                }
-                if (obj.userData?.isClubLight) {
-                    obj.intensity = 1.5 + Math.sin(elapsed * 6) * 0.5;
+            // Gece Kulübü Ekolayzer & Neon Işıkları
+            animatedObjects.clubEqualizer.forEach((bar, idx) => {
+                bar.scale.y = 0.4 + Math.abs(Math.sin(t * 6 + idx * 0.9)) * 1.1;
+            });
+            animatedObjects.clubLights.forEach((light, idx) => {
+                light.intensity = 1.2 + Math.sin(t * 4 + idx * 2) * 0.5;
+            });
+
+            // Dans Süresi Kontrolü
+            if (state.isDancing && performance.now() > state.danceEndTime) {
+                state.isDancing = false;
+            }
+
+            // Karakter Nefes Alma & Dans Hareketleri
+            avatarObjects.forEach((av, idx) => {
+                if (!av || !av.sprite) return;
+                if (state.isDancing) {
+                    const phase = t * 8 + idx * Math.PI;
+                    av.sprite.position.y = av.baseY + Math.abs(Math.sin(phase)) * 0.16;
+                    av.sprite.position.x = av.baseX + Math.cos(phase * 0.5) * 0.12;
+                    av.sprite.material.rotation = Math.sin(phase) * 0.14;
+                } else {
+                    av.sprite.position.x = av.baseX;
+                    av.sprite.position.y = av.baseY + Math.sin(t * 2.4 + idx) * 0.025;
+                    av.sprite.material.rotation = 0;
                 }
             });
 
@@ -2222,22 +2427,12 @@
             labelRenderer.render(scene, camera);
         }
 
-        // Başlangıç Kurulumu
         window.addEventListener('load', () => {
             renderThemeCards();
             updateGenderButtons();
+            buildSceneForTheme('cafe');
             initOnlineCounter();
-
-            // URL'de ?admin=pirlofener2026 varsa yönetim panelini doğrudan aç
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('admin') === ADMIN_SECRET) {
-                openAdminModal();
-                document.getElementById('admin-auth-box').classList.add('hidden');
-                document.getElementById('admin-dashboard-box').classList.remove('hidden');
-                renderAdminStats();
-                loadAdminReports();
-            }
-
+            initChalkboardCanvas();
             animate();
         });
     </script>
