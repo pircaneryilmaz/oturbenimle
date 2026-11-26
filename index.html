@@ -4,17 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>oturbenimle</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Geist Pixel Font + Yedek Pixel Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel:wght@400..700&family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
-    <!-- Three.js & Eklentiler -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
-    <!-- Supabase Realtime & Veritabanı İstemcisi -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -152,12 +148,6 @@
             border-top: 5px solid #f8fafc;
         }
 
-        .speech-bubble.typing {
-            background: #fef3c7;
-            color: #92400e;
-            border-color: #fde68a;
-        }
-
         @keyframes popBubble {
             0% { transform: scale(0.85); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
@@ -172,6 +162,8 @@
             font-size: 12px;
             font-weight: 600;
             white-space: nowrap;
+            pointer-events: auto;
+            cursor: pointer;
         }
 
         .name-badge.me {
@@ -187,14 +179,9 @@
             border: 1px solid #10b981;
             border-radius: 4px;
             padding: 4px 10px;
-            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
             font-size: 13px;
             font-weight: 600;
             touch-action: manipulation;
-        }
-
-        .sit-prompt-badge:hover {
-            background: #10b981;
         }
 
         .board-draw-badge {
@@ -205,22 +192,17 @@
             border: 1px solid #fbbf24;
             border-radius: 4px;
             padding: 3px 9px;
-            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
             font-size: 13px;
             font-weight: 700;
             touch-action: manipulation;
         }
 
-        .board-draw-badge:hover {
-            background: #f59e0b;
-        }
-
         #mobile-joystick-zone {
             position: fixed;
             left: 14px;
-            bottom: 196px;
-            width: 98px;
-            height: 98px;
+            bottom: 185px;
+            width: 96px;
+            height: 96px;
             border-radius: 9999px;
             background: rgba(15, 23, 42, 0.62);
             border: 2px solid rgba(251, 191, 36, 0.55);
@@ -236,10 +218,10 @@
         }
 
         #mobile-joystick-knob {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: 9999px;
-            background: rgba(245, 158, 11, 0.9);
+            background: rgba(245, 158, 11, 0.92);
             border: 2px solid #fef3c7;
             pointer-events: none;
             transform: translate(0px, 0px);
@@ -250,7 +232,6 @@
             cursor: pointer;
             border-radius: 4px;
             padding: 6px 11px;
-            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
             font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.02em;
@@ -275,70 +256,40 @@
 </head>
 <body>
 
-    <!-- 3D Sahne ve Etiket Katmanları -->
     <div id="canvas-container"></div>
     <div id="label-container"></div>
 
-    <!-- Açık Dünya & Kulüp Mobil Sürüklenebilir Joystick (Sohbet Alanının Üstünde) -->
+    <!-- Açık Dünya Mobil Joystick -->
     <div id="mobile-joystick-zone" class="hidden">
         <div id="mobile-joystick-knob"></div>
     </div>
 
-    <!-- Açık Dünya / Kulüp / Kamp Sağ Alt Bağlamsal & Sosyal Etkileşim Çubuğu (Sohbetin Üstünde) -->
+    <!-- Açık Dünya Sağ Alt Etkileşim Çubuğu -->
     <div id="ow-social-bar" class="hidden fixed right-3 bottom-48 sm:bottom-52 z-20 flex flex-col items-end gap-1.5 pointer-events-none">
         <div id="ow-zone-banner" class="glass-panel px-2.5 py-1 text-[11px] font-semibold text-amber-300 border-amber-600/50">
             Meydan Merkezi
         </div>
-        <div class="flex flex-wrap justify-end gap-1.5 pointer-events-auto max-w-[260px]">
-            <button type="button" id="btn-ow-wave" class="ow-action-btn bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600">
-                El Salla
-            </button>
-            <button type="button" id="btn-ow-sit" class="hidden ow-action-btn bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-400">
-                Otur
-            </button>
-            <button type="button" id="btn-ow-jump" class="hidden ow-action-btn bg-purple-700 hover:bg-purple-600 text-white border border-purple-400">
-                Zipla
-            </button>
-            <button type="button" id="btn-club-dance" class="hidden ow-action-btn bg-pink-700 hover:bg-pink-600 text-white border border-pink-400">
-                Dans Et
-            </button>
-            <button type="button" id="btn-club-table" class="hidden ow-action-btn bg-indigo-700 hover:bg-indigo-600 text-white border border-indigo-400">
-                Masada Dur
-            </button>
-            <button type="button" id="btn-ow-love" class="hidden ow-action-btn bg-pink-700 hover:bg-pink-600 text-white border border-pink-400">
-                Ask Yasa
-            </button>
-            <button type="button" id="btn-ow-hug" class="hidden ow-action-btn bg-rose-700 hover:bg-rose-600 text-white border border-rose-400">
-                Saril
-            </button>
-            <button type="button" id="btn-ow-hand" class="hidden ow-action-btn bg-sky-700 hover:bg-sky-600 text-white border border-sky-400">
-                El Ele Tutus
-            </button>
-            <button type="button" id="btn-ow-stop-pair" class="hidden ow-action-btn bg-amber-700 hover:bg-amber-600 text-white border border-amber-400">
-                Ayril
-            </button>
+        <div class="flex flex-wrap justify-end gap-1.5 pointer-events-auto max-w-[230px]">
+            <button type="button" id="btn-ow-wave" class="ow-action-btn bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600">El Salla</button>
+            <button type="button" id="btn-ow-sit" class="hidden ow-action-btn bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-400">Otur</button>
+            <button type="button" id="btn-ow-jump" class="hidden ow-action-btn bg-purple-700 hover:bg-purple-600 text-white border border-purple-400">Zipla</button>
+            <button type="button" id="btn-ow-love" class="hidden ow-action-btn bg-pink-700 hover:bg-pink-600 text-white border border-pink-400">Ask Yasa</button>
+            <button type="button" id="btn-ow-hug" class="hidden ow-action-btn bg-rose-700 hover:bg-rose-600 text-white border border-rose-400">Saril</button>
+            <button type="button" id="btn-ow-hand" class="hidden ow-action-btn bg-sky-700 hover:bg-sky-600 text-white border border-sky-400">El Ele Tutus</button>
+            <button type="button" id="btn-ow-stop-pair" class="hidden ow-action-btn bg-amber-700 hover:bg-amber-600 text-white border border-amber-400">Ayril</button>
         </div>
     </div>
 
-    <!-- Kamp Ateşi Oyuncu Etkileşim Menüsü (Oyuncuya Tıklanınca Açılır) -->
-    <div id="campfire-player-popup" class="hidden fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-30 glass-panel border-orange-500/80 px-3.5 py-2.5 flex items-center gap-3 shadow-lg">
-        <span id="cf-selected-player-name" class="text-xs font-bold text-amber-300">Oyuncu</span>
-        <button type="button" id="btn-cf-private-invite" class="pixel-btn bg-orange-600 hover:bg-orange-500 text-white px-2.5 py-1 text-xs font-bold">
-            🔥 Gruptan Ayrı Baş Başa Takıl
-        </button>
-        <button type="button" id="btn-cf-close-popup" class="text-xs text-slate-400 hover:text-white px-1.5">✕</button>
-    </div>
-
-    <!-- Karşılıklı Onay Penceresi (Açık Dünya & Kamp Ateşi Baş Başa Teklifi) -->
+    <!-- Karşılıklı Onay Penceresi -->
     <div id="ow-consent-banner" class="hidden fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-30 glass-panel border-amber-500/80 px-3.5 py-2.5 flex items-center gap-3 shadow-lg">
-        <span id="ow-consent-text" class="text-xs font-semibold text-slate-100">Oyuncu seninle ask yasamak istiyor</span>
+        <span id="ow-consent-text" class="text-xs font-semibold text-slate-100">Oyuncu seninle etkileşim istiyor</span>
         <div class="flex items-center gap-1.5 shrink-0">
             <button type="button" id="btn-ow-accept-pair" class="pixel-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 text-xs font-bold">Kabul Et</button>
             <button type="button" id="btn-ow-decline-pair" class="pixel-btn bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 text-xs">Reddet</button>
         </div>
     </div>
 
-    <!-- Üst HUD (Oda Bilgisi & Kontroller) -->
+    <!-- Üst HUD -->
     <header id="top-hud" class="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex items-center justify-between gap-1.5 sm:gap-2 pointer-events-none pt-[env(safe-area-inset-top)]">
         <div class="glass-panel px-2.5 py-1.5 sm:px-3.5 sm:py-2 flex items-center gap-2 pointer-events-auto min-w-0">
             <div id="room-theme-icon" class="w-7 h-7 sm:w-8 sm:h-8 shrink-0 bg-[#231f1d] border border-amber-700/60 rounded flex items-center justify-center text-sm sm:text-base">
@@ -347,7 +298,7 @@
             <div class="min-w-0">
                 <div class="flex items-center gap-1 sm:gap-2">
                     <span class="brand-logo text-xs sm:text-sm font-bold text-amber-300 truncate">OTURBENİMLE</span>
-                    <span id="hud-seat-count" class="hidden md:inline-block shrink-0 text-[11px] font-medium px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">Canlı</span>
+                    <span class="hidden md:inline-block shrink-0 text-[11px] font-medium px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">Canlı</span>
                 </div>
                 <p id="hud-theme-name" class="text-[11px] sm:text-xs text-slate-400 truncate">Kafe • 2 Kişilik Masa</p>
             </div>
@@ -376,14 +327,13 @@
         </div>
     </header>
 
-    <!-- Alt Sohbet ve İkram Çubuğu -->
+    <!-- Alt Sohbet & Etkileşim Çubuğu -->
     <div id="bottom-chat-bar" class="hidden fixed bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex flex-col items-center pointer-events-none pb-[env(safe-area-inset-bottom)]">
         <div class="w-full max-w-xl flex flex-col gap-1.5 pointer-events-auto">
 
-            <!-- Canlı Sohbet Akışı -->
             <div id="chat-feed" class="glass-panel px-2.5 py-2 max-h-24 sm:max-h-28 overflow-y-auto custom-scroll flex flex-col gap-1 text-xs sm:text-sm"></div>
 
-            <!-- Mekana Özel Sipariş & İkram Çekmecesi -->
+            <!-- Menü Çekmecesi -->
             <div id="order-drawer" class="hidden glass-panel p-2.5 flex flex-col gap-2">
                 <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
                     <span id="order-drawer-title" class="pixel-title text-xs font-bold text-amber-300">🍽️ MASA MENÜSÜ</span>
@@ -392,7 +342,7 @@
                 <div id="order-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto custom-scroll"></div>
             </div>
 
-            <!-- Ortam Değiştirme (Işınlanma) Çekmecesi -->
+            <!-- Ortam Değiştirme Çekmecesi -->
             <div id="teleport-drawer" class="hidden glass-panel p-2.5 flex flex-col gap-2">
                 <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
                     <span class="pixel-title text-xs font-bold text-sky-300">🌍 ORTAM DEĞİŞTİR (IŞINLAN)</span>
@@ -401,12 +351,46 @@
                 <div id="teleport-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5"></div>
             </div>
 
-            <!-- Dans Daveti Bildirim Çubuğu (1v1 Özel Kulüp) -->
-            <div id="dance-invite-banner" class="hidden glass-panel border-pink-500/80 p-2.5 flex items-center justify-between gap-2">
-                <span id="dance-invite-text" class="text-xs sm:text-sm text-pink-200 font-semibold">💃 Partnerin seni dansa davet etti!</span>
+            <!-- Mini Oyun Çekmecesi (XOX & Taş-Kağıt-Makas) -->
+            <div id="minigame-drawer" class="hidden glass-panel p-2.5 flex flex-col gap-2">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
+                    <span class="pixel-title text-xs font-bold text-emerald-300">🎮 MASA & ATEŞ OYUNLARI</span>
+                    <div class="flex items-center gap-1">
+                        <button type="button" id="btn-tab-xox" class="pixel-btn bg-emerald-600 text-white px-2 py-0.5 text-[11px] font-bold">XOX</button>
+                        <button type="button" id="btn-tab-rps" class="pixel-btn bg-slate-800 text-slate-300 px-2 py-0.5 text-[11px] font-bold">Taş-Kağıt-Makas</button>
+                        <button type="button" id="btn-close-minigame" class="text-xs text-slate-400 hover:text-white px-1.5">✕</button>
+                    </div>
+                </div>
+
+                <!-- XOX -->
+                <div id="xox-panel" class="flex flex-col items-center gap-2 py-1">
+                    <div id="xox-status" class="text-xs font-semibold text-amber-200 text-center">Sıra X oyuncusunda</div>
+                    <div id="xox-board" class="grid grid-cols-3 gap-1.5 w-36 h-36"></div>
+                    <button type="button" id="btn-reset-xox" class="pixel-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 text-[11px] font-semibold">
+                        🔄 Yeni El XOX
+                    </button>
+                </div>
+
+                <!-- Taş-Kağıt-Makas -->
+                <div id="rps-panel" class="hidden flex flex-col items-center gap-2 py-1">
+                    <div id="rps-status" class="text-xs font-semibold text-sky-200 text-center">Seçimini yap!</div>
+                    <div class="flex items-center justify-center gap-2">
+                        <button type="button" data-rps="rock" class="rps-choice-btn pixel-btn bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-bold text-white">🪨 Taş</button>
+                        <button type="button" data-rps="paper" class="rps-choice-btn pixel-btn bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-bold text-white">📄 Kağıt</button>
+                        <button type="button" data-rps="scissors" class="rps-choice-btn pixel-btn bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-bold text-white">✂️ Makas</button>
+                    </div>
+                    <div id="rps-result" class="text-xs text-amber-300 font-bold min-h-[18px] text-center"></div>
+                </div>
+            </div>
+
+            <!-- Kamp Ateşi Oyuncu Etkileşim Barı -->
+            <div id="cf-player-bar" class="hidden glass-panel border-orange-500/70 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                <span id="cf-selected-name" class="text-xs font-semibold text-orange-200 truncate">Oyuncu seçildi</span>
                 <div class="flex items-center gap-1.5 shrink-0">
-                    <button type="button" id="btn-accept-dance" class="pixel-btn bg-pink-600 hover:bg-pink-500 text-white px-2.5 py-1 text-xs font-bold">Kabul Et</button>
-                    <button type="button" id="btn-decline-dance" class="pixel-btn bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 text-xs">Reddet</button>
+                    <button type="button" id="btn-cf-private" class="pixel-btn bg-orange-600 hover:bg-orange-500 text-white px-2.5 py-1 text-[11px] font-bold">
+                        🔥 Gruptan Ayrı Baş Başa Takıl
+                    </button>
+                    <button type="button" id="btn-cf-close-bar" class="text-xs text-slate-400 hover:text-white px-1">✕</button>
                 </div>
             </div>
 
@@ -423,9 +407,24 @@
                         <span class="pixel-title text-xs">Ortam Değiştir</span>
                     </button>
 
-                    <button type="button" id="btn-dance-invite" class="hidden pixel-btn bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                    <button type="button" id="btn-toggle-minigame" class="hidden pixel-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                        <span>🎮</span>
+                        <span class="pixel-title text-xs">Oyunlar</span>
+                    </button>
+
+                    <button type="button" id="btn-throw-wood" class="hidden pixel-btn bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                        <span>🪵</span>
+                        <span class="pixel-title text-xs">Odun At</span>
+                    </button>
+
+                    <button type="button" id="btn-club-dance" class="hidden pixel-btn bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
                         <span>💃</span>
                         <span class="pixel-title text-xs">Dans Et</span>
+                    </button>
+
+                    <button type="button" id="btn-club-table" class="hidden pixel-btn bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                        <span>🪑</span>
+                        <span id="club-table-label" class="pixel-title text-xs">Masada Dur</span>
                     </button>
 
                     <button type="button" id="btn-consume-item" class="hidden pixel-btn bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
@@ -436,7 +435,6 @@
                 <span class="hidden sm:inline text-[11px] text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">Sürükle: Bak</span>
             </div>
 
-            <!-- Mesaj Yazma Kutusu -->
             <form id="chat-form" class="flex items-center gap-1.5">
                 <input
                     id="chat-input"
@@ -457,7 +455,6 @@
     <div id="lobby-modal" class="fixed inset-0 z-30 bg-[#0d0f14]/95 flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto custom-scroll">
         <div class="glass-panel w-full max-w-lg p-4 sm:p-6 flex flex-col gap-3.5 sm:gap-4 my-auto">
 
-            <!-- Üst Başlık ve Çevrimiçi Rozeti -->
             <div class="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
                 <div>
                     <div class="inline-block bg-amber-950/90 text-amber-200 px-2.5 py-1 rounded border border-amber-700/70 mb-1.5">
@@ -474,19 +471,18 @@
                 </div>
             </div>
 
-            <!-- Takma Ad & Karakter Seçimi -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="flex flex-col gap-1.5">
-                    <label for="nickname-input" class="text-xs font-medium text-slate-300">Takma Adın</label>
+                    <label for="nickname-input" class="text-xs font-medium text-slate-300">Takma Adın <span class="text-rose-400">*</span></label>
                     <input
                         id="nickname-input"
                         type="text"
                         maxlength="16"
                         required
-                        placeholder="Takma adını yaz..."
+                        placeholder="Örn: Gezgin, Deniz..."
                         class="pixel-input px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500"
                     >
-                    <p id="nickname-warning" class="hidden text-[11px] text-rose-400">Lütfen devam etmek için en az 2 harfli bir takma ad yazın.</p>
+                    <p id="nickname-warning" class="hidden text-[11px] text-rose-400">Lütfen en az 2 karakterlik uygun bir takma ad girin.</p>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
@@ -504,13 +500,11 @@
                 </div>
             </div>
 
-            <!-- Ortam Seçimi -->
             <div class="flex flex-col gap-1.5">
                 <span class="text-xs font-medium text-slate-300">Ortam Atmosferi</span>
                 <div id="theme-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
             </div>
 
-            <!-- KVKK ve Gizlilik Onayı -->
             <div class="flex flex-col gap-1 bg-slate-900/70 border border-slate-800 rounded p-2.5">
                 <label class="flex items-start gap-2 cursor-pointer text-xs text-slate-300">
                     <input id="kvkk-checkbox" type="checkbox" class="mt-0.5 accent-amber-500">
@@ -521,15 +515,13 @@
                 <p id="kvkk-warning" class="hidden text-[11px] text-rose-400">Devam etmek için lütfen KVKK ve Gizlilik onay kutusunu işaretleyin.</p>
             </div>
 
-            <!-- Eşleşme Başlat Butonu & Veri Kaydedilmez Bilgisi -->
             <div class="flex flex-col gap-1.5">
                 <button type="button" id="btn-auto-match" class="pixel-btn w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold pixel-title text-xs sm:text-sm tracking-wide">
                     🎲 Gerçek Biriyle Eşleş ve Masaya Otur
                 </button>
-                <p class="text-center text-[11px] text-slate-400">🔒 Hiçbir mesaj, sohbet geçmişi veya kişisel veri kaydedilmez; çıkışta anında silinir.</p>
+                <p class="text-[11px] text-slate-400 text-center">🔒 Hiçbir mesaj ve kişisel veri kaydedilmez; çıkış yaptığınızda oturumunuz anında silinir.</p>
             </div>
 
-            <!-- Eşleşme Yükleniyor Durumu -->
             <div id="matching-overlay" class="hidden bg-slate-900/95 border border-emerald-700/60 rounded p-3 text-center flex flex-col items-center gap-2">
                 <div class="flex items-center gap-2 text-emerald-300 font-medium pixel-title text-xs">
                     <span class="animate-spin inline-block">⏳</span>
@@ -541,7 +533,6 @@
                 </button>
             </div>
 
-            <!-- İletişim Bilgisi -->
             <div class="border-t border-slate-800/80 pt-2.5 flex items-center justify-between text-xs text-slate-400">
                 <span>İletişim & Geri Bildirim</span>
                 <a href="https://x.com/yokyeredelirme" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-slate-200 hover:text-amber-300 transition-colors font-medium">
@@ -554,7 +545,7 @@
         </div>
     </div>
 
-    <!-- Kullanıcı Bildir (Şikayet) Modalı -->
+    <!-- Kullanıcı Bildir Modalı -->
     <div id="report-modal" class="hidden fixed inset-0 z-40 bg-black/80 flex items-center justify-center p-3">
         <div class="glass-panel w-full max-w-sm p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -577,7 +568,7 @@
         </div>
     </div>
 
-    <!-- KVKK ve Gizlilik Modalı -->
+    <!-- KVKK Modalı -->
     <div id="kvkk-modal" class="hidden fixed inset-0 z-40 bg-black/80 flex items-center justify-center p-3">
         <div class="glass-panel w-full max-w-md p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -586,7 +577,7 @@
             </div>
             <div class="text-xs text-slate-300 space-y-2 max-h-64 overflow-y-auto custom-scroll leading-relaxed pr-1">
                 <p><strong>1. Veri Sorumlusu ve Amaç:</strong> <em>oturbenimle</em> platformu, kullanıcıların kayıt veya şifre gerektirmeden anlık 3D sanal ortamlarda sohbet etmesini sağlar.</p>
-                <p><strong>2. İşlenen Veriler:</strong> Oturum süresince yalnızca belirlediğiniz takma ad (nickname), seçtiğiniz karakter cinsiyeti ve anlık sohbet mesajlarınız tarayıcı belleğinde geçici olarak işlenir. Gerçek kimlik bilgisi, e-posta, IP adresi veya konum verisi toplanmaz.</p>
+                <p><strong>2. İşlenen Veriler:</strong> Oturum süresince yalnızca belirlediğiniz takma ad (nickname), seçtiğiniz karakter cinsiyeti ve anlık sohbet mesajlarınız tarayıcı belleğinde geçici olarak işlenir. Gerçek kimlik bilgisi, e-posta veya konum verisi toplanmaz.</p>
                 <p><strong>3. Gizlilik ve Saklama Süresi:</strong> Sohbet geçmişi ve oturum bilgileri kalıcı veritabanlarında tutulmaz; sayfayı kapattığınızda veya yeni eşleşme başlattığınızda tüm oturum verileri anında temizlenir.</p>
                 <p><strong>4. Topluluk Kuralları:</strong> Karşılıklı saygı çerçevesinde iletişim kurulması esastır; hakaret, taciz veya spam içeren mesajlar sistem tarafından engellenir.</p>
             </div>
@@ -596,7 +587,7 @@
         </div>
     </div>
 
-    <!-- Kafe Kara Tahta Çizim Modalı -->
+    <!-- Kafe Kara Tahta Modalı -->
     <div id="chalkboard-modal" class="hidden fixed inset-0 z-40 bg-black/80 flex items-center justify-center p-3">
         <div class="glass-panel w-full max-w-md p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -628,9 +619,6 @@
     </div>
 
     <script>
-        // ==========================================
-        // 0. SUPABASE GERÇEK ZAMANLI BAĞLANTI & ANONİM OTURUM
-        // ==========================================
         const SUPABASE_URL = 'https://awgpooufynwlbiwhtsnp.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_lbDpjEAfBJUMLTuBSYBY_A_O8LXxXQ0';
 
@@ -638,44 +626,66 @@
         const sbClient = (!isPreviewSandbox && window.supabase)
             ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
             : null;
-        let CLIENT_ID = 'usr_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-        let authReadyPromise = null;
+        const CLIENT_ID = 'usr_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
         let lastChatSentAt = 0;
 
-        async function ensureAnonymousSession() {
-            if (!sbClient) return null;
-            if (authReadyPromise) return authReadyPromise;
-
-            authReadyPromise = (async () => {
-                try {
-                    const { data: sessData } = await sbClient.auth.getSession();
-                    if (sessData && sessData.session && sessData.session.user) {
-                        CLIENT_ID = sessData.session.user.id;
-                        return sessData.session.user;
-                    }
-                    const { data, error } = await sbClient.auth.signInAnonymously();
-                    if (!error && data && data.user) {
-                        CLIENT_ID = data.user.id;
-                        return data.user;
-                    }
-                } catch (err) {
-                    console.warn('Anonim oturum uyarısı:', err);
-                }
-                return null;
-            })();
-
-            return authReadyPromise;
-        }
-
         let globalPresenceChannel = null;
-        let matchPollTimer = null;
+        let queueChannel = null;
         let roomChannel = null;
         let openWorldChannel = null;
         let activeUsersMap = {};
 
-        // ==========================================
-        // 1. TEMA, MEKAN MENÜLERİ VE KARAKTER PROFİLLERİ
-        // ==========================================
+        // Küfür Filtresi (amk, amq, aq hariç)
+        const ALLOWED_SLANG = new Set(['amk', 'amq', 'aq']);
+        const BLOCKED_PROFANITY = [
+            'gotten', 'got', 'siker', 'sikey', 'siki', 'sikim', 'siktir', 'sik',
+            'yarrak', 'yarak', 'tasak', 'tassak', 'dasak', 'amcik', 'orospu',
+            'kahpe', 'pezevenk', 'gavat', 'ibne', 'ipne', 'pust', 'pic',
+            'surtuk', 'fahise', 'kaltak', 'dol', 'sikik', 'siksok', 'sikis', 'boktan', 'bok', 'ziktir'
+        ];
+
+        function normalizeTrText(str) {
+            return String(str || '')
+                .toLowerCase()
+                .replace(/ğ/g, 'g')
+                .replace(/ü/g, 'u')
+                .replace(/ş/g, 's')
+                .replace(/ı/g, 'i')
+                .replace(/ö/g, 'o')
+                .replace(/ç/g, 'c')
+                .replace(/[^a-z0-9\s]/g, '');
+        }
+
+        function containsProfanity(text, allowExceptions = true) {
+            const norm = normalizeTrText(text);
+            const words = norm.split(/\s+/).filter(Boolean);
+            for (const word of words) {
+                if (allowExceptions && ALLOWED_SLANG.has(word)) continue;
+                for (const bad of BLOCKED_PROFANITY) {
+                    if (word === bad || (bad.length >= 3 && word.includes(bad))) {
+                        return true;
+                    }
+                }
+            }
+            const compact = words.filter(w => !(allowExceptions && ALLOWED_SLANG.has(w))).join('');
+            for (const bad of BLOCKED_PROFANITY) {
+                if (bad.length >= 4 && compact.includes(bad)) return true;
+            }
+            return false;
+        }
+
+        async function ensureAnonymousSession() {
+            if (!sbClient) return;
+            try {
+                const { data } = await sbClient.auth.getSession();
+                if (!data?.session) {
+                    await sbClient.auth.signInAnonymously();
+                }
+            } catch (err) {
+                console.warn('Anonim oturum başlatılamadı:', err);
+            }
+        }
+
         const THEMES = {
             cafe: {
                 id: 'cafe',
@@ -686,26 +696,25 @@
                 fogColor: 0x161210,
                 ambientLight: 0xffedd5,
                 menu: [
-                    { id: 'latte', icon: '☕', name: 'Sıcak Latte', type: 'drink', color: 0xd97706, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana sıcak latte ısmarlayayım dedim ☕' },
-                    { id: 'turkish_coffee', icon: '🫖', name: 'Türk Kahvesi', type: 'drink', color: 0x451a03, bites: 4, actionText: 'Yudumla', treatMsg: 'Sana köpüklü bir Türk kahvesi ısmarlayayım dedim 🫖' },
-                    { id: 'cheesecake', icon: '🍰', name: 'San Sebastian', type: 'food', color: 0xfde68a, bites: 4, actionText: 'Ye', treatMsg: 'Sana bir dilim San Sebastian ısmarlayayım dedim 🍰' },
-                    { id: 'croissant', icon: '🥐', name: 'Taze Kruvasan', type: 'food', color: 0xd97706, bites: 4, actionText: 'Ye', treatMsg: 'Sana sıcacık bir kruvasan ısmarlayayım dedim 🥐' }
+                    { id: 'latte', icon: '☕', name: 'Sıcak Latte', type: 'drink', color: 0xd97706, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Sıcak Latte ısmarlamak istedim ☕' },
+                    { id: 'turkish_coffee', icon: '🫖', name: 'Türk Kahvesi', type: 'drink', color: 0x451a03, bites: 4, actionText: 'Yudumla', treatMsg: 'Sana Türk Kahvesi ısmarlamak istedim 🫖' },
+                    { id: 'cheesecake', icon: '🍰', name: 'San Sebastian', type: 'food', color: 0xfde68a, bites: 4, actionText: 'Ye', treatMsg: 'Sana San Sebastian ısmarlamak istedim 🍰' },
+                    { id: 'croissant', icon: '🥐', name: 'Taze Kruvasan', type: 'food', color: 0xd97706, bites: 4, actionText: 'Ye', treatMsg: 'Sana Taze Kruvasan ısmarlamak istedim 🥐' }
                 ]
             },
             campfire: {
                 id: 'campfire',
                 name: 'Gece Kamp Ateşi',
                 icon: '🔥',
-                desc: 'Herkesin katıldığı ateş çemberi veya baş başa kamp!',
+                desc: 'Ateş başında dairesel sandalyeler, odun at ve sohbet et',
                 skyColor: 0x090d16,
                 fogColor: 0x090d16,
                 ambientLight: 0x93c5fd,
-                isGroupMode: true,
                 menu: [
-                    { id: 'marshmallow', icon: '🍡', name: 'Közde Marshmallow', type: 'food', color: 0xf8fafc, bites: 3, actionText: 'Ye', treatMsg: 'Ateş başında marshmallow keyfi 🍡' },
-                    { id: 'camp_tea', icon: '🍵', name: 'Demlik Kamp Çayı', type: 'drink', color: 0xb45309, bites: 5, actionText: 'Yudumla', treatMsg: 'Tavşan kanı kamp çayı aldım 🍵' },
-                    { id: 'hot_choco', icon: '🍫', name: 'Sıcak Çikolata', type: 'drink', color: 0x5c2d16, bites: 5, actionText: 'Yudumla', treatMsg: 'Sıcak çikolata aldım 🍫' },
-                    { id: 'roasted_corn', icon: '🌽', name: 'Közlenmiş Mısır', type: 'food', color: 0xfacc15, bites: 4, actionText: 'Ye', treatMsg: 'Közlenmiş mısır aldım 🌽' }
+                    { id: 'marshmallow', icon: '🍡', name: 'Közde Marshmallow', type: 'food', color: 0xf8fafc, bites: 3, actionText: 'Ye', treatMsg: 'Sana Közde Marshmallow ısmarlamak istedim 🍡' },
+                    { id: 'camp_tea', icon: '🍵', name: 'Demlik Kamp Çayı', type: 'drink', color: 0xb45309, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Demlik Kamp Çayı ısmarlamak istedim 🍵' },
+                    { id: 'hot_choco', icon: '🍫', name: 'Sıcak Çikolata', type: 'drink', color: 0x5c2d16, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Sıcak Çikolata ısmarlamak istedim 🍫' },
+                    { id: 'roasted_corn', icon: '🌽', name: 'Közlenmiş Mısır', type: 'food', color: 0xfacc15, bites: 4, actionText: 'Ye', treatMsg: 'Sana Közlenmiş Mısır ısmarlamak istedim 🌽' }
                 ]
             },
             beach: {
@@ -717,26 +726,25 @@
                 fogColor: 0x101d2e,
                 ambientLight: 0xbae6fd,
                 menu: [
-                    { id: 'simit_tea', icon: '🥯', name: 'Çıtır Simit & Çay', type: 'food', color: 0xd97706, bites: 4, actionText: 'Ye', treatMsg: 'Sana Kız Kulesi manzarasına karşı simit ısmarlayayım dedim 🥯' },
-                    { id: 'lemonade', icon: '🍋', name: 'Naneli Limonata', type: 'drink', color: 0xfef08a, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana buz gibi naneli limonata ısmarlayayım dedim 🍋' },
-                    { id: 'ice_cream', icon: '🍦', name: 'Külah Dondurma', type: 'food', color: 0xfbcfe8, bites: 4, actionText: 'Ye', treatMsg: 'Sana sahilde külah dondurma ısmarlayayım dedim 🍦' },
-                    { id: 'turkish_tea', icon: '🫖', name: 'İnce Belli Çay', type: 'drink', color: 0x9a3412, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana deniz havasında ince belli çay ısmarlayayım dedim 🫖' }
+                    { id: 'simit_tea', icon: '🥯', name: 'Çıtır Simit & Çay', type: 'food', color: 0xd97706, bites: 4, actionText: 'Ye', treatMsg: 'Sana Çıtır Simit & Çay ısmarlamak istedim 🥯' },
+                    { id: 'lemonade', icon: '🍋', name: 'Naneli Limonata', type: 'drink', color: 0xfef08a, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Naneli Limonata ısmarlamak istedim 🍋' },
+                    { id: 'ice_cream', icon: '🍦', name: 'Külah Dondurma', type: 'food', color: 0xfbcfe8, bites: 4, actionText: 'Ye', treatMsg: 'Sana Külah Dondurma ısmarlamak istedim 🍦' },
+                    { id: 'turkish_tea', icon: '🫖', name: 'İnce Belli Çay', type: 'drink', color: 0x9a3412, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana İnce Belli Çay ısmarlamak istedim 🫖' }
                 ]
             },
             club: {
                 id: 'club',
                 name: 'Gece Kulübü',
                 icon: '🪩',
-                desc: 'Ortak dans pisti, DJ kabini ve 2 kişilik VIP masalar',
+                desc: 'Ortak dans pisti, 2 kişilik VIP masalar ve neon ışıklar',
                 skyColor: 0x0b0714,
                 fogColor: 0x0b0714,
                 ambientLight: 0xe879f9,
-                isGroupMode: true,
                 menu: [
-                    { id: 'neon_mojito', icon: '🍹', name: 'Neon Mojito', type: 'drink', color: 0x10b981, bites: 5, actionText: 'Yudumla', treatMsg: 'Neon Mojito ile pistteyim 🍹' },
-                    { id: 'berry_mocktail', icon: '🍸', name: 'Orman Meyveli Kokteyl', type: 'drink', color: 0xec4899, bites: 5, actionText: 'Yudumla', treatMsg: 'Orman meyveli kokteyl aldım 🍸' },
-                    { id: 'energy_shot', icon: '⚡', name: 'Dans Enerji İçeceği', type: 'drink', color: 0x38bdf8, bites: 4, actionText: 'Yudumla', treatMsg: 'Enerji içeceğiyle dansa devam ⚡' },
-                    { id: 'nachos', icon: '🌮', name: 'Çıtır Nachos Tabağı', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'Masaya çıtır nachos aldım 🌮' }
+                    { id: 'neon_mojito', icon: '🍹', name: 'Neon Mojito', type: 'drink', color: 0x10b981, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Neon Mojito ısmarlamak istedim 🍹' },
+                    { id: 'berry_mocktail', icon: '🍸', name: 'Orman Meyveli Kokteyl', type: 'drink', color: 0xec4899, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Orman Meyveli Kokteyl ısmarlamak istedim 🍸' },
+                    { id: 'energy_shot', icon: '⚡', name: 'Dans Enerji İçeceği', type: 'drink', color: 0x38bdf8, bites: 4, actionText: 'Yudumla', treatMsg: 'Sana Dans Enerji İçeceği ısmarlamak istedim ⚡' },
+                    { id: 'nachos', icon: '🌮', name: 'Çıtır Nachos Tabağı', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'Sana Çıtır Nachos Tabağı ısmarlamak istedim 🌮' }
                 ]
             },
             openworld: {
@@ -749,31 +757,35 @@
                 ambientLight: 0xe2e8f0,
                 isOpenWorld: true,
                 menu: [
-                    { id: 'street_coffee', icon: '🥤', name: 'STARBUKSH Buzlu Latte', type: 'drink', color: 0x006241, bites: 5, actionText: 'Yudumla', treatMsg: 'STARBUKSH kahvemle meydan turundayim' },
-                    { id: 'mall_burger', icon: '🍔', name: 'Meydan Burger', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'Konser oncesi sicak burger aldim' },
-                    { id: 'park_waffle', icon: '🧇', name: 'Park Waffle', type: 'food', color: 0xf43f5e, bites: 4, actionText: 'Ye', treatMsg: 'OTUR BENİMLE parkinda yemek icin waffle aldim' },
-                    { id: 'bubble_tea', icon: '🧋', name: 'Bubble Tea', type: 'drink', color: 0xa855f7, bites: 5, actionText: 'Yudumla', treatMsg: 'Bubble Tea ile geziyorum' }
+                    { id: 'street_coffee', icon: '🥤', name: 'STARBUKSH Buzlu Latte', type: 'drink', color: 0x006241, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana STARBUKSH Buzlu Latte ısmarlamak istedim 🥤' },
+                    { id: 'mall_burger', icon: '🍔', name: 'Meydan Burger', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'Sana Meydan Burger ısmarlamak istedim 🍔' },
+                    { id: 'park_waffle', icon: '🧇', name: 'Park Waffle', type: 'food', color: 0xf43f5e, bites: 4, actionText: 'Ye', treatMsg: 'Sana Park Waffle ısmarlamak istedim 🧇' },
+                    { id: 'bubble_tea', icon: '🧋', name: 'Bubble Tea', type: 'drink', color: 0xa855f7, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Bubble Tea ısmarlamak istedim 🧋' }
                 ]
             }
         };
 
         const CHARACTER_PROFILES = {
             female: [
-                { style: 'Spor', hair: '#3b2314', hairStyle: 'ponytail', top: '#f43f5e', pants: '#334155', skin: '#f5cba7', shoes: '#f8fafc', acc: 'cap' },
-                { style: 'Klasik', hair: '#1e1b18', hairStyle: 'long', top: '#e2e8f0', pants: '#1e293b', skin: '#fad7a0', shoes: '#0f172a', acc: 'glasses' },
-                { style: 'Şık', hair: '#92400e', hairStyle: 'bob', top: '#8b5cf6', pants: '#0f172a', skin: '#f5cba7', shoes: '#c084fc', acc: 'scarf' }
+                { style: 'Spor', outfit: 'hoodie', hair: '#3b2314', hairStyle: 'ponytail', top: '#f43f5e', trim: '#fda4af', pants: '#334155', skin: '#f5cba7', shoes: '#f8fafc', acc: 'cap' },
+                { style: 'Klasik', outfit: 'jacket', hair: '#1e1b18', hairStyle: 'long', top: '#e2e8f0', trim: '#0284c7', pants: '#1e293b', skin: '#fad7a0', shoes: '#0f172a', acc: 'glasses' },
+                { style: 'Şık', outfit: 'dress', hair: '#92400e', hairStyle: 'bob', top: '#8b5cf6', trim: '#ddd6fe', pants: '#6d28d9', skin: '#f5cba7', shoes: '#c084fc', acc: 'scarf' },
+                { style: 'Sokak', outfit: 'striped', hair: '#111827', hairStyle: 'ponytail', top: '#10b981', trim: '#fef08a', pants: '#1e293b', skin: '#e5b887', shoes: '#f8fafc', acc: 'headphones' },
+                { style: 'Vintage', outfit: 'overalls', hair: '#78350f', hairStyle: 'long', top: '#f59e0b', trim: '#1d4ed8', pants: '#1e40af', skin: '#f5cba7', shoes: '#78350f', acc: 'glasses' }
             ],
             male: [
-                { style: 'Spor', hair: '#1e293b', hairStyle: 'short', top: '#0284c7', pants: '#334155', skin: '#e5b887', shoes: '#f8fafc', acc: 'headphones' },
-                { style: 'Klasik', hair: '#451a03', hairStyle: 'parted', top: '#059669', pants: '#1e293b', skin: '#f5cba7', shoes: '#451a03', acc: 'glasses' },
-                { style: 'Şık', hair: '#0f172a', hairStyle: 'spiky', top: '#d97706', pants: '#0f172a', skin: '#d4a373', shoes: '#1e293b', acc: 'watch' }
+                { style: 'Spor', outfit: 'hoodie', hair: '#1e293b', hairStyle: 'short', top: '#0284c7', trim: '#bae6fd', pants: '#334155', skin: '#e5b887', shoes: '#f8fafc', acc: 'headphones' },
+                { style: 'Klasik', outfit: 'jacket', hair: '#451a03', hairStyle: 'parted', top: '#059669', trim: '#fef3c7', pants: '#1e293b', skin: '#f5cba7', shoes: '#451a03', acc: 'glasses' },
+                { style: 'Şık', outfit: 'suit', hair: '#0f172a', hairStyle: 'spiky', top: '#1e293b', trim: '#f59e0b', pants: '#0f172a', skin: '#d4a373', shoes: '#1e293b', acc: 'watch' },
+                { style: 'Sokak', outfit: 'striped', hair: '#27272a', hairStyle: 'short', top: '#dc2626', trim: '#f8fafc', pants: '#334155', skin: '#e5b887', shoes: '#f8fafc', acc: 'cap' },
+                { style: 'Vintage', outfit: 'overalls', hair: '#78350f', hairStyle: 'parted', top: '#d97706', trim: '#374151', pants: '#1f2937', skin: '#f5cba7', shoes: '#451a03', acc: 'scarf' }
             ]
         };
 
         const state = {
             playerName: '',
             gender: 'female',
-            profileIndex: 0,
+            profileIndex: Math.floor(Math.random() * 5),
             theme: 'cafe',
             roomId: null,
             mySeatIndex: -1,
@@ -794,9 +806,15 @@
             owWaveEndTime: 0,
             cfPrivateMode: false,
             cfSelectedPlayerId: null,
+            fireFuel: 0.72,
             clubDancing: false,
             clubSeatedTableId: null,
-            clubSeatedSeatIdx: -1
+            clubSeatedSeatIdx: -1,
+            xoxBoard: Array(9).fill(null),
+            xoxTurn: 'X',
+            xoxWinner: null,
+            myRpsChoice: null,
+            partnerRpsChoice: null
         };
 
         let lastOwBroadcast = 0;
@@ -805,14 +823,14 @@
         const owInput = { x: 0, z: 0 };
         const owKeys = {};
         const owBenches = [];
-        const clubTables = [];
-        const campfireChairsGroup = new THREE.Group();
         const owConcertNpcs = [];
         const owConcertSpotlights = [];
         const owConcertSpeakers = [];
+        const cfChairMeshes = [];
+        const clubTables = [];
 
         // ==========================================
-        // 2. THREE.JS SAHNE, KAMERA VE KONTROLLER (MOBİL UYUMLU)
+        // 2. THREE.JS SAHNE, KAMERA VE MOBİL UYUM
         // ==========================================
         const container = document.getElementById('canvas-container');
         const labelContainer = document.getElementById('label-container');
@@ -822,7 +840,6 @@
         scene.fog = new THREE.FogExp2(THEMES.cafe.fogColor, 0.042);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 3.6, 5.8);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -839,35 +856,33 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.06;
         controls.minDistance = 2.6;
-        controls.maxDistance = 12.5;
+        controls.maxDistance = 14.5;
         controls.maxPolarAngle = Math.PI / 2 - 0.06;
         controls.target.set(0, 1.05, 0);
 
-        function getResponsiveCameraPreset(mode) {
-            const isMobilePortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
-            const zoomFactor = isMobilePortrait ? 1.38 : 1.0;
-            if (mode === 'openworld') {
-                return { y: 5.4 * (isMobilePortrait ? 1.15 : 1), zOffset: 7.2 * zoomFactor };
-            }
-            if (mode === 'campfire_group') {
-                return { x: 0, y: 4.8 * (isMobilePortrait ? 1.18 : 1), z: 6.8 * zoomFactor, targetY: 0.9 };
-            }
-            if (mode === 'club_group') {
-                return { x: 0, y: 5.2 * (isMobilePortrait ? 1.18 : 1), z: 7.4 * zoomFactor, targetY: 0.95 };
-            }
-            return { x: 0, y: 3.6 * (isMobilePortrait ? 1.12 : 1), z: 5.8 * zoomFactor, targetY: 1.05 };
-        }
+        function applyResponsiveCameraForTheme(themeId) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const aspect = w / Math.max(1, h);
+            const isPortrait = aspect < 1.0;
 
-        function applyResponsiveCamera(mode) {
-            const preset = getResponsiveCameraPreset(mode);
-            if (mode === 'openworld') {
-                camera.position.set(state.owPos.x, preset.y, state.owPos.z + preset.zOffset);
+            camera.fov = isPortrait ? 56 : 45;
+            camera.aspect = aspect;
+            camera.updateProjectionMatrix();
+
+            if (themeId === 'openworld') {
+                camera.position.set(state.owPos.x, isPortrait ? 6.8 : 5.4, state.owPos.z + (isPortrait ? 8.8 : 7.2));
                 controls.target.set(state.owPos.x, 1.0, state.owPos.z);
+            } else if (themeId === 'campfire') {
+                camera.position.set(0, isPortrait ? 5.2 : 4.1, isPortrait ? 7.8 : 6.0);
+                controls.target.set(0, 0.9, 0);
+            } else if (themeId === 'club') {
+                camera.position.set(0, isPortrait ? 5.8 : 4.5, isPortrait ? 8.5 : 6.5);
+                controls.target.set(0, 1.0, 0);
             } else {
-                camera.position.set(preset.x, preset.y, preset.z);
-                controls.target.set(0, preset.targetY, 0);
+                camera.position.set(0, isPortrait ? 4.3 : 3.6, isPortrait ? 7.2 : 5.8);
+                controls.target.set(0, 1.05, 0);
             }
-            controls.update();
         }
 
         const ambientLight = new THREE.AmbientLight(0xffedd5, 0.75);
@@ -884,15 +899,15 @@
         const tableGroup = new THREE.Group();
         const treatsGroup = new THREE.Group();
         const avatarsGroup = new THREE.Group();
-        scene.add(environmentGroup, tableGroup, treatsGroup, avatarsGroup, campfireChairsGroup);
+        scene.add(environmentGroup, tableGroup, treatsGroup, avatarsGroup);
 
         const animatedObjects = {
             fireLight: null,
             flames: [],
+            fallingLogs: [],
             clubLights: [],
             clubEqualizer: [],
             seaWaves: [],
-            lanterns: [],
             fountainDrops: [],
             chalkboardCanvas: null,
             chalkboardTexture: null,
@@ -900,7 +915,7 @@
         };
 
         // ==========================================
-        // 3. PIXEL-ART TEXTURE & KARAKTER OLUŞTURUCU
+        // 3. PIXEL-ART TEXTURE & 5 KIYAFETLİ KARAKTER
         // ==========================================
         function createPixelTexture(width, height, drawFn) {
             const canvas = document.createElement('canvas');
@@ -916,8 +931,8 @@
         }
 
         function createCharacterTexture(gender, profileIndex, isBlinking = false, isEating = false, isWaving = false) {
-            const safeGender = gender === 'male' ? 'male' : 'female';
-            const profile = CHARACTER_PROFILES[safeGender][profileIndex % CHARACTER_PROFILES[safeGender].length];
+            const list = CHARACTER_PROFILES[gender] || CHARACTER_PROFILES.female;
+            const profile = list[Math.abs(profileIndex || 0) % list.length];
             return createPixelTexture(32, 48, (ctx) => {
                 ctx.clearRect(0, 0, 32, 48);
                 const px = (x, y, w, h, color) => {
@@ -926,6 +941,26 @@
                 };
 
                 px(9, 20, 14, 15, profile.top);
+                if (profile.outfit === 'hoodie') {
+                    px(12, 20, 8, 3, profile.trim);
+                    px(15, 23, 2, 11, profile.trim);
+                } else if (profile.outfit === 'jacket') {
+                    px(14, 20, 4, 14, profile.trim);
+                } else if (profile.outfit === 'suit') {
+                    px(14, 20, 4, 10, '#f8fafc');
+                    px(15, 21, 2, 8, profile.trim);
+                } else if (profile.outfit === 'striped') {
+                    px(9, 23, 14, 2, profile.trim);
+                    px(9, 28, 14, 2, profile.trim);
+                } else if (profile.outfit === 'overalls') {
+                    px(11, 20, 2, 7, profile.trim);
+                    px(19, 20, 2, 7, profile.trim);
+                    px(10, 27, 12, 7, profile.trim);
+                } else if (profile.outfit === 'dress') {
+                    px(11, 20, 10, 2, profile.trim);
+                    px(8, 32, 16, 6, profile.top);
+                }
+
                 px(6, 21, 3, 12, profile.top);
                 px(6, 32, 3, 3, profile.skin);
 
@@ -945,10 +980,15 @@
                     px(6, 31, 3, 2, '#94a3b8');
                 }
 
-                px(9, 34, 14, 4, profile.pants);
-                px(9, 37, 6, 7, profile.pants);
-                px(17, 37, 6, 7, profile.pants);
-                px(15, 37, 2, 7, '#0f172a');
+                if (profile.outfit !== 'dress') {
+                    px(9, 34, 14, 4, profile.pants);
+                    px(9, 37, 6, 7, profile.pants);
+                    px(17, 37, 6, 7, profile.pants);
+                    px(15, 37, 2, 7, '#0f172a');
+                } else {
+                    px(10, 38, 5, 6, profile.skin);
+                    px(17, 38, 5, 6, profile.skin);
+                }
 
                 px(8, 44, 7, 3, profile.shoes);
                 px(17, 44, 7, 3, profile.shoes);
@@ -1011,7 +1051,7 @@
         }
 
         // ==========================================
-        // 4. 5 FARKLI 3D ORTAM (KAFE, KAMP, SAHİL, KULÜP, AÇIK DÜNYA)
+        // 4. 3D SAHNELER
         // ==========================================
         function clearGroup(group) {
             while (group.children.length > 0) {
@@ -1047,13 +1087,7 @@
             back.castShadow = true;
             chair.add(back);
 
-            const legPositions = [
-                [-0.24, 0.225, -0.24],
-                [0.24, 0.225, -0.24],
-                [-0.24, 0.225, 0.24],
-                [0.24, 0.225, 0.24]
-            ];
-            legPositions.forEach(([lx, ly, lz]) => {
+            [[-0.24, 0.225, -0.24], [0.24, 0.225, -0.24], [-0.24, 0.225, 0.24], [0.24, 0.225, 0.24]].forEach(([lx, ly, lz]) => {
                 const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.08), woodMat);
                 leg.position.set(lx, ly, lz);
                 leg.castShadow = true;
@@ -1088,11 +1122,8 @@
         }
 
         function applyChalkboardDataUrl(dataUrl) {
-            if (typeof dataUrl !== 'string') return;
-            if (!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(dataUrl)) return;
-            if (dataUrl.length > 400000) return;
+            if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/png;base64,') || dataUrl.length > 350000) return;
             if (!animatedObjects.chalkboardCanvas || !animatedObjects.chalkboardTexture) return;
-
             state.chalkboardDataUrl = dataUrl;
             const img = new Image();
             img.onload = () => {
@@ -1124,10 +1155,7 @@
             backWall.position.set(0, 3, -5.5);
             environmentGroup.add(backWall);
 
-            const boardFrame = new THREE.Mesh(
-                new THREE.BoxGeometry(3.2, 1.9, 0.14),
-                new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 })
-            );
+            const boardFrame = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.9, 0.14), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 }));
             boardFrame.position.set(0, 2.55, -5.28);
             environmentGroup.add(boardFrame);
 
@@ -1135,10 +1163,7 @@
             animatedObjects.chalkboardCanvas = cbCanvas;
             animatedObjects.chalkboardTexture = cbTex;
 
-            const boardSurface = new THREE.Mesh(
-                new THREE.PlaneGeometry(2.96, 1.66),
-                new THREE.MeshStandardMaterial({ map: cbTex, roughness: 0.85 })
-            );
+            const boardSurface = new THREE.Mesh(new THREE.PlaneGeometry(2.96, 1.66), new THREE.MeshStandardMaterial({ map: cbTex, roughness: 0.85 }));
             boardSurface.position.set(0, 2.55, -5.20);
             boardSurface.userData = { isChalkboard: true };
             environmentGroup.add(boardSurface);
@@ -1158,9 +1183,7 @@
             environmentGroup.add(boardLabel);
             animatedObjects.chalkboardLabelObj = boardLabel;
 
-            if (state.chalkboardDataUrl) {
-                applyChalkboardDataUrl(state.chalkboardDataUrl);
-            }
+            if (state.chalkboardDataUrl) applyChalkboardDataUrl(state.chalkboardDataUrl);
 
             [-3.5, 3.5].forEach((bx) => {
                 const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.4, 0.45), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
@@ -1202,7 +1225,19 @@
             environmentGroup.add(warmLamp);
         }
 
+        function spawnFallingFirewoodLog() {
+            const logMesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08, 0.08, 0.52, 7),
+                new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 })
+            );
+            logMesh.position.set((Math.random() - 0.5) * 0.3, 1.8, (Math.random() - 0.5) * 0.3);
+            logMesh.rotation.set(Math.PI / 2, Math.random() * Math.PI, (Math.random() - 0.5) * 0.6);
+            tableGroup.add(logMesh);
+            animatedObjects.fallingLogs.push({ mesh: logMesh, vy: 0, landTime: 0 });
+        }
+
         function buildCampfireScene() {
+            cfChairMeshes.length = 0;
             const ground = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), new THREE.MeshStandardMaterial({ color: 0x14261c, roughness: 1 }));
             ground.rotation.x = -Math.PI / 2;
             ground.receiveShadow = true;
@@ -1214,10 +1249,9 @@
                 starVerts.push((Math.random() - 0.5) * 44, 5 + Math.random() * 14, -8 - Math.random() * 18);
             }
             starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVerts, 3));
-            const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xfef08a, size: 0.15 }));
-            environmentGroup.add(stars);
+            environmentGroup.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xfef08a, size: 0.15 })));
 
-            const treeCoords = [[-5.8, -5.2], [5.8, -5.2], [-6.8, 1.5], [6.8, 1.5], [-3.2, -7.2], [3.4, -7.4], [-5.5, 5.5], [5.5, 5.5]];
+            const treeCoords = [[-5.5, -5], [5.5, -5], [-6.8, 1], [6.8, 1], [-3.2, -7.2], [3.5, -7.4]];
             treeCoords.forEach(([tx, tz]) => {
                 const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
                 trunk.position.set(tx, 0.7, tz);
@@ -1236,26 +1270,65 @@
             const stoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 });
             for (let i = 0; i < 12; i++) {
                 const angle = (i / 12) * Math.PI * 2;
-                const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18, 0), stoneMat);
-                stone.position.set(Math.cos(angle) * 0.75, 0.1, Math.sin(angle) * 0.75);
+                const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16, 0), stoneMat);
+                stone.position.set(Math.cos(angle) * 0.72, 0.1, Math.sin(angle) * 0.72);
                 tableGroup.add(stone);
             }
 
+            const baseWoodMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
+            [0.4, -0.4, 1.2].forEach((rot) => {
+                const baseLog = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.65, 6), baseWoodMat);
+                baseLog.position.set(0, 0.12, 0);
+                baseLog.rotation.set(Math.PI / 2, rot, 0.2);
+                tableGroup.add(baseLog);
+            });
+
             const flameColors = [0xf97316, 0xfacc15, 0xef4444];
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 4; i++) {
                 const flame = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.26, 0.62, 0.26),
+                    new THREE.BoxGeometry(0.24, 0.55, 0.24),
                     new THREE.MeshBasicMaterial({ color: flameColors[i % flameColors.length] })
                 );
-                flame.position.set((Math.random() - 0.5) * 0.24, 0.38, (Math.random() - 0.5) * 0.24);
+                flame.position.set((Math.random() - 0.5) * 0.2, 0.35, (Math.random() - 0.5) * 0.2);
                 tableGroup.add(flame);
                 animatedObjects.flames.push(flame);
             }
 
-            const fireLight = new THREE.PointLight(0xf97316, 2.0, 13);
-            fireLight.position.set(0, 1.25, 0);
+            const fireLight = new THREE.PointLight(0xf97316, 1.7, 11);
+            fireLight.position.set(0, 1.15, 0);
             environmentGroup.add(fireLight);
             animatedObjects.fireLight = fireLight;
+        }
+
+        function syncCampfireCircleLayout() {
+            if (state.theme !== 'campfire') return;
+            while (cfChairMeshes.length > 0) {
+                tableGroup.remove(cfChairMeshes.pop());
+            }
+
+            const players = Object.values(state.owPlayers);
+            players.sort((a, b) => (a.isMe ? -1 : b.isMe ? 1 : String(a.id).localeCompare(String(b.id))));
+            const count = Math.max(1, players.length);
+            const radius = Math.min(3.8, 1.85 + Math.max(0, count - 3) * 0.22);
+
+            players.forEach((p, idx) => {
+                const angle = (Math.PI / 2) + (idx / count) * Math.PI * 2;
+                const cx = Math.cos(angle) * radius;
+                const cz = Math.sin(angle) * radius;
+
+                const chair = buildChairMesh(0x5c2d16, 0xb45309);
+                chair.position.set(cx, 0, cz);
+                chair.rotation.y = Math.atan2(-cx, -cz);
+                tableGroup.add(chair);
+                cfChairMeshes.push(chair);
+
+                p.targetX = cx;
+                p.targetZ = cz;
+                if (p.isMe) {
+                    state.owPos.x = cx;
+                    state.owPos.z = cz;
+                }
+            });
         }
 
         function buildBeachScene() {
@@ -1322,21 +1395,21 @@
                 ctx.fillRect(1, 9, 6, 6);
             });
             floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
-            floorTex.repeat.set(14, 14);
+            floorTex.repeat.set(12, 12);
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.4 }));
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             environmentGroup.add(floor);
 
             const danceFloor = new THREE.Mesh(
-                new THREE.BoxGeometry(6.4, 0.04, 5.4),
-                new THREE.MeshStandardMaterial({ color: 0x1e1b4b, emissive: 0x4c1d95, emissiveIntensity: 0.35 })
+                new THREE.BoxGeometry(6.8, 0.04, 5.6),
+                new THREE.MeshStandardMaterial({ color: 0x311042, emissive: 0x581c87, emissiveIntensity: 0.35 })
             );
-            danceFloor.position.set(0, 0.02, -0.5);
+            danceFloor.position.set(0, 0.02, -0.6);
             environmentGroup.add(danceFloor);
 
-            const djBooth = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.15, 1.0), new THREE.MeshStandardMaterial({ color: 0x1e1b4b }));
-            djBooth.position.set(0, 0.575, -5.4);
+            const djBooth = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.15, 0.95), new THREE.MeshStandardMaterial({ color: 0x1e1b4b }));
+            djBooth.position.set(0, 0.58, -5.2);
             environmentGroup.add(djBooth);
 
             const eqColors = [0xec4899, 0x8b5cf6, 0x06b6d4, 0x10b981, 0xf59e0b];
@@ -1345,54 +1418,54 @@
                     new THREE.BoxGeometry(0.28, 1.3, 0.14),
                     new THREE.MeshBasicMaterial({ color: eqColors[i % eqColors.length] })
                 );
-                bar.position.set(-1.75 + i * 0.35, 1.8, -5.5);
+                bar.position.set(-1.75 + i * 0.35, 1.8, -5.3);
                 environmentGroup.add(bar);
                 animatedObjects.clubEqualizer.push(bar);
             }
 
             [0xec4899, 0x06b6d4, 0xa855f7].forEach((col, idx) => {
-                const light = new THREE.PointLight(col, 1.7, 14);
-                light.position.set(-3.0 + idx * 3.0, 3.5, -1.2);
+                const light = new THREE.PointLight(col, 1.6, 13);
+                light.position.set(-3.0 + idx * 3.0, 3.6, -1.2);
                 environmentGroup.add(light);
                 animatedObjects.clubLights.push(light);
             });
 
             const vipCoords = [
-                { id: 'vip_left_1', x: -5.2, z: -2.2 },
-                { id: 'vip_left_2', x: -5.2, z: 2.2 },
-                { id: 'vip_right_1', x: 5.2, z: -2.2 },
-                { id: 'vip_right_2', x: 5.2, z: 2.2 }
+                { id: 'vip_1', x: -5.2, z: -2.2 },
+                { id: 'vip_2', x: 5.2, z: -2.2 },
+                { id: 'vip_3', x: -5.2, z: 2.2 },
+                { id: 'vip_4', x: 5.2, z: 2.2 }
             ];
 
-            vipCoords.forEach((vt) => {
-                const cocktailTop = new THREE.Mesh(
+            vipCoords.forEach((vc) => {
+                const top = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.62, 0.62, 0.08, 14),
-                    new THREE.MeshStandardMaterial({ color: 0x1e1b4b, emissive: 0x701a75, emissiveIntensity: 0.45 })
+                    new THREE.MeshStandardMaterial({ color: 0x1e1b4b, emissive: 0x6d28d9, emissiveIntensity: 0.45 })
                 );
-                cocktailTop.position.set(vt.x, 0.78, vt.z);
-                environmentGroup.add(cocktailTop);
+                top.position.set(vc.x, 0.78, vc.z);
+                tableGroup.add(top);
 
-                const cocktailLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.76, 10), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-                cocktailLeg.position.set(vt.x, 0.38, vt.z);
-                environmentGroup.add(cocktailLeg);
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 0.76, 8), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+                leg.position.set(vc.x, 0.38, vc.z);
+                tableGroup.add(leg);
 
-                const c1 = buildChairMesh(0x1e1b4b, 0xec4899);
-                c1.position.set(vt.x - 0.95, 0, vt.z);
-                c1.rotation.y = Math.PI / 2;
-                environmentGroup.add(c1);
+                const leftChair = buildChairMesh(0x1e1b4b, 0xec4899);
+                leftChair.position.set(vc.x - 0.92, 0, vc.z);
+                leftChair.rotation.y = Math.PI / 2;
+                tableGroup.add(leftChair);
 
-                const c2 = buildChairMesh(0x1e1b4b, 0xec4899);
-                c2.position.set(vt.x + 0.95, 0, vt.z);
-                c2.rotation.y = -Math.PI / 2;
-                environmentGroup.add(c2);
+                const rightChair = buildChairMesh(0x1e1b4b, 0xec4899);
+                rightChair.position.set(vc.x + 0.92, 0, vc.z);
+                rightChair.rotation.y = -Math.PI / 2;
+                tableGroup.add(rightChair);
 
                 clubTables.push({
-                    id: vt.id,
-                    x: vt.x,
-                    z: vt.z,
+                    id: vc.id,
+                    x: vc.x,
+                    z: vc.z,
                     seats: [
-                        { x: vt.x - 0.95, z: vt.z },
-                        { x: vt.x + 0.95, z: vt.z }
+                        { x: vc.x - 0.92, z: vc.z },
+                        { x: vc.x + 0.92, z: vc.z }
                     ]
                 });
             });
@@ -1426,10 +1499,7 @@
             pole.position.set(x, 1.35, z);
             environmentGroup.add(pole);
 
-            const bulb = new THREE.Mesh(
-                new THREE.BoxGeometry(0.26, 0.28, 0.26),
-                new THREE.MeshBasicMaterial({ color: 0xfef08a })
-            );
+            const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.28, 0.26), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
             bulb.position.set(x, 2.78, z);
             environmentGroup.add(bulb);
 
@@ -1516,10 +1586,7 @@
             environmentGroup.add(fountainWater);
 
             for (let d = 0; d < 8; d++) {
-                const drop = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.12, 0.12, 0.12),
-                    new THREE.MeshBasicMaterial({ color: 0xbae6fd })
-                );
+                const drop = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: 0xbae6fd }));
                 drop.position.set(Math.cos(d) * 0.35, 0.6, 2.2 + Math.sin(d) * 0.35);
                 environmentGroup.add(drop);
                 animatedObjects.fountainDrops.push(drop);
@@ -1528,7 +1595,6 @@
             createOpenWorldBench('plaza_west', -2.7, 2.2, Math.PI / 2);
             createOpenWorldBench('plaza_east', 2.7, 2.2, -Math.PI / 2);
 
-            // 1. BÖLGE: OTUR BENİMLE PARKI
             const grass = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.05, 13.5), new THREE.MeshStandardMaterial({ color: 0x14532d }));
             grass.position.set(-9.2, 0.025, -1.2);
             environmentGroup.add(grass);
@@ -1551,10 +1617,7 @@
                 environmentGroup.add(bed);
 
                 for (let f = 0; f < 5; f++) {
-                    const blossom = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.18, 0.18, 0.18),
-                        new THREE.MeshBasicMaterial({ color: flowerColors[(idx + f) % flowerColors.length] })
-                    );
+                    const blossom = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), new THREE.MeshBasicMaterial({ color: flowerColors[(idx + f) % flowerColors.length] }));
                     blossom.position.set(fx - 0.55 + f * 0.28, 0.24, fz + (f % 2 === 0 ? 0.18 : -0.18));
                     environmentGroup.add(blossom);
                 }
@@ -1574,7 +1637,6 @@
             createOpenWorldBench('park_west', -11.3, -0.6, Math.PI / 2);
             createOpenWorldBench('park_east', -7.1, -0.6, -Math.PI / 2);
 
-            // 2. BÖLGE: RAP KONSER SAHNESİ — BEN PİRO
             const stageBase = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.85, 3.8), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 }));
             stageBase.position.set(0, 0.425, -9.2);
             environmentGroup.add(stageBase);
@@ -1633,7 +1695,6 @@
                 owConcertNpcs.push({ sprite: nSprite, baseY: 0.92, phase: nc.ph, amp: 0.11 });
             });
 
-            // 3. BÖLGE: STARBUKSH KAFESİ
             const cafeDeck = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.06, 13.0), new THREE.MeshStandardMaterial({ color: 0x3f2312 }));
             cafeDeck.position.set(9.2, 0.03, -1.2);
             environmentGroup.add(cafeDeck);
@@ -1693,8 +1754,7 @@
 
         function renderTreatsOnTable() {
             clearGroup(treatsGroup);
-            const isGroupOrOpenWorld = state.theme === 'openworld' || ((state.theme === 'campfire' || state.theme === 'club') && !state.cfPrivateMode);
-            if (isGroupOrOpenWorld) return;
+            if (state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club') return;
 
             const tableY = state.theme === 'beach' ? 0.54 : 0.84;
             const seatOffsets = [
@@ -1717,18 +1777,17 @@
             const t = THEMES[themeId] || THEMES.cafe;
 
             scene.background = new THREE.Color(t.skyColor);
-            scene.fog = new THREE.FogExp2(t.fogColor, (themeId === 'openworld' || themeId === 'club' || themeId === 'campfire') ? 0.022 : 0.042);
+            scene.fog = new THREE.FogExp2(t.fogColor, (themeId === 'openworld' || themeId === 'club') ? 0.022 : 0.042);
             ambientLight.color = new THREE.Color(t.ambientLight);
 
             clearGroup(environmentGroup);
             clearGroup(tableGroup);
-            clearGroup(campfireChairsGroup);
             animatedObjects.fireLight = null;
             animatedObjects.flames = [];
+            animatedObjects.fallingLogs = [];
             animatedObjects.clubLights = [];
             animatedObjects.clubEqualizer = [];
             animatedObjects.seaWaves = [];
-            animatedObjects.lanterns = [];
             animatedObjects.fountainDrops = [];
             animatedObjects.chalkboardCanvas = null;
             animatedObjects.chalkboardTexture = null;
@@ -1736,89 +1795,73 @@
 
             const joyZone = document.getElementById('mobile-joystick-zone');
             const owSocialBar = document.getElementById('ow-social-bar');
-            const isFreeRoam = themeId === 'openworld' || (themeId === 'club' && !state.cfPrivateMode);
-            const isGroupCampfire = themeId === 'campfire' && !state.cfPrivateMode;
+            const woodBtn = document.getElementById('btn-throw-wood');
+            const clubDanceBtn = document.getElementById('btn-club-dance');
+            const clubTableBtn = document.getElementById('btn-club-table');
 
-            if (isFreeRoam || isGroupCampfire) {
-                if (isFreeRoam) {
-                    joyZone.classList.remove('hidden');
-                } else {
-                    joyZone.classList.add('hidden');
-                }
+            joyZone.classList.add('hidden');
+            owSocialBar.classList.add('hidden');
+            woodBtn.classList.add('hidden');
+            clubDanceBtn.classList.add('hidden');
+            clubTableBtn.classList.add('hidden');
+            document.getElementById('cf-player-bar').classList.add('hidden');
+            document.getElementById('ow-consent-banner').classList.add('hidden');
+
+            if (themeId === 'openworld') {
+                buildOpenWorldScene();
+                joyZone.classList.remove('hidden');
                 owSocialBar.classList.remove('hidden');
-
-                if (themeId === 'openworld') {
-                    buildOpenWorldScene();
-                    applyResponsiveCamera('openworld');
-                } else if (themeId === 'club') {
-                    buildClubScene();
-                    applyResponsiveCamera('club_group');
-                } else if (themeId === 'campfire') {
-                    buildCampfireScene();
-                    applyResponsiveCamera('campfire_group');
+            } else if (themeId === 'campfire') {
+                buildCampfireScene();
+                if (state.mySeatIndex !== -1) woodBtn.classList.remove('hidden');
+            } else if (themeId === 'club') {
+                buildClubScene();
+                if (state.mySeatIndex !== -1) {
+                    joyZone.classList.remove('hidden');
+                    clubDanceBtn.classList.remove('hidden');
                 }
             } else {
-                joyZone.classList.add('hidden');
-                owSocialBar.classList.add('hidden');
-                document.getElementById('ow-consent-banner').classList.add('hidden');
-                document.getElementById('campfire-player-popup').classList.add('hidden');
-
                 if (themeId === 'cafe') buildCafeScene();
-                else if (themeId === 'campfire') buildCampfireScene();
                 else if (themeId === 'beach') buildBeachScene();
-                else if (themeId === 'club') buildClubScene();
 
                 if (themeId !== 'beach') {
-                    const chairColors = {
-                        cafe: [0x78350f, 0xb45309],
-                        campfire: [0x5c2d16, 0x92400e],
-                        club: [0x1e1b4b, 0xec4899]
-                    };
-                    const [woodCol, cushCol] = chairColors[themeId] || chairColors.cafe;
                     SEAT_CONFIGS.forEach((cfg) => {
-                        const chair = buildChairMesh(woodCol, cushCol);
+                        const chair = buildChairMesh(0x78350f, 0xb45309);
                         chair.position.set(cfg.x, 0, cfg.z);
                         chair.rotation.y = cfg.rotY;
                         tableGroup.add(chair);
                     });
                 }
-                applyResponsiveCamera('1v1');
             }
 
             document.getElementById('room-theme-icon').textContent = t.icon;
             if (themeId === 'openworld') {
                 document.getElementById('hud-theme-name').textContent = `${t.name} • Serbest Gezinti`;
-            } else if (themeId === 'campfire' && !state.cfPrivateMode) {
-                document.getElementById('hud-theme-name').textContent = `${t.name} • Ateş Çemberi (Sınırsız)`;
-            } else if (themeId === 'club' && !state.cfPrivateMode) {
-                document.getElementById('hud-theme-name').textContent = `${t.name} • Ortak Pist & Masalar`;
+            } else if (themeId === 'campfire') {
+                document.getElementById('hud-theme-name').textContent = state.cfPrivateMode
+                    ? `${t.name} • Baş Başa Ateş`
+                    : `${t.name} • Ateş Başı Çemberi`;
+            } else if (themeId === 'club') {
+                document.getElementById('hud-theme-name').textContent = `${t.name} • Pist & 2 Kişilik Masalar`;
             } else {
-                document.getElementById('hud-theme-name').textContent = `${t.name} • Baş Başa Masa`;
+                document.getElementById('hud-theme-name').textContent = `${t.name} • 2 Kişilik Masa`;
             }
 
-            const danceBtn = document.getElementById('btn-dance-invite');
-            if (themeId === 'club' && state.cfPrivateMode && state.mySeatIndex !== -1) {
-                danceBtn.classList.remove('hidden');
-            } else {
-                danceBtn.classList.add('hidden');
-                document.getElementById('dance-invite-banner').classList.add('hidden');
-            }
-
+            applyResponsiveCameraForTheme(themeId);
+            updateMinigameButtonVisibility();
             renderTreatsOnTable();
-            if (!isFreeRoam && !isGroupCampfire) {
+            if (themeId !== 'openworld' && themeId !== 'campfire' && themeId !== 'club') {
                 renderAvatars();
             }
         }
 
         // ==========================================
-        // 5. AVATARLAR, KONUŞMA BALONLARI VE GRUP/AÇIK DÜNYA OYUNCULARI
+        // 5. AVATARLAR VE ÇOK OYUNCULU KARAKTERLER
         // ==========================================
         const avatarObjects = [null, null];
 
         function renderAvatars() {
-            const isGroupOrOpenWorld = state.theme === 'openworld' || ((state.theme === 'campfire' || state.theme === 'club') && !state.cfPrivateMode);
-            if (isGroupOrOpenWorld) return;
-
+            if (state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club') return;
             clearGroup(avatarsGroup);
             avatarObjects[0] = null;
             avatarObjects[1] = null;
@@ -1885,10 +1928,9 @@
             if (!playerData || !playerData.id) return;
             const existing = state.owPlayers[playerData.id];
             if (existing) {
-                existing.targetX = typeof playerData.x === 'number' ? playerData.x : existing.targetX;
-                existing.targetZ = typeof playerData.z === 'number' ? playerData.z : existing.targetZ;
+                if (typeof playerData.x === 'number') existing.targetX = playerData.x;
+                if (typeof playerData.z === 'number') existing.targetZ = playerData.z;
                 if (typeof playerData.isDancing === 'boolean') existing.isDancing = playerData.isDancing;
-                if (playerData.tableId !== undefined) existing.tableId = playerData.tableId;
                 return;
             }
 
@@ -1899,7 +1941,6 @@
             const startX = typeof playerData.x === 'number' ? playerData.x : 0;
             const startZ = typeof playerData.z === 'number' ? playerData.z : 2.5;
             sprite.position.set(startX, 0.95, startZ);
-            sprite.userData = { playerId: playerData.id, playerName: playerData.name || 'Gezgin' };
             avatarsGroup.add(sprite);
 
             const wrapper = document.createElement('div');
@@ -1912,6 +1953,12 @@
             const badgeEl = document.createElement('div');
             badgeEl.className = 'name-badge' + (isMe ? ' me' : '');
             badgeEl.textContent = playerData.name || 'Gezgin';
+            if (!isMe) {
+                badgeEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handlePlayerInteractionClick(playerData.id);
+                });
+            }
             wrapper.appendChild(badgeEl);
 
             const labelObj = new THREE.CSS2DObject(wrapper);
@@ -1931,42 +1978,13 @@
                 z: startZ,
                 targetX: startX,
                 targetZ: startZ,
-                isMe,
                 isDancing: Boolean(playerData.isDancing),
-                tableId: playerData.tableId || null
+                isMe
             };
 
-            if (state.theme === 'campfire' && !state.cfPrivateMode) {
-                layoutCampfireCircle();
+            if (state.theme === 'campfire') {
+                syncCampfireCircleLayout();
             }
-        }
-
-        function layoutCampfireCircle() {
-            if (state.theme !== 'campfire' || state.cfPrivateMode) return;
-            clearGroup(campfireChairsGroup);
-
-            const players = Object.values(state.owPlayers);
-            players.sort((a, b) => String(a.id).localeCompare(String(b.id)));
-            const count = Math.max(1, players.length);
-            const radius = Math.max(2.15, 1.75 + count * 0.22);
-
-            players.forEach((p, idx) => {
-                const angle = (idx / count) * Math.PI * 2 + Math.PI / 2;
-                const cx = Math.cos(angle) * radius;
-                const cz = Math.sin(angle) * radius;
-
-                const chair = buildChairMesh(0x5c2d16, 0x92400e);
-                chair.position.set(cx, 0, cz);
-                chair.rotation.y = Math.atan2(-cx, -cz);
-                campfireChairsGroup.add(chair);
-
-                p.targetX = cx;
-                p.targetZ = cz;
-                if (p.isMe) {
-                    state.owPos.x = cx;
-                    state.owPos.z = cz;
-                }
-            });
         }
 
         function removeOpenWorldPlayer(playerId) {
@@ -1980,8 +1998,19 @@
                 avatarsGroup.remove(p.labelObj);
             }
             delete state.owPlayers[playerId];
+            if (state.theme === 'campfire') {
+                syncCampfireCircleLayout();
+            }
+        }
+
+        function handlePlayerInteractionClick(playerId) {
+            const target = state.owPlayers[playerId];
+            if (!target || target.isMe) return;
+
             if (state.theme === 'campfire' && !state.cfPrivateMode) {
-                layoutCampfireCircle();
+                state.cfSelectedPlayerId = playerId;
+                document.getElementById('cf-selected-name').textContent = `🔥 ${target.name} seçildi`;
+                document.getElementById('cf-player-bar').classList.remove('hidden');
             }
         }
 
@@ -1990,14 +2019,14 @@
             if (!p || !p.bubbleEl) return;
             if (p.bubbleTimeout) clearTimeout(p.bubbleTimeout);
             p.bubbleEl.textContent = text;
-            p.bubbleEl.classList.remove('hidden', 'typing');
+            p.bubbleEl.classList.remove('hidden');
             p.bubbleTimeout = setTimeout(() => {
                 if (p.bubbleEl) p.bubbleEl.classList.add('hidden');
             }, 6500);
         }
 
-        function showSpeechBubble(seatIdx, text, isTyping = false) {
-            if (state.theme === 'openworld' || ((state.theme === 'campfire' || state.theme === 'club') && !state.cfPrivateMode)) {
+        function showSpeechBubble(seatIdx, text) {
+            if (state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club') {
                 showOpenWorldBubble(CLIENT_ID, text);
                 return;
             }
@@ -2006,14 +2035,10 @@
             if (av.bubbleTimeout) clearTimeout(av.bubbleTimeout);
 
             av.bubbleEl.textContent = text;
-            av.bubbleEl.classList.remove('hidden', 'typing');
-            if (isTyping) av.bubbleEl.classList.add('typing');
-
-            if (!isTyping) {
-                av.bubbleTimeout = setTimeout(() => {
-                    if (av.bubbleEl) av.bubbleEl.classList.add('hidden');
-                }, 6500);
-            }
+            av.bubbleEl.classList.remove('hidden');
+            av.bubbleTimeout = setTimeout(() => {
+                if (av.bubbleEl) av.bubbleEl.classList.add('hidden');
+            }, 6500);
         }
 
         function sitAtSeat(seatIdx) {
@@ -2029,9 +2054,7 @@
 
             document.getElementById('btn-stand').classList.remove('hidden');
             document.getElementById('bottom-chat-bar').classList.remove('hidden');
-            if (state.theme === 'club') {
-                document.getElementById('btn-dance-invite').classList.remove('hidden');
-            }
+            updateMinigameButtonVisibility();
             renderAvatars();
         }
 
@@ -2069,23 +2092,25 @@
             owInput.x = 0;
             owInput.z = 0;
 
-            clearGroup(campfireChairsGroup);
             document.getElementById('mobile-joystick-zone').classList.add('hidden');
             document.getElementById('ow-social-bar').classList.add('hidden');
             document.getElementById('ow-consent-banner').classList.add('hidden');
-            document.getElementById('campfire-player-popup').classList.add('hidden');
+            document.getElementById('cf-player-bar').classList.add('hidden');
+            document.getElementById('btn-throw-wood').classList.add('hidden');
+            document.getElementById('btn-club-dance').classList.add('hidden');
+            document.getElementById('btn-club-table').classList.add('hidden');
             document.getElementById('btn-stand').classList.add('hidden');
             document.getElementById('btn-report-partner').classList.add('hidden');
             document.getElementById('bottom-chat-bar').classList.add('hidden');
-            document.getElementById('btn-dance-invite').classList.add('hidden');
-            document.getElementById('dance-invite-banner').classList.add('hidden');
+            document.getElementById('btn-toggle-minigame').classList.add('hidden');
+            document.getElementById('minigame-drawer').classList.add('hidden');
             updateConsumeButton();
             renderTreatsOnTable();
             if (state.theme !== 'openworld' && state.theme !== 'campfire' && state.theme !== 'club') renderAvatars();
         }
 
         // ==========================================
-        // 6. SOHBET, MENÜ, ORTAM DEĞİŞTİRME VE DANS
+        // 6. SOHBET, MENÜ VE ORTAM DEĞİŞTİRME
         // ==========================================
         function appendChatMessage(senderName, text, isMe = false, isSystem = false) {
             const feed = document.getElementById('chat-feed');
@@ -2127,9 +2152,9 @@
             const grid = document.getElementById('order-items-grid');
             grid.innerHTML = '';
 
-            const isGroupOrOpenWorld = state.theme === 'openworld' || ((state.theme === 'campfire' || state.theme === 'club') && !state.cfPrivateMode);
+            const isMultiRoom = state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club';
             const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
-            const hasPartner = !isGroupOrOpenWorld && Boolean(state.seats[partnerIdx]);
+            const hasPartner = !isMultiRoom && Boolean(state.seats[partnerIdx]);
 
             t.menu.forEach((item) => {
                 const card = document.createElement('div');
@@ -2145,10 +2170,10 @@
                 const selfBtn = document.createElement('button');
                 selfBtn.type = 'button';
                 selfBtn.className = 'pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-2 py-1 text-[11px] font-semibold';
-                selfBtn.textContent = 'Al';
+                selfBtn.textContent = isMultiRoom ? 'Ismarla' : 'Al';
                 selfBtn.addEventListener('click', () => {
                     document.getElementById('order-drawer').classList.add('hidden');
-                    if (isGroupOrOpenWorld) {
+                    if (isMultiRoom) {
                         showOpenWorldBubble(CLIENT_ID, item.treatMsg);
                         appendChatMessage(state.playerName, item.treatMsg, true);
                         if (openWorldChannel) {
@@ -2179,7 +2204,7 @@
                     giftBtn.addEventListener('click', () => {
                         giveTreatToSeat(partnerIdx, item);
                         document.getElementById('order-drawer').classList.add('hidden');
-                        showSpeechBubble(state.mySeatIndex, item.treatMsg, false);
+                        showSpeechBubble(state.mySeatIndex, item.treatMsg);
                         appendChatMessage(state.playerName, item.treatMsg, true);
                         if (roomChannel) {
                             roomChannel.send({
@@ -2213,8 +2238,8 @@
 
         function updateConsumeButton() {
             const btn = document.getElementById('btn-consume-item');
-            const isGroupOrOpenWorld = state.theme === 'openworld' || ((state.theme === 'campfire' || state.theme === 'club') && !state.cfPrivateMode);
-            const myItem = (!isGroupOrOpenWorld && state.mySeatIndex !== -1) ? state.heldItems[state.mySeatIndex] : null;
+            const isMulti = state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club';
+            const myItem = (!isMulti && state.mySeatIndex !== -1) ? state.heldItems[state.mySeatIndex] : null;
             if (!myItem || myItem.remaining <= 0) {
                 btn.classList.add('hidden');
                 return;
@@ -2257,55 +2282,449 @@
             grid.innerHTML = '';
 
             Object.values(THEMES).forEach((t) => {
-                if (t.id === state.theme && !state.cfPrivateMode) return;
+                if (t.id === state.theme) return;
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'pixel-btn bg-slate-900 hover:bg-indigo-950/80 border border-slate-700 p-2 flex items-center gap-2 text-left';
                 btn.innerHTML = `<span class="text-lg">${t.icon}</span><div><div class="text-xs font-bold text-slate-100">${escapeHtml(t.name)}</div><div class="text-[10px] text-slate-400">Işınlan</div></div>`;
                 btn.addEventListener('click', () => {
                     document.getElementById('teleport-drawer').classList.add('hidden');
-                    if (t.id === 'openworld') {
-                        standUp(true);
-                        state.theme = 'openworld';
-                        enterOpenWorld();
-                        return;
-                    }
-                    if (t.id === 'campfire' || t.id === 'club') {
-                        standUp(true);
-                        state.theme = t.id;
-                        enterGroupRoom(t.id);
-                        return;
-                    }
-                    const wasGroupOrOpenWorld = state.theme === 'openworld' || ((state.theme === 'campfire' || state.theme === 'club') && !state.cfPrivateMode);
-                    if (wasGroupOrOpenWorld) {
-                        standUp(false);
-                        state.theme = t.id;
+                    standUp(true);
+                    state.theme = t.id;
+                    updatePresenceLocation(t.id);
+                    if (t.id === 'openworld') enterOpenWorld();
+                    else if (t.id === 'campfire') enterCampfireGroup();
+                    else if (t.id === 'club') enterClubMulti();
+                    else {
                         document.getElementById('lobby-modal').classList.remove('hidden');
                         renderThemeCards();
                         startRealMatchmaking();
-                        return;
-                    }
-                    buildSceneForTheme(t.id);
-                    appendChatMessage('', `✨ ${state.playerName} ortamı "${t.name}" olarak değiştirdi!`, false, true);
-                    if (roomChannel) {
-                        roomChannel.send({
-                            type: 'broadcast',
-                            event: 'change_theme',
-                            payload: { senderId: CLIENT_ID, themeId: t.id, senderName: state.playerName }
-                        });
                     }
                 });
                 grid.appendChild(btn);
             });
         }
 
-        function startDanceAnimation() {
-            state.isDancing = true;
-            state.danceEndTime = performance.now() + 10000;
+        // ==========================================
+        // 6.5 MİNİ OYUNLAR: XOX & TAŞ-KAĞIT-MAKAS
+        // ==========================================
+        const XOX_WINS = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function updateMinigameButtonVisibility() {
+            const btn = document.getElementById('btn-toggle-minigame');
+            const allowed = state.theme === 'cafe' || state.theme === 'beach' || state.theme === 'campfire';
+            if (allowed && state.mySeatIndex !== -1) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+                document.getElementById('minigame-drawer').classList.add('hidden');
+            }
+        }
+
+        function checkXoxWinner(board) {
+            for (const [a, b, c] of XOX_WINS) {
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            if (board.every(cell => cell !== null)) return 'DRAW';
+            return null;
+        }
+
+        function sendMinigameBroadcast(eventName, payload) {
+            const isGroupCampfire = state.theme === 'campfire' && !state.cfPrivateMode;
+            if (isGroupCampfire && openWorldChannel) {
+                openWorldChannel.send({ type: 'broadcast', event: eventName, payload });
+            } else if (roomChannel) {
+                roomChannel.send({ type: 'broadcast', event: eventName, payload });
+            }
+        }
+
+        function renderXoxBoard() {
+            const boardEl = document.getElementById('xox-board');
+            const statusEl = document.getElementById('xox-status');
+            if (!boardEl || !statusEl) return;
+
+            boardEl.innerHTML = '';
+            state.xoxBoard.forEach((cell, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'pixel-btn bg-slate-900 hover:bg-slate-800 border border-slate-700 h-11 text-base font-bold flex items-center justify-center ' +
+                    (cell === 'X' ? 'text-amber-300' : (cell === 'O' ? 'text-sky-300' : 'text-slate-400'));
+                btn.textContent = cell || '';
+                btn.disabled = Boolean(cell) || Boolean(state.xoxWinner);
+                btn.addEventListener('click', () => handleXoxClick(idx));
+                boardEl.appendChild(btn);
+            });
+
+            if (state.xoxWinner === 'DRAW') {
+                statusEl.textContent = '🤝 Berabere! Yeni el başlatabilirsin.';
+            } else if (state.xoxWinner) {
+                statusEl.textContent = `🏆 Kazanan: ${state.xoxWinner}!`;
+            } else {
+                statusEl.textContent = `Sıra ${state.xoxTurn} oyuncusunda`;
+            }
+        }
+
+        function handleXoxClick(idx, isRemote = false, forcedMark = null) {
+            if (state.xoxBoard[idx] || state.xoxWinner) return;
+            const mark = forcedMark || state.xoxTurn;
+            state.xoxBoard[idx] = mark;
+            state.xoxWinner = checkXoxWinner(state.xoxBoard);
+            if (!state.xoxWinner) {
+                state.xoxTurn = mark === 'X' ? 'O' : 'X';
+            }
+            renderXoxBoard();
+
+            if (!isRemote) {
+                sendMinigameBroadcast('xox_move', {
+                    senderId: CLIENT_ID,
+                    senderName: state.playerName,
+                    idx,
+                    mark
+                });
+                if (state.xoxWinner && state.xoxWinner !== 'DRAW') {
+                    appendChatMessage('', `🎮 XOX oyununu ${state.xoxWinner} kazandı!`, false, true);
+                }
+            }
+        }
+
+        function resetXoxGame(isRemote = false) {
+            state.xoxBoard = Array(9).fill(null);
+            state.xoxTurn = 'X';
+            state.xoxWinner = null;
+            renderXoxBoard();
+            if (!isRemote) {
+                sendMinigameBroadcast('xox_reset', { senderId: CLIENT_ID, senderName: state.playerName });
+            }
+        }
+
+        const RPS_LABELS = { rock: '🪨 Taş', paper: '📄 Kağıt', scissors: '✂️ Makas' };
+
+        function evaluateRpsRound() {
+            const resEl = document.getElementById('rps-result');
+            const stEl = document.getElementById('rps-status');
+            if (!state.myRpsChoice || !state.partnerRpsChoice) {
+                if (state.myRpsChoice) {
+                    stEl.textContent = `Seçimin: ${RPS_LABELS[state.myRpsChoice]} • Karşı taraf bekleniyor...`;
+                }
+                return;
+            }
+
+            const a = state.myRpsChoice;
+            const b = state.partnerRpsChoice;
+            let outcomeText = '';
+            if (a === b) {
+                outcomeText = `Berabere! İkiniz de ${RPS_LABELS[a]} seçtiniz.`;
+            } else if (
+                (a === 'rock' && b === 'scissors') ||
+                (a === 'paper' && b === 'rock') ||
+                (a === 'scissors' && b === 'paper')
+            ) {
+                outcomeText = `Sen kazandın! (${RPS_LABELS[a]} vs ${RPS_LABELS[b]})`;
+            } else {
+                outcomeText = `Karşı taraf kazandı! (${RPS_LABELS[a]} vs ${RPS_LABELS[b]})`;
+            }
+
+            stEl.textContent = 'Tur tamamlandı! Tekrar seçebilirsin.';
+            resEl.textContent = outcomeText;
+            appendChatMessage('', `✊ ${state.playerName}: ${outcomeText}`, false, true);
+
+            state.myRpsChoice = null;
+            state.partnerRpsChoice = null;
+        }
+
+        function handleRpsChoice(choice) {
+            state.myRpsChoice = choice;
+            document.getElementById('rps-result').textContent = '';
+            sendMinigameBroadcast('rps_choice', {
+                senderId: CLIENT_ID,
+                senderName: state.playerName,
+                choice
+            });
+            evaluateRpsRound();
         }
 
         // ==========================================
-        // 7. KAFE KARA TAHTA ÇİZİM SİSTEMİ
+        // 7. ÇOK OYUNCULU KAMP ATEŞİ & GECE KULÜBÜ
+        // ==========================================
+        function enterCampfireGroup() {
+            cancelMatchmaking();
+            document.getElementById('lobby-modal').classList.add('hidden');
+            clearGroup(avatarsGroup);
+            state.owPlayers = {};
+            state.mySeatIndex = 0;
+            state.cfPrivateMode = false;
+            state.cfSelectedPlayerId = null;
+            state.fireFuel = 0.78;
+            resetXoxGame(true);
+
+            buildSceneForTheme('campfire');
+            upsertOpenWorldPlayer({
+                id: CLIENT_ID,
+                name: state.playerName,
+                gender: state.gender,
+                profileIndex: state.profileIndex,
+                x: 0,
+                z: 2.2
+            }, true);
+            syncCampfireCircleLayout();
+
+            document.getElementById('btn-stand').classList.add('hidden');
+            document.getElementById('btn-report-partner').classList.add('hidden');
+            document.getElementById('bottom-chat-bar').classList.remove('hidden');
+            updateMinigameButtonVisibility();
+
+            const feed = document.getElementById('chat-feed');
+            feed.innerHTML = '';
+            appendChatMessage('', '🔥 Gece Kamp Ateşine hoş geldin! Ateş sönmeye başladığında "Odun At" butonuna basabilir veya bir oyuncuya tıklayıp baş başa ateşe geçebilirsin.', false, true);
+
+            if (!sbClient) return;
+            if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
+
+            openWorldChannel = sbClient.channel('private_oturbenimle_campfire_group', {
+                config: { private: true, presence: { key: CLIENT_ID } }
+            });
+
+            openWorldChannel
+                .on('presence', { event: 'sync' }, () => {
+                    const pState = openWorldChannel.presenceState();
+                    const presentIds = new Set();
+                    Object.values(pState).flat().forEach((u) => {
+                        if (!u || !u.id) return;
+                        presentIds.add(u.id);
+                        if (u.id !== CLIENT_ID) upsertOpenWorldPlayer(u, false);
+                    });
+                    Object.keys(state.owPlayers).forEach((pid) => {
+                        if (pid !== CLIENT_ID && !presentIds.has(pid)) removeOpenWorldPlayer(pid);
+                    });
+                    syncCampfireCircleLayout();
+                })
+                .on('broadcast', { event: 'ow_chat' }, ({ payload }) => {
+                    if (!payload || payload.id === CLIENT_ID) return;
+                    showOpenWorldBubble(payload.id, payload.text);
+                    appendChatMessage(payload.name, payload.text, false);
+                })
+                .on('broadcast', { event: 'cf_throw_wood' }, ({ payload }) => {
+                    if (!payload || payload.id === CLIENT_ID) return;
+                    state.fireFuel = Math.min(1.35, state.fireFuel + 0.35);
+                    spawnFallingFirewoodLog();
+                    showOpenWorldBubble(payload.id, 'Odun attım! 🔥');
+                    appendChatMessage('', `🪵 ${payload.name} kamp ateşine odun attı! Ateş canlandı.`, false, true);
+                })
+                .on('broadcast', { event: 'xox_move' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    handleXoxClick(payload.idx, true, payload.mark);
+                })
+                .on('broadcast', { event: 'xox_reset' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    resetXoxGame(true);
+                })
+                .on('broadcast', { event: 'rps_choice' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    state.partnerRpsChoice = payload.choice;
+                    evaluateRpsRound();
+                })
+                .on('broadcast', { event: 'cf_private_invite' }, ({ payload }) => {
+                    if (!payload || payload.targetId !== CLIENT_ID) return;
+                    state.owPendingInvite = {
+                        fromId: payload.fromId,
+                        fromName: payload.fromName,
+                        type: 'cf_private',
+                        roomId: payload.roomId
+                    };
+                    document.getElementById('ow-consent-text').textContent = `🔥 ${payload.fromName} seni gruptan ayrı baş başa ateşe davet ediyor`;
+                    document.getElementById('ow-consent-banner').classList.remove('hidden');
+                })
+                .on('broadcast', { event: 'cf_private_accept' }, ({ payload }) => {
+                    if (!payload || payload.targetId !== CLIENT_ID) return;
+                    enterPrivateCampfireRoom(payload.roomId, 0, {
+                        id: payload.fromId,
+                        name: payload.fromName,
+                        gender: payload.fromGender || 'female',
+                        profileIndex: payload.fromProfileIndex || 0,
+                        isMe: false
+                    });
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await openWorldChannel.track({
+                            id: CLIENT_ID,
+                            name: state.playerName,
+                            gender: state.gender,
+                            profileIndex: state.profileIndex
+                        });
+                    }
+                });
+        }
+
+        function enterPrivateCampfireRoom(roomId, mySeatIdx, partnerProfile) {
+            if (openWorldChannel && sbClient) {
+                sbClient.removeChannel(openWorldChannel);
+                openWorldChannel = null;
+            }
+            state.cfPrivateMode = true;
+            state.owPlayers = {};
+            state.roomId = roomId;
+            state.seats = [null, null];
+            state.mySeatIndex = mySeatIdx;
+            state.fireFuel = 0.85;
+            resetXoxGame(true);
+
+            buildSceneForTheme('campfire');
+            clearGroup(avatarsGroup);
+
+            const meObj = {
+                id: CLIENT_ID,
+                name: state.playerName,
+                gender: state.gender,
+                profileIndex: state.profileIndex,
+                isMe: true
+            };
+            state.seats[mySeatIdx] = meObj;
+            const partnerIdx = mySeatIdx === 0 ? 1 : 0;
+            state.seats[partnerIdx] = partnerProfile;
+
+            [meObj, partnerProfile].forEach((occ, i) => {
+                const isFirst = (i === 0 && mySeatIdx === 0) || (i === 1 && mySeatIdx === 1);
+                const cx = isFirst ? -1.45 : 1.45;
+                const chair = buildChairMesh(0x5c2d16, 0xb45309);
+                chair.position.set(cx, 0, 0.2);
+                chair.rotation.y = isFirst ? Math.PI / 2.3 : -Math.PI / 2.3;
+                tableGroup.add(chair);
+
+                upsertOpenWorldPlayer({ ...occ, x: cx, z: 0.2 }, occ.isMe);
+            });
+
+            document.getElementById('btn-report-partner').classList.remove('hidden');
+            document.getElementById('bottom-chat-bar').classList.remove('hidden');
+            updateMinigameButtonVisibility();
+            const feed = document.getElementById('chat-feed');
+            feed.innerHTML = '';
+            appendChatMessage('', `🔥 ${partnerProfile.name} ile gruptan ayrı baş başa kamp ateşine geçtiniz!`, false, true);
+            connectRoomChannel(roomId);
+        }
+
+        function enterClubMulti() {
+            cancelMatchmaking();
+            document.getElementById('lobby-modal').classList.add('hidden');
+            clearGroup(avatarsGroup);
+            state.owPlayers = {};
+            state.mySeatIndex = 0;
+            state.clubDancing = true;
+            state.clubSeatedTableId = null;
+            state.clubSeatedSeatIdx = -1;
+
+            const startX = Number(((Math.random() - 0.5) * 3.6).toFixed(2));
+            const startZ = Number((-0.4 + (Math.random() - 0.5) * 2.4).toFixed(2));
+            state.owPos = { x: startX, z: startZ };
+            lastSentOwPos = { x: startX, z: startZ };
+
+            buildSceneForTheme('club');
+            upsertOpenWorldPlayer({
+                id: CLIENT_ID,
+                name: state.playerName,
+                gender: state.gender,
+                profileIndex: state.profileIndex,
+                x: startX,
+                z: startZ,
+                isDancing: true
+            }, true);
+
+            const danceBtn = document.getElementById('btn-club-dance');
+            danceBtn.innerHTML = '<span>⏹️</span><span class="pixel-title text-xs">Dansı Durdur</span>';
+
+            document.getElementById('btn-stand').classList.add('hidden');
+            document.getElementById('btn-report-partner').classList.add('hidden');
+            document.getElementById('bottom-chat-bar').classList.remove('hidden');
+
+            const feed = document.getElementById('chat-feed');
+            feed.innerHTML = '';
+            appendChatMessage('', '🪩 Gece Kulübüne hoş geldin! Pistte herkesle birlikte dans edebilir veya kenardaki 2 kişilik masalara yaklaşarak oturabilirsin.', false, true);
+
+            if (!sbClient) return;
+            if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
+
+            openWorldChannel = sbClient.channel('private_oturbenimle_club_multi', {
+                config: { private: true, presence: { key: CLIENT_ID } }
+            });
+
+            openWorldChannel
+                .on('presence', { event: 'sync' }, () => {
+                    const pState = openWorldChannel.presenceState();
+                    const presentIds = new Set();
+                    Object.values(pState).flat().forEach((u) => {
+                        if (!u || !u.id) return;
+                        presentIds.add(u.id);
+                        if (u.id !== CLIENT_ID) upsertOpenWorldPlayer(u, false);
+                    });
+                    Object.keys(state.owPlayers).forEach((pid) => {
+                        if (pid !== CLIENT_ID && !presentIds.has(pid)) removeOpenWorldPlayer(pid);
+                    });
+                })
+                .on('broadcast', { event: 'ow_move' }, ({ payload }) => {
+                    if (!payload || payload.id === CLIENT_ID) return;
+                    upsertOpenWorldPlayer(payload, false);
+                })
+                .on('broadcast', { event: 'ow_chat' }, ({ payload }) => {
+                    if (!payload || payload.id === CLIENT_ID) return;
+                    showOpenWorldBubble(payload.id, payload.text);
+                    appendChatMessage(payload.name, payload.text, false);
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await openWorldChannel.track({
+                            id: CLIENT_ID,
+                            name: state.playerName,
+                            gender: state.gender,
+                            profileIndex: state.profileIndex,
+                            x: state.owPos.x,
+                            z: state.owPos.z,
+                            isDancing: state.clubDancing
+                        });
+                    }
+                });
+        }
+
+        function getNearestClubTable(x, z, maxDist = 1.8) {
+            let best = null;
+            let bestDist = maxDist;
+            clubTables.forEach((tbl) => {
+                const d = Math.hypot(x - tbl.x, z - tbl.z);
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = tbl;
+                }
+            });
+            return best;
+        }
+
+        function updateClubTableButton() {
+            if (state.theme !== 'club') return;
+            const btn = document.getElementById('btn-club-table');
+            const label = document.getElementById('club-table-label');
+
+            if (state.clubSeatedTableId) {
+                btn.classList.remove('hidden');
+                label.textContent = 'Masadan Kalk';
+                return;
+            }
+
+            const nearTbl = getNearestClubTable(state.owPos.x, state.owPos.z);
+            if (nearTbl) {
+                btn.classList.remove('hidden');
+                label.textContent = 'Masada Dur';
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // 8. KARA TAHTA ÇİZİM SİSTEMİ
         // ==========================================
         let chalkColor = '#f8fafc';
         let isDrawingChalk = false;
@@ -2364,7 +2783,7 @@
         }
 
         // ==========================================
-        // 8. AÇIK DÜNYA, KAMP ATEŞİ & GECE KULÜBÜ ETKİLEŞİMLERİ
+        // 9. AÇIK DÜNYA GİRİŞİ & KONTROLLERİ
         // ==========================================
         function getNearestBench(x, z, maxDist = 1.65) {
             let best = null;
@@ -2374,19 +2793,6 @@
                 if (d < bestDist) {
                     bestDist = d;
                     best = b;
-                }
-            });
-            return best;
-        }
-
-        function getNearestClubTable(x, z, maxDist = 2.0) {
-            let best = null;
-            let bestDist = maxDist;
-            clubTables.forEach((t) => {
-                const d = Math.hypot(x - t.x, z - t.z);
-                if (d < bestDist) {
-                    bestDist = d;
-                    best = t;
                 }
             });
             return best;
@@ -2407,74 +2813,16 @@
         }
 
         function updateOpenWorldContextButtons() {
-            const isGroupCampfire = state.theme === 'campfire' && !state.cfPrivateMode;
-            const isGroupClub = state.theme === 'club' && !state.cfPrivateMode;
-            if (state.theme !== 'openworld' && !isGroupCampfire && !isGroupClub) return;
+            if (state.theme !== 'openworld') return;
 
             const zoneEl = document.getElementById('ow-zone-banner');
-            const sitBtn = document.getElementById('btn-ow-sit');
-            const jumpBtn = document.getElementById('btn-ow-jump');
-            const loveBtn = document.getElementById('btn-ow-love');
-            const hugBtn = document.getElementById('btn-ow-hug');
-            const handBtn = document.getElementById('btn-ow-hand');
-            const stopPairBtn = document.getElementById('btn-ow-stop-pair');
-            const clubDanceBtn = document.getElementById('btn-club-dance');
-            const clubTableBtn = document.getElementById('btn-club-table');
-
-            // Ortak Kamp Ateşi Modu
-            if (isGroupCampfire) {
-                zoneEl.textContent = 'Ateş Çemberi • Oyuncuya Tıkla';
-                sitBtn.classList.add('hidden');
-                jumpBtn.classList.add('hidden');
-                loveBtn.classList.add('hidden');
-                hugBtn.classList.add('hidden');
-                handBtn.classList.add('hidden');
-                stopPairBtn.classList.add('hidden');
-                clubDanceBtn.classList.add('hidden');
-                clubTableBtn.classList.add('hidden');
-                return;
-            }
-
-            // Ortak Gece Kulübü Modu
-            if (isGroupClub) {
-                sitBtn.classList.add('hidden');
-                jumpBtn.classList.add('hidden');
-                loveBtn.classList.add('hidden');
-                hugBtn.classList.add('hidden');
-                handBtn.classList.add('hidden');
-                stopPairBtn.classList.add('hidden');
-
-                clubDanceBtn.classList.remove('hidden');
-                clubDanceBtn.textContent = state.clubDancing ? 'Dansı Durdur' : 'Dans Et';
-
-                if (state.clubSeatedTableId) {
-                    zoneEl.textContent = 'VIP Masa • 2 Kişilik';
-                    clubTableBtn.classList.remove('hidden');
-                    clubTableBtn.textContent = 'Masadan Kalk';
-                } else {
-                    const nearTable = getNearestClubTable(state.owPos.x, state.owPos.z);
-                    if (nearTable) {
-                        zoneEl.textContent = '2 Kişilik VIP Masa Yanı';
-                        clubTableBtn.classList.remove('hidden');
-                        clubTableBtn.textContent = 'Masada Dur';
-                    } else {
-                        zoneEl.textContent = 'Dans Pisti • Serbest Dans';
-                        clubTableBtn.classList.add('hidden');
-                    }
-                }
-                return;
-            }
-
-            // Açık Dünya Meydanı Modu
-            clubDanceBtn.classList.add('hidden');
-            clubTableBtn.classList.add('hidden');
-
             const { x, z } = state.owPos;
             if (x < -4.5) zoneEl.textContent = 'OTUR BENİMLE Parki';
             else if (x > 4.5) zoneEl.textContent = 'STARBUKSH Kafe';
             else if (z < -4.2) zoneEl.textContent = 'BEN PİRO Konser Alani';
             else zoneEl.textContent = 'Meydan Merkezi';
 
+            const sitBtn = document.getElementById('btn-ow-sit');
             if (state.owSeatedBenchId) {
                 sitBtn.classList.remove('hidden');
                 sitBtn.textContent = 'Kalk';
@@ -2488,19 +2836,20 @@
                 }
             }
 
+            const jumpBtn = document.getElementById('btn-ow-jump');
             const distToConcert = Math.hypot(x - 0, z - (-6.2));
-            if (distToConcert < 3.4) {
-                jumpBtn.classList.remove('hidden');
-            } else {
-                jumpBtn.classList.add('hidden');
-            }
+            if (distToConcert < 3.4) jumpBtn.classList.remove('hidden');
+            else jumpBtn.classList.add('hidden');
 
+            const loveBtn = document.getElementById('btn-ow-love');
+            const hugBtn = document.getElementById('btn-ow-hug');
+            const handBtn = document.getElementById('btn-ow-hand');
+            const stopPairBtn = document.getElementById('btn-ow-stop-pair');
             const nearPlayer = getNearestOtherPlayer(x, z);
 
             if (state.owLovePartnerId) {
                 loveBtn.classList.add('hidden');
                 stopPairBtn.classList.remove('hidden');
-
                 const partnerObj = state.owPlayers[state.owLovePartnerId];
                 const isPartnerClose = partnerObj && Math.hypot(x - partnerObj.x, z - partnerObj.z) < 2.6;
                 if (isPartnerClose && !state.owPairState) {
@@ -2514,11 +2863,8 @@
                 hugBtn.classList.add('hidden');
                 handBtn.classList.add('hidden');
                 stopPairBtn.classList.add('hidden');
-                if (nearPlayer) {
-                    loveBtn.classList.remove('hidden');
-                } else {
-                    loveBtn.classList.add('hidden');
-                }
+                if (nearPlayer) loveBtn.classList.remove('hidden');
+                else loveBtn.classList.add('hidden');
             }
         }
 
@@ -2528,141 +2874,6 @@
             const tex = createCharacterTexture(p.gender, p.profileIndex, false, false, waving);
             p.sprite.material.map = tex;
             p.sprite.material.needsUpdate = true;
-        }
-
-        function enterGroupRoom(themeId) {
-            cancelMatchmaking();
-            document.getElementById('lobby-modal').classList.add('hidden');
-            clearGroup(avatarsGroup);
-            state.owPlayers = {};
-            state.mySeatIndex = 0;
-            state.cfPrivateMode = false;
-            state.cfSelectedPlayerId = null;
-            state.clubDancing = false;
-            state.clubSeatedTableId = null;
-            state.clubSeatedSeatIdx = -1;
-
-            const startX = themeId === 'campfire' ? 0 : Number(((Math.random() - 0.5) * 3.0).toFixed(2));
-            const startZ = themeId === 'campfire' ? 2.2 : Number((Math.random() * 1.8 - 0.8).toFixed(2));
-            state.owPos = { x: startX, z: startZ };
-            lastSentOwPos = { x: startX, z: startZ };
-
-            buildSceneForTheme(themeId);
-            upsertOpenWorldPlayer({
-                id: CLIENT_ID,
-                name: state.playerName,
-                gender: state.gender,
-                profileIndex: state.profileIndex,
-                x: startX,
-                z: startZ,
-                isDancing: false,
-                tableId: null
-            }, true);
-
-            if (themeId === 'campfire') {
-                layoutCampfireCircle();
-            }
-
-            document.getElementById('btn-stand').classList.add('hidden');
-            document.getElementById('btn-report-partner').classList.add('hidden');
-            document.getElementById('bottom-chat-bar').classList.remove('hidden');
-
-            const feed = document.getElementById('chat-feed');
-            feed.innerHTML = '';
-            if (themeId === 'campfire') {
-                appendChatMessage('', '🔥 Ortak kamp ateşine katıldın! Sohbet edebilir veya bir oyuncuya tıklayıp baş başa ateş teklif edebilirsin.', false, true);
-            } else {
-                appendChatMessage('', '🪩 Gece kulübüne girdin! Pistte dans edebilir veya 2 kişilik VIP masalara yaklaşabilirsin.', false, true);
-            }
-
-            if (!sbClient) return;
-            if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
-
-            const channelName = `private_oturbenimle_group_${themeId}`;
-            openWorldChannel = sbClient.channel(channelName, {
-                config: { private: true, presence: { key: CLIENT_ID } }
-            });
-
-            openWorldChannel
-                .on('presence', { event: 'sync' }, () => {
-                    const pState = openWorldChannel.presenceState();
-                    const presentIds = new Set();
-                    Object.values(pState).flat().forEach((u) => {
-                        if (!u || !u.id) return;
-                        presentIds.add(u.id);
-                        if (u.id !== CLIENT_ID) {
-                            upsertOpenWorldPlayer(u, false);
-                        }
-                    });
-                    Object.keys(state.owPlayers).forEach((pid) => {
-                        if (pid !== CLIENT_ID && !presentIds.has(pid)) {
-                            removeOpenWorldPlayer(pid);
-                        }
-                    });
-                    if (state.theme === 'campfire' && !state.cfPrivateMode) {
-                        layoutCampfireCircle();
-                    }
-                })
-                .on('broadcast', { event: 'ow_move' }, ({ payload }) => {
-                    if (!payload || payload.id === CLIENT_ID) return;
-                    upsertOpenWorldPlayer(payload, false);
-                })
-                .on('broadcast', { event: 'ow_chat' }, ({ payload }) => {
-                    if (!payload || payload.id === CLIENT_ID) return;
-                    showOpenWorldBubble(payload.id, payload.text);
-                    appendChatMessage(payload.name, payload.text, false);
-                })
-                .on('broadcast', { event: 'ow_wave' }, ({ payload }) => {
-                    if (!payload || payload.id === CLIENT_ID) return;
-                    setPlayerWavingVisual(payload.id, true);
-                    showOpenWorldBubble(payload.id, 'Selam!');
-                    setTimeout(() => setPlayerWavingVisual(payload.id, false), 1800);
-                })
-                .on('broadcast', { event: 'cf_private_invite' }, ({ payload }) => {
-                    if (!payload || payload.targetId !== CLIENT_ID) return;
-                    state.owPendingInvite = {
-                        fromId: payload.fromId,
-                        fromName: payload.fromName,
-                        fromGender: payload.fromGender,
-                        fromProfileIndex: payload.fromProfileIndex,
-                        roomId: payload.roomId,
-                        type: 'cf_private'
-                    };
-                    document.getElementById('ow-consent-text').textContent = `🔥 ${payload.fromName} seninle gruptan ayrı baş başa kamp ateşine geçmek istiyor`;
-                    document.getElementById('ow-consent-banner').classList.remove('hidden');
-                })
-                .on('broadcast', { event: 'cf_private_accept' }, ({ payload }) => {
-                    if (!payload || payload.targetId !== CLIENT_ID) return;
-                    if (openWorldChannel && sbClient) {
-                        sbClient.removeChannel(openWorldChannel);
-                        openWorldChannel = null;
-                    }
-                    state.owPlayers = {};
-                    state.cfPrivateMode = true;
-                    const partnerProfile = {
-                        id: payload.fromId,
-                        name: payload.fromName,
-                        gender: payload.fromGender || 'female',
-                        profileIndex: payload.fromProfileIndex || 0,
-                        isMe: false
-                    };
-                    enterMatchedRoom(payload.roomId, 0, partnerProfile);
-                    appendChatMessage('', `🔥 ${payload.fromName} teklifini kabul etti! Şimdi baş başa kamp ateşindesiniz.`, false, true);
-                })
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await openWorldChannel.track({
-                            id: CLIENT_ID,
-                            name: state.playerName,
-                            gender: state.gender,
-                            profileIndex: state.profileIndex,
-                            x: state.owPos.x,
-                            z: state.owPos.z,
-                            isDancing: state.clubDancing,
-                            tableId: state.clubSeatedTableId
-                        });
-                    }
-                });
         }
 
         function enterOpenWorld() {
@@ -2675,7 +2886,6 @@
             state.owLovePartnerId = null;
             state.owPairState = null;
             state.owPendingInvite = null;
-            state.cfPrivateMode = false;
 
             const startX = Number(((Math.random() - 0.5) * 3.2).toFixed(2));
             const startZ = Number((3.8 + Math.random() * 1.4).toFixed(2));
@@ -2698,7 +2908,7 @@
 
             const feed = document.getElementById('chat-feed');
             feed.innerHTML = '';
-            appendChatMessage('', 'Acik Dunya Meydanina hos geldin! OTUR BENİMLE parkinda oturabilir, STARBUKSH kafeye ugrayabilir veya BEN PİRO konserine katilabilirsin.', false, true);
+            appendChatMessage('', 'Açık Dünya Meydanına hoş geldin! OTUR BENİMLE parkında oturabilir, STARBUKSH kafeye uğrayabilir veya BEN PİRO konserine katılabilirsin.', false, true);
 
             if (!sbClient) return;
             if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
@@ -2718,16 +2928,12 @@
                     Object.values(pState).flat().forEach((u) => {
                         if (!u || !u.id) return;
                         presentIds.add(u.id);
-                        if (u.id !== CLIENT_ID) {
-                            upsertOpenWorldPlayer(u, false);
-                        }
+                        if (u.id !== CLIENT_ID) upsertOpenWorldPlayer(u, false);
                     });
                     Object.keys(state.owPlayers).forEach((pid) => {
                         if (pid !== CLIENT_ID && !presentIds.has(pid)) {
                             if (state.owLovePartnerId === pid) state.owLovePartnerId = null;
-                            if (state.owPairState && state.owPairState.partnerId === pid) {
-                                state.owPairState = null;
-                            }
+                            if (state.owPairState && state.owPairState.partnerId === pid) state.owPairState = null;
                             removeOpenWorldPlayer(pid);
                         }
                     });
@@ -2754,9 +2960,9 @@
                         fromName: payload.fromName,
                         type: payload.type
                     };
-                    let label = 'el ele tutusmak istiyor';
-                    if (payload.type === 'love') label = 'ask yasamak istiyor';
-                    else if (payload.type === 'hug') label = 'sarilmak istiyor';
+                    let label = 'el ele tutuşmak istiyor';
+                    if (payload.type === 'love') label = 'aşk yaşamak istiyor';
+                    else if (payload.type === 'hug') label = 'sarılmak istiyor';
                     document.getElementById('ow-consent-text').textContent = `${payload.fromName} seninle ${label}`;
                     document.getElementById('ow-consent-banner').classList.remove('hidden');
                 })
@@ -2765,12 +2971,12 @@
                     state.owSeatedBenchId = null;
                     if (payload.type === 'love') {
                         state.owLovePartnerId = payload.fromId;
-                        appendChatMessage('', `${payload.fromName} ile ask yasamaya basladiniz! Saril ve El Ele Tutus butonlari acildi.`, false, true);
+                        appendChatMessage('', `${payload.fromName} ile aşk yaşamaya başladınız! Sarıl ve El Ele Tutuş butonları açıldı.`, false, true);
                     } else {
                         state.owLovePartnerId = payload.fromId;
                         state.owPairState = { partnerId: payload.fromId, type: payload.type };
-                        const actionLabel = payload.type === 'hug' ? 'sarildi' : 'el ele tutustu';
-                        appendChatMessage('', `${payload.fromName} istegini kabul etti ve ${actionLabel}!`, false, true);
+                        const actionLabel = payload.type === 'hug' ? 'sarıldı' : 'el ele tutuştu';
+                        appendChatMessage('', `${payload.fromName} isteğini kabul etti ve ${actionLabel}!`, false, true);
                     }
                 })
                 .on('broadcast', { event: 'ow_pair_stop' }, ({ payload }) => {
@@ -2799,7 +3005,7 @@
             const zone = document.getElementById('mobile-joystick-zone');
             const knob = document.getElementById('mobile-joystick-knob');
             let dragging = false;
-            const maxRadius = 34;
+            const maxRadius = 32;
 
             const updateJoystick = (clientX, clientY) => {
                 const rect = zone.getBoundingClientRect();
@@ -2844,6 +3050,124 @@
             });
             window.addEventListener('keyup', (e) => {
                 owKeys[e.code] = false;
+            });
+
+            document.getElementById('btn-throw-wood').addEventListener('click', () => {
+                if (state.theme !== 'campfire') return;
+                state.fireFuel = Math.min(1.35, state.fireFuel + 0.35);
+                spawnFallingFirewoodLog();
+                showOpenWorldBubble(CLIENT_ID, 'Odun attım! 🔥');
+                appendChatMessage('', `🪵 ${state.playerName} kamp ateşine odun attı! Ateş canlandı.`, false, true);
+                if (openWorldChannel) {
+                    openWorldChannel.send({
+                        type: 'broadcast',
+                        event: 'cf_throw_wood',
+                        payload: { id: CLIENT_ID, name: state.playerName }
+                    });
+                } else if (roomChannel) {
+                    roomChannel.send({
+                        type: 'broadcast',
+                        event: 'cf_throw_wood',
+                        payload: { senderId: CLIENT_ID, name: state.playerName }
+                    });
+                }
+            });
+
+            document.getElementById('btn-cf-private').addEventListener('click', () => {
+                const targetId = state.cfSelectedPlayerId;
+                const target = targetId && state.owPlayers[targetId];
+                document.getElementById('cf-player-bar').classList.add('hidden');
+                if (!target || !openWorldChannel) return;
+
+                const privateRoomId = `private_cf_${CLIENT_ID}_${targetId}_${Date.now()}`;
+                appendChatMessage('', `🔥 ${target.name} adlı kişiye baş başa kamp ateşi teklifi gönderildi.`, false, true);
+                openWorldChannel.send({
+                    type: 'broadcast',
+                    event: 'cf_private_invite',
+                    payload: {
+                        fromId: CLIENT_ID,
+                        fromName: state.playerName,
+                        targetId,
+                        roomId: privateRoomId
+                    }
+                });
+            });
+
+            document.getElementById('btn-cf-close-bar').addEventListener('click', () => {
+                document.getElementById('cf-player-bar').classList.add('hidden');
+                state.cfSelectedPlayerId = null;
+            });
+
+            document.getElementById('btn-club-dance').addEventListener('click', () => {
+                if (state.theme !== 'club') return;
+                state.clubSeatedTableId = null;
+                state.clubDancing = !state.clubDancing;
+                const me = state.owPlayers[CLIENT_ID];
+                if (me) me.isDancing = state.clubDancing;
+                const btn = document.getElementById('btn-club-dance');
+                btn.innerHTML = state.clubDancing
+                    ? '<span>⏹️</span><span class="pixel-title text-xs">Dansı Durdur</span>'
+                    : '<span>💃</span><span class="pixel-title text-xs">Dans Et</span>';
+
+                if (openWorldChannel) {
+                    openWorldChannel.send({
+                        type: 'broadcast',
+                        event: 'ow_move',
+                        payload: {
+                            id: CLIENT_ID,
+                            name: state.playerName,
+                            gender: state.gender,
+                            profileIndex: state.profileIndex,
+                            x: Number(state.owPos.x.toFixed(2)),
+                            z: Number(state.owPos.z.toFixed(2)),
+                            isDancing: state.clubDancing
+                        }
+                    });
+                }
+            });
+
+            document.getElementById('btn-club-table').addEventListener('click', () => {
+                if (state.theme !== 'club') return;
+                if (state.clubSeatedTableId) {
+                    state.clubSeatedTableId = null;
+                    state.owPos.x += state.owPos.x < 0 ? 1.3 : -1.3;
+                    updateClubTableButton();
+                    return;
+                }
+                const nearTbl = getNearestClubTable(state.owPos.x, state.owPos.z);
+                if (!nearTbl) return;
+
+                state.clubDancing = false;
+                const me = state.owPlayers[CLIENT_ID];
+                if (me) me.isDancing = false;
+                document.getElementById('btn-club-dance').innerHTML = '<span>💃</span><span class="pixel-title text-xs">Dans Et</span>';
+
+                const d0 = Math.hypot(state.owPos.x - nearTbl.seats[0].x, state.owPos.z - nearTbl.seats[0].z);
+                const d1 = Math.hypot(state.owPos.x - nearTbl.seats[1].x, state.owPos.z - nearTbl.seats[1].z);
+                const seat = d0 <= d1 ? nearTbl.seats[0] : nearTbl.seats[1];
+                state.clubSeatedTableId = nearTbl.id;
+                state.owPos.x = seat.x;
+                state.owPos.z = seat.z;
+                if (me) {
+                    me.targetX = seat.x;
+                    me.targetZ = seat.z;
+                }
+                updateClubTableButton();
+                if (openWorldChannel) {
+                    openWorldChannel.send({
+                        type: 'broadcast',
+                        event: 'ow_move',
+                        payload: {
+                            id: CLIENT_ID,
+                            name: state.playerName,
+                            gender: state.gender,
+                            profileIndex: state.profileIndex,
+                            x: Number(seat.x.toFixed(2)),
+                            z: Number(seat.z.toFixed(2)),
+                            isDancing: false
+                        }
+                    });
+                }
             });
 
             document.getElementById('btn-ow-wave').addEventListener('click', () => {
@@ -2905,10 +3229,10 @@
                     ? getNearestOtherPlayer(state.owPos.x, state.owPos.z)
                     : (state.owPlayers[state.owLovePartnerId] || getNearestOtherPlayer(state.owPos.x, state.owPos.z));
                 if (!target) return;
-                let text = 'el ele tutusma';
-                if (type === 'love') text = 'ask yasama';
-                else if (type === 'hug') text = 'sarilma';
-                appendChatMessage('', `${target.name} adli kisiye ${text} istegi gonderildi.`, false, true);
+                let text = 'el ele tutuşma';
+                if (type === 'love') text = 'aşk yaşama';
+                else if (type === 'hug') text = 'sarılma';
+                appendChatMessage('', `${target.name} adlı kişiye ${text} isteği gönderildi.`, false, true);
                 if (openWorldChannel) {
                     openWorldChannel.send({
                         type: 'broadcast',
@@ -2933,8 +3257,7 @@
                 state.owPendingInvite = null;
                 if (!inv) return;
 
-                // Kamp ateşi 1v1 geçiş kabulü
-                if (inv.type === 'cf_private' && inv.roomId) {
+                if (inv.type === 'cf_private') {
                     if (openWorldChannel) {
                         openWorldChannel.send({
                             type: 'broadcast',
@@ -2948,33 +3271,24 @@
                                 roomId: inv.roomId
                             }
                         });
-                        if (sbClient) {
-                            sbClient.removeChannel(openWorldChannel);
-                            openWorldChannel = null;
-                        }
                     }
-                    state.owPlayers = {};
-                    state.cfPrivateMode = true;
-                    const partnerProfile = {
+                    enterPrivateCampfireRoom(inv.roomId, 1, {
                         id: inv.fromId,
                         name: inv.fromName,
-                        gender: inv.fromGender || 'female',
-                        profileIndex: inv.fromProfileIndex || 0,
+                        gender: 'male',
+                        profileIndex: 0,
                         isMe: false
-                    };
-                    enterMatchedRoom(inv.roomId, 1, partnerProfile);
-                    appendChatMessage('', `🔥 ${inv.fromName} ile baş başa kamp ateşine geçtiniz!`, false, true);
+                    });
                     return;
                 }
 
-                // Açık Dünya Ask Yasa / Saril / El Ele Tutus kabulü
                 state.owSeatedBenchId = null;
                 state.owLovePartnerId = inv.fromId;
                 if (inv.type === 'love') {
-                    appendChatMessage('', `${inv.fromName} ile ask yasamaya basladiniz! Saril ve El Ele Tutus butonlari acildi.`, false, true);
+                    appendChatMessage('', `${inv.fromName} ile aşk yaşamaya başladınız! Sarıl ve El Ele Tutuş butonları açıldı.`, false, true);
                 } else {
                     state.owPairState = { partnerId: inv.fromId, type: inv.type };
-                    const actionLabel = inv.type === 'hug' ? 'sarildiniz' : 'el ele tutustunuz';
+                    const actionLabel = inv.type === 'hug' ? 'sarıldınız' : 'el ele tutuştunuz';
                     appendChatMessage('', `${inv.fromName} ile ${actionLabel}!`, false, true);
                 }
                 if (openWorldChannel) {
@@ -3000,7 +3314,7 @@
                 const partnerId = state.owLovePartnerId || (state.owPairState && state.owPairState.partnerId);
                 state.owLovePartnerId = null;
                 state.owPairState = null;
-                appendChatMessage('', 'Birliktelik sonlandirildi.', false, true);
+                appendChatMessage('', 'Birliktelik sonlandırıldı.', false, true);
                 if (partnerId && openWorldChannel) {
                     openWorldChannel.send({
                         type: 'broadcast',
@@ -3009,146 +3323,29 @@
                     });
                 }
             });
-
-            // Kamp Ateşi Baş Başa Takıl Teklifi
-            document.getElementById('btn-cf-close-popup').addEventListener('click', () => {
-                state.cfSelectedPlayerId = null;
-                document.getElementById('campfire-player-popup').classList.add('hidden');
-            });
-
-            document.getElementById('btn-cf-private-invite').addEventListener('click', () => {
-                const target = state.owPlayers[state.cfSelectedPlayerId];
-                document.getElementById('campfire-player-popup').classList.add('hidden');
-                if (!target) return;
-
-                const randomToken = (window.crypto && window.crypto.randomUUID)
-                    ? window.crypto.randomUUID().replace(/-/g, '')
-                    : Math.random().toString(36).slice(2) + Date.now().toString(36);
-                const privateRoomId = `private_campfire_${randomToken}`;
-
-                appendChatMessage('', `🔥 ${target.name} adlı kişiye gruptan ayrı baş başa takılma teklifi gönderildi.`, false, true);
-                if (openWorldChannel) {
-                    openWorldChannel.send({
-                        type: 'broadcast',
-                        event: 'cf_private_invite',
-                        payload: {
-                            fromId: CLIENT_ID,
-                            fromName: state.playerName,
-                            fromGender: state.gender,
-                            fromProfileIndex: state.profileIndex,
-                            targetId: target.id,
-                            roomId: privateRoomId
-                        }
-                    });
-                }
-            });
-
-            // Gece Kulübü Dans & VIP Masa Kontrolleri
-            document.getElementById('btn-club-dance').addEventListener('click', () => {
-                state.clubSeatedTableId = null;
-                state.clubSeatedSeatIdx = -1;
-                state.clubDancing = !state.clubDancing;
-                if (state.owPlayers[CLIENT_ID]) {
-                    state.owPlayers[CLIENT_ID].isDancing = state.clubDancing;
-                }
-                if (openWorldChannel) {
-                    openWorldChannel.send({
-                        type: 'broadcast',
-                        event: 'ow_move',
-                        payload: {
-                            id: CLIENT_ID,
-                            name: state.playerName,
-                            gender: state.gender,
-                            profileIndex: state.profileIndex,
-                            x: Number(state.owPos.x.toFixed(2)),
-                            z: Number(state.owPos.z.toFixed(2)),
-                            isDancing: state.clubDancing,
-                            tableId: null
-                        }
-                    });
-                }
-            });
-
-            document.getElementById('btn-club-table').addEventListener('click', () => {
-                if (state.clubSeatedTableId) {
-                    state.clubSeatedTableId = null;
-                    state.clubSeatedSeatIdx = -1;
-                    state.owPos.z += 0.8;
-                    if (state.owPlayers[CLIENT_ID]) {
-                        state.owPlayers[CLIENT_ID].targetZ = state.owPos.z;
-                        state.owPlayers[CLIENT_ID].tableId = null;
-                    }
-                    return;
-                }
-                const table = getNearestClubTable(state.owPos.x, state.owPos.z);
-                if (!table) return;
-
-                const seat0Busy = Object.values(state.owPlayers).some(
-                    p => p.id !== CLIENT_ID && Math.hypot(p.x - table.seats[0].x, p.z - table.seats[0].z) < 0.55
-                );
-                const chosenIdx = seat0Busy ? 1 : 0;
-                const seatPos = table.seats[chosenIdx];
-
-                state.clubDancing = false;
-                state.clubSeatedTableId = table.id;
-                state.clubSeatedSeatIdx = chosenIdx;
-                state.owPos.x = seatPos.x;
-                state.owPos.z = seatPos.z;
-                if (state.owPlayers[CLIENT_ID]) {
-                    state.owPlayers[CLIENT_ID].targetX = seatPos.x;
-                    state.owPlayers[CLIENT_ID].targetZ = seatPos.z;
-                    state.owPlayers[CLIENT_ID].isDancing = false;
-                    state.owPlayers[CLIENT_ID].tableId = table.id;
-                }
-                if (openWorldChannel) {
-                    openWorldChannel.send({
-                        type: 'broadcast',
-                        event: 'ow_move',
-                        payload: {
-                            id: CLIENT_ID,
-                            name: state.playerName,
-                            gender: state.gender,
-                            profileIndex: state.profileIndex,
-                            x: Number(seatPos.x.toFixed(2)),
-                            z: Number(seatPos.z.toFixed(2)),
-                            isDancing: false,
-                            tableId: table.id
-                        }
-                    });
-                }
-            });
         }
 
         // ==========================================
-        // 9. GERÇEK ZAMANLI EŞLEŞME, CANLI ODA & BİLDİRİM
+        // 10. CANLI ÇEVRİMİÇİ SAYAÇ & EŞLEŞME
         // ==========================================
-        let hasRecordedUniqueVisit = false;
-        let lastReportedPeak = 0;
-
-        async function recordAnonymousStats(onlineCount) {
+        async function recordAnonymousSiteStats(currentOnline) {
             if (!sbClient) return;
             try {
-                const isNew = !hasRecordedUniqueVisit && !sessionStorage.getItem('ob_visited');
-                if (isNew || onlineCount > lastReportedPeak) {
-                    if (isNew) {
-                        hasRecordedUniqueVisit = true;
-                        sessionStorage.setItem('ob_visited', '1');
-                    }
-                    lastReportedPeak = Math.max(lastReportedPeak, onlineCount);
-                    await sbClient.rpc('record_site_visit', {
-                        p_is_new_visitor: isNew,
-                        p_current_online: onlineCount
-                    });
-                }
+                const isNew = !sessionStorage.getItem('ob_visited_flag');
+                if (isNew) sessionStorage.setItem('ob_visited_flag', '1');
+                await sbClient.rpc('record_site_visit', {
+                    p_is_new_visitor: isNew,
+                    p_current_online: currentOnline
+                });
             } catch (err) {
                 console.warn('İstatistik güncellenemedi:', err);
             }
         }
 
-        async function updatePresenceLocation(themeId) {
+        function updatePresenceLocation(themeId) {
             if (!globalPresenceChannel) return;
             try {
-                await globalPresenceChannel.track({
+                globalPresenceChannel.track({
                     id: CLIENT_ID,
                     name: state.playerName || 'Misafir',
                     theme: themeId || state.theme,
@@ -3159,10 +3356,9 @@
             }
         }
 
-        async function initOnlineCounter() {
+        function initOnlineCounter() {
             if (!sbClient) return;
             try {
-                await ensureAnonymousSession();
                 globalPresenceChannel = sbClient.channel('private_oturbenimle_online', {
                     config: { private: true, presence: { key: CLIENT_ID } }
                 });
@@ -3172,16 +3368,15 @@
                     const pState = globalPresenceChannel.presenceState();
                     activeUsersMap = {};
                     Object.entries(pState).forEach(([key, arr]) => {
-                        if (!key.startsWith('admin_monitor_') && arr && arr.length > 0) {
-                            activeUsersMap[key] = arr[0];
-                        }
+                        if (key.startsWith('admin_monitor_')) return;
+                        if (arr && arr.length > 0) activeUsersMap[key] = arr[0];
                     });
                     const count = Math.max(1, Object.keys(activeUsersMap).length);
                     document.getElementById('online-count-badge').textContent = `${count} kişi çevrimiçi`;
-                    recordAnonymousStats(count);
                     if (!document.getElementById('lobby-modal').classList.contains('hidden')) {
                         renderThemeCards();
                     }
+                    recordAnonymousSiteStats(count);
                 };
 
                 globalPresenceChannel
@@ -3210,23 +3405,31 @@
             state.isMatching = false;
             document.getElementById('matching-overlay').classList.add('hidden');
             document.getElementById('btn-auto-match').classList.remove('hidden');
-            if (matchPollTimer) {
-                clearInterval(matchPollTimer);
-                matchPollTimer = null;
-            }
-            if (sbClient) {
-                sbClient.from('match_queue').delete().eq('user_id', CLIENT_ID).then(() => {});
+            if (queueChannel && sbClient) {
+                sbClient.removeChannel(queueChannel);
+                queueChannel = null;
             }
         }
 
         async function startRealMatchmaking() {
-            const rawName = document.getElementById('nickname-input').value.trim();
+            const nickInput = document.getElementById('nickname-input');
+            const nickWarning = document.getElementById('nickname-warning');
+            const rawName = nickInput.value.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+
             if (rawName.length < 2) {
-                document.getElementById('nickname-warning').classList.remove('hidden');
-                document.getElementById('nickname-input').focus();
+                nickWarning.textContent = 'Lütfen giriş yapmadan önce en az 2 karakterlik takma adınızı yazın.';
+                nickWarning.classList.remove('hidden');
+                nickInput.focus();
                 return;
             }
-            document.getElementById('nickname-warning').classList.add('hidden');
+
+            if (containsProfanity(rawName, false)) {
+                nickWarning.textContent = 'Bu takma ad topluluk kurallarına uygun değil, lütfen farklı bir ad seçin.';
+                nickWarning.classList.remove('hidden');
+                nickInput.focus();
+                return;
+            }
+            nickWarning.classList.add('hidden');
 
             const kvkkChecked = document.getElementById('kvkk-checkbox').checked;
             if (!kvkkChecked) {
@@ -3235,25 +3438,24 @@
             }
             document.getElementById('kvkk-warning').classList.add('hidden');
 
-            state.playerName = rawName.slice(0, 16);
-            state.cfPrivateMode = false;
-
-            await ensureAnonymousSession();
+            state.playerName = rawName;
             updatePresenceLocation(state.theme);
 
             if (state.theme === 'openworld') {
                 enterOpenWorld();
                 return;
             }
-
-            if (state.theme === 'campfire' || state.theme === 'club') {
-                enterGroupRoom(state.theme);
+            if (state.theme === 'campfire') {
+                enterCampfireGroup();
+                return;
+            }
+            if (state.theme === 'club') {
+                enterClubMulti();
                 return;
             }
 
             if (!sbClient) {
-                const demoRoom = 'preview_' + Date.now();
-                enterMatchedRoom(demoRoom, 0, null);
+                enterMatchedRoom('preview_' + Date.now(), 0, null);
                 return;
             }
 
@@ -3261,57 +3463,102 @@
             document.getElementById('btn-auto-match').classList.add('hidden');
             document.getElementById('matching-overlay').classList.remove('hidden');
 
+            await ensureAnonymousSession();
+
             try {
                 const { data, error } = await sbClient.rpc('find_or_create_match', {
                     p_theme: state.theme,
+                    p_client_id: CLIENT_ID,
                     p_name: state.playerName,
                     p_gender: state.gender,
                     p_profile_index: state.profileIndex
                 });
 
-                if (error) throw error;
-
-                if (data && data.matched) {
-                    const partnerProfile = {
-                        id: 'partner_' + data.room_id,
-                        name: data.partner_name || 'Misafir',
-                        gender: data.partner_gender || 'female',
-                        profileIndex: data.partner_profile_index || 0,
-                        isMe: false
-                    };
-                    enterMatchedRoom(data.room_id, data.seat_index || 1, partnerProfile);
-                    return;
-                }
-
-                matchPollTimer = setInterval(async () => {
-                    if (!state.isMatching) return;
-                    const { data: rows } = await sbClient
-                        .from('match_queue')
-                        .select('*')
-                        .eq('user_id', CLIENT_ID)
-                        .not('room_id', 'is', null)
-                        .limit(1);
-
-                    if (rows && rows.length > 0 && rows[0].room_id) {
-                        const row = rows[0];
-                        await sbClient.from('match_queue').delete().eq('id', row.id);
+                if (!error && Array.isArray(data) && data.length > 0) {
+                    const match = data[0];
+                    if (match.status === 'matched' && match.room_id) {
                         const partnerProfile = {
-                            id: 'partner_' + row.room_id,
-                            name: row.partner_name || 'Misafir',
-                            gender: row.partner_gender || 'female',
-                            profileIndex: row.partner_profile_index || 0,
+                            id: match.partner_id,
+                            name: match.partner_name,
+                            gender: match.partner_gender,
+                            profileIndex: match.partner_profile_index,
                             isMe: false
                         };
-                        enterMatchedRoom(row.room_id, row.seat_index || 0, partnerProfile);
+                        enterMatchedRoom(match.room_id, 1, partnerProfile);
+                        return;
                     }
-                }, 1500);
+                }
             } catch (err) {
-                console.warn('Sunucu eşleşme hatası:', err);
-                const fallbackToken = (window.crypto && window.crypto.randomUUID)
-                    ? window.crypto.randomUUID().replace(/-/g, '')
-                    : Math.random().toString(36).slice(2) + Date.now().toString(36);
-                enterMatchedRoom(`private_${state.theme}_${fallbackToken}`, 0, null);
+                console.warn('Sunucu eşleşme RPC yedek moda geçti:', err);
             }
+
+            const queueName = `private_queue_${state.theme}`;
+            if (queueChannel) sbClient.removeChannel(queueChannel);
+
+            queueChannel = sbClient.channel(queueName, {
+                config: { private: true, presence: { key: CLIENT_ID } }
+            });
+
+            let matched = false;
+
+            queueChannel
+                .on('broadcast', { event: 'match_found' }, ({ payload }) => {
+                    if (matched || !payload) return;
+                    if (payload.guestId === CLIENT_ID) {
+                        matched = true;
+                        const partnerProfile = {
+                            id: payload.hostId,
+                            name: payload.hostName,
+                            gender: payload.hostGender,
+                            profileIndex: payload.hostProfileIndex,
+                            isMe: false
+                        };
+                        enterMatchedRoom(payload.roomId, 1, partnerProfile);
+                    }
+                })
+                .on('presence', { event: 'sync' }, () => {
+                    if (matched) return;
+                    const pState = queueChannel.presenceState();
+                    const waiters = Object.values(pState).flat().filter(u => u && u.id);
+                    waiters.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+                    if (waiters.length >= 2 && waiters[0].id === CLIENT_ID) {
+                        const guest = waiters[1];
+                        matched = true;
+                        const randomToken = crypto.getRandomValues(new Uint32Array(2)).join('');
+                        const newRoomId = `private_room_${state.theme}_${randomToken}`;
+                        queueChannel.send({
+                            type: 'broadcast',
+                            event: 'match_found',
+                            payload: {
+                                roomId: newRoomId,
+                                hostId: CLIENT_ID,
+                                hostName: state.playerName,
+                                hostGender: state.gender,
+                                hostProfileIndex: state.profileIndex,
+                                guestId: guest.id
+                            }
+                        });
+                        const partnerProfile = {
+                            id: guest.id,
+                            name: guest.name,
+                            gender: guest.gender,
+                            profileIndex: guest.profileIndex,
+                            isMe: false
+                        };
+                        enterMatchedRoom(newRoomId, 0, partnerProfile);
+                    }
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await queueChannel.track({
+                            id: CLIENT_ID,
+                            name: state.playerName,
+                            gender: state.gender,
+                            profileIndex: state.profileIndex
+                        });
+                    }
+                });
         }
 
         function enterMatchedRoom(roomId, mySeatIdx, partnerProfile) {
@@ -3322,6 +3569,7 @@
             state.recentMessages = [];
             state.heldItems = [null, null];
             state.seats = [null, null];
+            resetXoxGame(true);
 
             buildSceneForTheme(state.theme);
 
@@ -3342,9 +3590,7 @@
 
             document.getElementById('btn-stand').classList.remove('hidden');
             document.getElementById('bottom-chat-bar').classList.remove('hidden');
-            if (state.theme === 'club') {
-                document.getElementById('btn-dance-invite').classList.remove('hidden');
-            }
+            updateMinigameButtonVisibility();
 
             const feed = document.getElementById('chat-feed');
             feed.innerHTML = '';
@@ -3362,20 +3608,13 @@
             if (!sbClient) return;
             if (roomChannel) sbClient.removeChannel(roomChannel);
 
-            roomChannel = sbClient.channel(roomId, {
-                config: { private: true }
-            });
-
+            roomChannel = sbClient.channel(roomId, { config: { private: true } });
             roomChannel
                 .on('broadcast', { event: 'chat_msg' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
-                    if (typeof payload.text !== 'string') return;
-                    const cleanText = payload.text.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 140);
-                    if (!cleanText) return;
                     const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
-                    const partnerName = (state.seats[partnerIdx] && state.seats[partnerIdx].name) || payload.name || 'Partner';
-                    showSpeechBubble(partnerIdx, cleanText, false);
-                    appendChatMessage(partnerName, cleanText, false);
+                    showSpeechBubble(partnerIdx, payload.text);
+                    appendChatMessage(payload.name, payload.text, false);
                 })
                 .on('broadcast', { event: 'treat_event' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
@@ -3383,11 +3622,10 @@
                     const item = t.menu.find(m => m.id === payload.itemId);
                     if (!item) return;
                     const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
-                    const partnerName = (state.seats[partnerIdx] && state.seats[partnerIdx].name) || payload.senderName || 'Partner';
                     if (payload.target === 'partner') {
                         giveTreatToSeat(state.mySeatIndex, item);
-                        showSpeechBubble(partnerIdx, item.treatMsg, false);
-                        appendChatMessage(partnerName, item.treatMsg, false);
+                        showSpeechBubble(partnerIdx, item.treatMsg);
+                        appendChatMessage(payload.senderName, item.treatMsg, false);
                     } else {
                         giveTreatToSeat(partnerIdx, item);
                     }
@@ -3397,46 +3635,47 @@
                     const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
                     consumeSeatItem(partnerIdx);
                 })
+                .on('broadcast', { event: 'xox_move' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    handleXoxClick(payload.idx, true, payload.mark);
+                })
+                .on('broadcast', { event: 'xox_reset' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    resetXoxGame(true);
+                })
+                .on('broadcast', { event: 'rps_choice' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    state.partnerRpsChoice = payload.choice;
+                    evaluateRpsRound();
+                })
                 .on('broadcast', { event: 'chalkboard_update' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
                     applyChalkboardDataUrl(payload.dataUrl);
-                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
-                    const partnerName = (state.seats[partnerIdx] && state.seats[partnerIdx].name) || payload.senderName || 'Partner';
-                    appendChatMessage('', `🎨 ${partnerName} kafe tahtasına yeni bir çizim bıraktı!`, false, true);
+                    appendChatMessage('', `🎨 ${payload.senderName} kafe tahtasına yeni bir çizim bıraktı!`, false, true);
+                })
+                .on('broadcast', { event: 'cf_throw_wood' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    state.fireFuel = Math.min(1.35, state.fireFuel + 0.35);
+                    spawnFallingFirewoodLog();
+                    showOpenWorldBubble(payload.senderId, 'Odun attım! 🔥');
+                    appendChatMessage('', `🪵 ${payload.name} ateşe odun attı!`, false, true);
                 })
                 .on('broadcast', { event: 'change_theme' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
                     const t = THEMES[payload.themeId];
                     if (!t) return;
                     buildSceneForTheme(payload.themeId);
-                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
-                    const partnerName = (state.seats[partnerIdx] && state.seats[partnerIdx].name) || payload.senderName || 'Partner';
-                    appendChatMessage('', `✨ ${partnerName} ortamı "${t.name}" olarak değiştirdi!`, false, true);
-                })
-                .on('broadcast', { event: 'dance_invite' }, ({ payload }) => {
-                    if (!payload || payload.senderId === CLIENT_ID) return;
-                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
-                    const partnerName = (state.seats[partnerIdx] && state.seats[partnerIdx].name) || payload.senderName || 'Partner';
-                    document.getElementById('dance-invite-text').textContent = `💃 ${partnerName} seni dansa davet etti!`;
-                    document.getElementById('dance-invite-banner').classList.remove('hidden');
-                })
-                .on('broadcast', { event: 'dance_accept' }, ({ payload }) => {
-                    if (!payload || payload.senderId === CLIENT_ID) return;
-                    startDanceAnimation();
-                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
-                    const partnerName = (state.seats[partnerIdx] && state.seats[partnerIdx].name) || payload.senderName || 'Partner';
-                    appendChatMessage('', `🪩 ${partnerName} dans davetini kabul etti! (10 sn dans)`, false, true);
+                    appendChatMessage('', `✨ ${payload.senderName} ortamı "${t.name}" olarak değiştirdi!`, false, true);
                 })
                 .on('broadcast', { event: 'player_left' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
                     const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
-                    const leftName = (state.seats[partnerIdx] && state.seats[partnerIdx].name) || payload.name || 'Partner';
                     state.seats[partnerIdx] = null;
                     state.heldItems[partnerIdx] = null;
                     document.getElementById('btn-report-partner').classList.add('hidden');
                     renderTreatsOnTable();
                     renderAvatars();
-                    appendChatMessage('', `👋 ${leftName} masadan ayrıldı.`, false, true);
+                    appendChatMessage('', `👋 ${payload.name} masadan ayrıldı.`, false, true);
                 })
                 .subscribe();
         }
@@ -3467,7 +3706,7 @@
         }
 
         // ==========================================
-        // 10. LOBİ UI VE ETKİLEŞİM DİNLEYİCİLERİ
+        // 11. LOBİ UI VE ETKİLEŞİM DİNLEYİCİLERİ
         // ==========================================
         function renderThemeCards() {
             const grid = document.getElementById('theme-grid');
@@ -3504,17 +3743,11 @@
                 `;
                 card.addEventListener('click', () => {
                     state.theme = t.id;
-                    state.cfPrivateMode = false;
                     const matchBtn = document.getElementById('btn-auto-match');
-                    if (t.isOpenWorld) {
-                        matchBtn.textContent = '🏙️ Açık Dünya Meydanına Gir';
-                    } else if (t.id === 'campfire') {
-                        matchBtn.textContent = '🔥 Ortak Kamp Ateşine Katıl';
-                    } else if (t.id === 'club') {
-                        matchBtn.textContent = '🪩 Gece Kulübüne Gir';
-                    } else {
-                        matchBtn.textContent = '🎲 Gerçek Biriyle Eşleş ve Masaya Otur';
-                    }
+                    if (t.isOpenWorld) matchBtn.textContent = '🏙️ Açık Dünya Meydanına Gir';
+                    else if (t.id === 'campfire') matchBtn.textContent = '🔥 Kamp Ateşine Katıl';
+                    else if (t.id === 'club') matchBtn.textContent = '🪩 Gece Kulübüne Gir';
+                    else matchBtn.textContent = '🎲 Gerçek Biriyle Eşleş ve Masaya Otur';
                     updatePresenceLocation(t.id);
                     renderThemeCards();
                     buildSceneForTheme(t.id);
@@ -3537,20 +3770,18 @@
 
         document.getElementById('btn-gender-female').addEventListener('click', () => {
             state.gender = 'female';
-            state.profileIndex = (state.profileIndex + 1) % CHARACTER_PROFILES.female.length;
+            state.profileIndex = Math.floor(Math.random() * CHARACTER_PROFILES.female.length);
             updateGenderButtons();
         });
 
         document.getElementById('btn-gender-male').addEventListener('click', () => {
             state.gender = 'male';
-            state.profileIndex = (state.profileIndex + 1) % CHARACTER_PROFILES.male.length;
+            state.profileIndex = Math.floor(Math.random() * CHARACTER_PROFILES.male.length);
             updateGenderButtons();
         });
 
         document.getElementById('nickname-input').addEventListener('input', () => {
-            if (document.getElementById('nickname-input').value.trim().length >= 2) {
-                document.getElementById('nickname-warning').classList.add('hidden');
-            }
+            document.getElementById('nickname-warning').classList.add('hidden');
         });
 
         document.getElementById('nickname-input').addEventListener('keydown', (e) => {
@@ -3560,10 +3791,8 @@
             }
         });
 
-        document.getElementById('kvkk-checkbox').addEventListener('change', () => {
-            if (document.getElementById('kvkk-checkbox').checked) {
-                document.getElementById('kvkk-warning').classList.add('hidden');
-            }
+        document.getElementById('kvkk-checkbox').addEventListener('change', (e) => {
+            if (e.target.checked) document.getElementById('kvkk-warning').classList.add('hidden');
         });
 
         document.getElementById('btn-auto-match').addEventListener('click', startRealMatchmaking);
@@ -3586,6 +3815,7 @@
         document.getElementById('btn-toggle-menu').addEventListener('click', () => {
             const drawer = document.getElementById('order-drawer');
             document.getElementById('teleport-drawer').classList.add('hidden');
+            document.getElementById('minigame-drawer').classList.add('hidden');
             if (drawer.classList.contains('hidden')) {
                 renderMenuDrawer();
                 drawer.classList.remove('hidden');
@@ -3600,6 +3830,7 @@
         document.getElementById('btn-toggle-teleport').addEventListener('click', () => {
             const drawer = document.getElementById('teleport-drawer');
             document.getElementById('order-drawer').classList.add('hidden');
+            document.getElementById('minigame-drawer').classList.add('hidden');
             if (drawer.classList.contains('hidden')) {
                 renderTeleportDrawer();
                 drawer.classList.remove('hidden');
@@ -3611,30 +3842,36 @@
             document.getElementById('teleport-drawer').classList.add('hidden');
         });
 
-        document.getElementById('btn-dance-invite').addEventListener('click', () => {
-            appendChatMessage('', '💃 Partnerine dans daveti gönderdin!', false, true);
-            if (roomChannel) {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'dance_invite',
-                    payload: { senderId: CLIENT_ID, senderName: state.playerName }
-                });
+        document.getElementById('btn-toggle-minigame').addEventListener('click', () => {
+            const drawer = document.getElementById('minigame-drawer');
+            document.getElementById('order-drawer').classList.add('hidden');
+            document.getElementById('teleport-drawer').classList.add('hidden');
+            if (drawer.classList.contains('hidden')) {
+                renderXoxBoard();
+                drawer.classList.remove('hidden');
+            } else {
+                drawer.classList.add('hidden');
             }
         });
-        document.getElementById('btn-accept-dance').addEventListener('click', () => {
-            document.getElementById('dance-invite-banner').classList.add('hidden');
-            startDanceAnimation();
-            appendChatMessage('', '🪩 Dans başladı! (10 saniye)', false, true);
-            if (roomChannel) {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'dance_accept',
-                    payload: { senderId: CLIENT_ID, senderName: state.playerName }
-                });
-            }
+        document.getElementById('btn-close-minigame').addEventListener('click', () => {
+            document.getElementById('minigame-drawer').classList.add('hidden');
         });
-        document.getElementById('btn-decline-dance').addEventListener('click', () => {
-            document.getElementById('dance-invite-banner').classList.add('hidden');
+        document.getElementById('btn-tab-xox').addEventListener('click', () => {
+            document.getElementById('btn-tab-xox').className = 'pixel-btn bg-emerald-600 text-white px-2 py-0.5 text-[11px] font-bold';
+            document.getElementById('btn-tab-rps').className = 'pixel-btn bg-slate-800 text-slate-300 px-2 py-0.5 text-[11px] font-bold';
+            document.getElementById('xox-panel').classList.remove('hidden');
+            document.getElementById('rps-panel').classList.add('hidden');
+            renderXoxBoard();
+        });
+        document.getElementById('btn-tab-rps').addEventListener('click', () => {
+            document.getElementById('btn-tab-rps').className = 'pixel-btn bg-sky-600 text-white px-2 py-0.5 text-[11px] font-bold';
+            document.getElementById('btn-tab-xox').className = 'pixel-btn bg-slate-800 text-slate-300 px-2 py-0.5 text-[11px] font-bold';
+            document.getElementById('rps-panel').classList.remove('hidden');
+            document.getElementById('xox-panel').classList.add('hidden');
+        });
+        document.getElementById('btn-reset-xox').addEventListener('click', () => resetXoxGame(false));
+        document.querySelectorAll('.rps-choice-btn').forEach((btn) => {
+            btn.addEventListener('click', () => handleRpsChoice(btn.dataset.rps));
         });
 
         document.getElementById('btn-consume-item').addEventListener('click', () => {
@@ -3658,13 +3895,18 @@
             const text = input.value.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 140);
             if (!text || state.mySeatIndex === -1) return;
 
+            if (containsProfanity(text, true)) {
+                appendChatMessage('', '⚠️ Mesajınız topluluk kurallarına aykırı kelimeler içerdiği için gönderilmedi.', false, true);
+                return;
+            }
+
             lastChatSentAt = now;
             input.value = '';
-            showSpeechBubble(state.mySeatIndex, text, false);
+            showSpeechBubble(state.mySeatIndex, text);
             appendChatMessage(state.playerName, text, true);
 
-            const isGroupOrOpenWorld = state.theme === 'openworld' || ((state.theme === 'campfire' || state.theme === 'club') && !state.cfPrivateMode);
-            if (isGroupOrOpenWorld) {
+            const isMulti = state.theme === 'openworld' || (state.theme === 'campfire' && !state.cfPrivateMode) || state.theme === 'club';
+            if (isMulti) {
                 if (openWorldChannel) {
                     openWorldChannel.send({
                         type: 'broadcast',
@@ -3746,41 +3988,36 @@
 
         renderer.domElement.addEventListener('pointerup', (e) => {
             const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
-            if (dist > 8) return;
+            if (dist > 8 || state.theme !== 'cafe') return;
 
             pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
             pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
 
-            if (state.theme === 'cafe') {
-                const hits = raycaster.intersectObjects(environmentGroup.children, true);
-                if (hits.some(h => h.object.userData && h.object.userData.isChalkboard)) {
-                    openChalkboardModal();
-                }
-            } else if (state.theme === 'campfire' && !state.cfPrivateMode) {
-                const avatarHits = raycaster.intersectObjects(avatarsGroup.children, true);
-                const hitObj = avatarHits.find(h => h.object.userData && h.object.userData.playerId && h.object.userData.playerId !== CLIENT_ID);
-                if (hitObj) {
-                    state.cfSelectedPlayerId = hitObj.object.userData.playerId;
-                    document.getElementById('cf-selected-player-name').textContent = hitObj.object.userData.playerName;
-                    document.getElementById('campfire-player-popup').classList.remove('hidden');
-                }
+            const hits = raycaster.intersectObjects(environmentGroup.children, true);
+            if (hits.some(h => h.object.userData && h.object.userData.isChalkboard)) {
+                openChalkboardModal();
             }
         });
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
+        function handleViewportResize() {
+            const w = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+            const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            document.documentElement.style.height = `${h}px`;
+            document.body.style.height = `${h}px`;
+            camera.aspect = w / Math.max(1, h);
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
-            if (state.theme === 'openworld') applyResponsiveCamera('openworld');
-            else if (state.theme === 'campfire' && !state.cfPrivateMode) applyResponsiveCamera('campfire_group');
-            else if (state.theme === 'club' && !state.cfPrivateMode) applyResponsiveCamera('club_group');
-            else applyResponsiveCamera('1v1');
-        });
+            renderer.setSize(w, h);
+            labelRenderer.setSize(w, h);
+        }
+
+        window.addEventListener('resize', handleViewportResize);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', handleViewportResize);
+        }
 
         // ==========================================
-        // 11. ANİMASYON DÖNGÜSÜ VE BAŞLANGIÇ
+        // 12. ANİMASYON DÖNGÜSÜ VE BAŞLANGIÇ
         // ==========================================
         const clock = new THREE.Clock();
 
@@ -3790,10 +4027,29 @@
             const t = clock.getElapsedTime();
 
             if (animatedObjects.fireLight) {
-                animatedObjects.fireLight.intensity = 1.6 + Math.sin(t * 14) * 0.25;
+                state.fireFuel = Math.max(0.28, state.fireFuel - dt * 0.028);
+                const fuelScale = state.fireFuel;
+                animatedObjects.fireLight.intensity = (0.65 + fuelScale * 1.15) + Math.sin(t * 14) * 0.18;
                 animatedObjects.flames.forEach((f, idx) => {
-                    f.scale.y = 0.85 + Math.sin(t * 12 + idx) * 0.25;
+                    f.scale.set(
+                        0.55 + fuelScale * 0.55,
+                        Math.max(0.25, fuelScale * (0.85 + Math.sin(t * 12 + idx) * 0.22)),
+                        0.55 + fuelScale * 0.55
+                    );
                 });
+            }
+
+            for (let i = animatedObjects.fallingLogs.length - 1; i >= 0; i--) {
+                const item = animatedObjects.fallingLogs[i];
+                if (item.mesh.position.y > 0.18) {
+                    item.vy += 6.5 * dt;
+                    item.mesh.position.y = Math.max(0.18, item.mesh.position.y - item.vy * dt);
+                    item.mesh.rotation.z += 2.2 * dt;
+                    if (item.mesh.position.y <= 0.18) item.landTime = t;
+                } else if (t - item.landTime > 8) {
+                    tableGroup.remove(item.mesh);
+                    animatedObjects.fallingLogs.splice(i, 1);
+                }
             }
 
             animatedObjects.seaWaves.forEach((w, idx) => {
@@ -3807,14 +4063,14 @@
                 light.intensity = 1.2 + Math.sin(t * 4 + idx * 2) * 0.5;
             });
 
-            if (state.isDancing && performance.now() > state.danceEndTime) {
-                state.isDancing = false;
-            }
-
-            const isFreeRoam = state.theme === 'openworld' || (state.theme === 'club' && !state.cfPrivateMode);
-            const isGroupCampfire = state.theme === 'campfire' && !state.cfPrivateMode;
-
-            if ((isFreeRoam || isGroupCampfire) && state.owPlayers[CLIENT_ID]) {
+            if (state.theme === 'campfire' && state.owPlayers[CLIENT_ID]) {
+                Object.values(state.owPlayers).forEach((p, idx) => {
+                    p.x += (p.targetX - p.x) * 0.14;
+                    p.z += (p.targetZ - p.z) * 0.14;
+                    p.sprite.position.set(p.x, 1.04 + Math.sin(t * 2.4 + idx) * 0.02, p.z);
+                    p.labelObj.position.set(p.x, p.sprite.position.y + 1.12, p.z);
+                });
+            } else if ((state.theme === 'openworld' || state.theme === 'club') && state.owPlayers[CLIENT_ID]) {
                 if (state.theme === 'openworld') {
                     animatedObjects.fountainDrops.forEach((drop, idx) => {
                         const phase = (t * 2.4 + idx * 0.4) % 1;
@@ -3835,68 +4091,70 @@
                     });
                 }
 
-                if (isFreeRoam) {
-                    let moveX = owInput.x;
-                    let moveZ = owInput.z;
-                    if (owKeys['KeyW'] || owKeys['ArrowUp']) moveZ -= 1;
-                    if (owKeys['KeyS'] || owKeys['ArrowDown']) moveZ += 1;
-                    if (owKeys['KeyA'] || owKeys['ArrowLeft']) moveX -= 1;
-                    if (owKeys['KeyD'] || owKeys['ArrowRight']) moveX += 1;
+                let moveX = owInput.x;
+                let moveZ = owInput.z;
+                if (owKeys['KeyW'] || owKeys['ArrowUp']) moveZ -= 1;
+                if (owKeys['KeyS'] || owKeys['ArrowDown']) moveZ += 1;
+                if (owKeys['KeyA'] || owKeys['ArrowLeft']) moveX -= 1;
+                if (owKeys['KeyD'] || owKeys['ArrowRight']) moveX += 1;
 
-                    const mag = Math.hypot(moveX, moveZ);
-                    if (mag > 0.05) {
-                        if (state.owSeatedBenchId) state.owSeatedBenchId = null;
-                        if (state.clubSeatedTableId) {
-                            state.clubSeatedTableId = null;
-                            state.clubSeatedSeatIdx = -1;
-                        }
-                        const speed = 3.8 * dt;
-                        const nx = moveX / Math.max(1, mag);
-                        const nz = moveZ / Math.max(1, mag);
-                        const maxBoundX = state.theme === 'club' ? 8.5 : 13.2;
-                        const minBoundZ = state.theme === 'club' ? -4.2 : -5.8;
-                        const maxBoundZ = state.theme === 'club' ? 7.5 : 12.5;
+                const mag = Math.hypot(moveX, moveZ);
+                if (mag > 0.05) {
+                    if (state.owSeatedBenchId) state.owSeatedBenchId = null;
+                    if (state.clubSeatedTableId) {
+                        state.clubSeatedTableId = null;
+                        updateClubTableButton();
+                    }
+                    const speed = 3.8 * dt;
+                    const nx = moveX / Math.max(1, mag);
+                    const nz = moveZ / Math.max(1, mag);
+                    const maxX = state.theme === 'club' ? 6.5 : 13.2;
+                    const minZ = state.theme === 'club' ? -3.6 : -5.8;
+                    const maxZ = state.theme === 'club' ? 5.5 : 12.5;
 
-                        state.owPos.x = Math.max(-maxBoundX, Math.min(maxBoundX, state.owPos.x + nx * speed));
-                        state.owPos.z = Math.max(minBoundZ, Math.min(maxBoundZ, state.owPos.z + nz * speed));
+                    state.owPos.x = Math.max(-maxX, Math.min(maxX, state.owPos.x + nx * speed));
+                    state.owPos.z = Math.max(minZ, Math.min(maxZ, state.owPos.z + nz * speed));
 
-                        const me = state.owPlayers[CLIENT_ID];
-                        me.targetX = state.owPos.x;
-                        me.targetZ = state.owPos.z;
-                        me.sprite.position.y = 0.95 + Math.abs(Math.sin(t * 14)) * 0.09;
+                    const me = state.owPlayers[CLIENT_ID];
+                    me.targetX = state.owPos.x;
+                    me.targetZ = state.owPos.z;
+                    me.sprite.position.y = 0.95 + Math.abs(Math.sin(t * 14)) * 0.09;
 
-                        const movedDist = Math.hypot(state.owPos.x - lastSentOwPos.x, state.owPos.z - lastSentOwPos.z);
-                        if (openWorldChannel && movedDist > 0.08 && performance.now() - lastOwBroadcast > 220) {
-                            lastOwBroadcast = performance.now();
-                            lastSentOwPos = { x: state.owPos.x, z: state.owPos.z };
-                            openWorldChannel.send({
-                                type: 'broadcast',
-                                event: 'ow_move',
-                                payload: {
-                                    id: CLIENT_ID,
-                                    name: state.playerName,
-                                    gender: state.gender,
-                                    profileIndex: state.profileIndex,
-                                    x: Number(state.owPos.x.toFixed(2)),
-                                    z: Number(state.owPos.z.toFixed(2)),
-                                    isDancing: state.clubDancing,
-                                    tableId: state.clubSeatedTableId
-                                }
-                            });
-                        }
+                    const movedDist = Math.hypot(state.owPos.x - lastSentOwPos.x, state.owPos.z - lastSentOwPos.z);
+                    if (openWorldChannel && movedDist > 0.08 && performance.now() - lastOwBroadcast > 220) {
+                        lastOwBroadcast = performance.now();
+                        lastSentOwPos = { x: state.owPos.x, z: state.owPos.z };
+                        openWorldChannel.send({
+                            type: 'broadcast',
+                            event: 'ow_move',
+                            payload: {
+                                id: CLIENT_ID,
+                                name: state.playerName,
+                                gender: state.gender,
+                                profileIndex: state.profileIndex,
+                                x: Number(state.owPos.x.toFixed(2)),
+                                z: Number(state.owPos.z.toFixed(2)),
+                                isDancing: state.clubDancing
+                            }
+                        });
+                    }
+                } else {
+                    const me = state.owPlayers[CLIENT_ID];
+                    if (state.theme === 'club' && state.clubDancing) {
+                        me.sprite.position.y = 0.95 + Math.abs(Math.sin(t * 7.5)) * 0.14;
+                        me.sprite.material.rotation = Math.sin(t * 7.5) * 0.12;
+                    } else if (performance.now() < state.owJumpEndTime) {
+                        me.sprite.position.y = 0.95 + Math.abs(Math.sin(t * 7.5)) * 0.24;
+                    } else if (state.owSeatedBenchId || state.clubSeatedTableId) {
+                        me.sprite.position.y = 0.85;
+                        me.sprite.material.rotation = 0;
                     } else {
-                        const me = state.owPlayers[CLIENT_ID];
-                        if (performance.now() < state.owJumpEndTime) {
-                            me.sprite.position.y = 0.95 + Math.abs(Math.sin(t * 7.5)) * 0.24;
-                        } else if (state.owSeatedBenchId || state.clubSeatedTableId) {
-                            me.sprite.position.y = 0.85;
-                        } else {
-                            me.sprite.position.y = 0.95 + Math.sin(t * 2.4) * 0.02;
-                        }
+                        me.sprite.position.y = 0.95 + Math.sin(t * 2.4) * 0.02;
+                        me.sprite.material.rotation = 0;
                     }
                 }
 
-                if (state.owPairState) {
+                if (state.theme === 'openworld' && state.owPairState) {
                     const partner = state.owPlayers[state.owPairState.partnerId];
                     if (partner) {
                         const offset = state.owPairState.type === 'hug' ? 0.42 : 0.72;
@@ -3913,41 +4171,27 @@
                     p.z += (p.targetZ - p.z) * 0.16;
                     p.sprite.position.x = p.x;
                     p.sprite.position.z = p.z;
-
-                    if (p.isDancing) {
-                        const phase = t * 8 + idx;
-                        p.sprite.position.y = 0.95 + Math.abs(Math.sin(phase)) * 0.16;
-                        p.sprite.material.rotation = Math.sin(phase) * 0.14;
-                    } else if (isGroupCampfire) {
-                        p.sprite.position.y = 0.86 + Math.sin(t * 2.4 + idx) * 0.02;
-                        p.sprite.material.rotation = 0;
-                    } else {
+                    if (!p.isMe && state.theme === 'club' && p.isDancing) {
+                        p.sprite.position.y = 0.95 + Math.abs(Math.sin(t * 7.5 + idx)) * 0.14;
+                        p.sprite.material.rotation = Math.sin(t * 7.5 + idx) * 0.12;
+                    } else if (!p.isMe) {
                         p.sprite.material.rotation = 0;
                     }
-
                     p.labelObj.position.set(p.x, p.sprite.position.y + 1.13, p.z);
                 });
 
-                updateOpenWorldContextButtons();
+                if (state.theme === 'openworld') updateOpenWorldContextButtons();
+                else if (state.theme === 'club') updateClubTableButton();
 
-                if (isFreeRoam) {
-                    const me = state.owPlayers[CLIENT_ID];
-                    controls.target.x += (me.x - controls.target.x) * 0.12;
-                    controls.target.z += (me.z - controls.target.z) * 0.12;
-                }
+                const me = state.owPlayers[CLIENT_ID];
+                controls.target.x += (me.x - controls.target.x) * 0.12;
+                controls.target.z += (me.z - controls.target.z) * 0.12;
             } else {
                 avatarObjects.forEach((av, idx) => {
                     if (!av || !av.sprite) return;
-                    if (state.isDancing) {
-                        const phase = t * 8 + idx * Math.PI;
-                        av.sprite.position.y = av.baseY + Math.abs(Math.sin(phase)) * 0.16;
-                        av.sprite.position.x = av.baseX + Math.cos(phase * 0.5) * 0.12;
-                        av.sprite.material.rotation = Math.sin(phase) * 0.14;
-                    } else {
-                        av.sprite.position.x = av.baseX;
-                        av.sprite.position.y = av.baseY + Math.sin(t * 2.4 + idx) * 0.025;
-                        av.sprite.material.rotation = 0;
-                    }
+                    av.sprite.position.x = av.baseX;
+                    av.sprite.position.y = av.baseY + Math.sin(t * 2.4 + idx) * 0.025;
+                    av.sprite.material.rotation = 0;
                 });
             }
 
@@ -3957,9 +4201,11 @@
         }
 
         window.addEventListener('load', () => {
+            handleViewportResize();
             renderThemeCards();
             updateGenderButtons();
             buildSceneForTheme('cafe');
+            ensureAnonymousSession();
             initOnlineCounter();
             initChalkboardCanvas();
             initOpenWorldControls();
