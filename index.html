@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>oturbenimle — 3D Pixel Sosyal Masa</title>
+    <title>oturbenimle</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Geist Pixel Font + Yedek Pixel Font -->
@@ -412,7 +412,7 @@
                 </div>
             </div>
 
-            <!-- Ortam Seçimi -->
+            <!-- Ortam Seçimi (Sağ Üst Köşelerde Canlı Kişi Sayacıyla) -->
             <div class="flex flex-col gap-1.5">
                 <span class="text-xs font-medium text-slate-300">Ortam Atmosferi</span>
                 <div id="theme-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -448,12 +448,9 @@
                 </button>
             </div>
 
-            <!-- İletişim Bilgisi (X / Twitter) & Gizli Yönetim Girişi -->
+            <!-- İletişim Bilgisi (X / Twitter) -->
             <div class="border-t border-slate-800/80 pt-2.5 flex items-center justify-between text-xs text-slate-400">
-                <div class="flex items-center gap-2">
-                    <span>İletişim & Geri Bildirim</span>
-                    <button type="button" id="btn-secret-admin" title="Yönetim Paneli" class="text-slate-600 hover:text-amber-400 transition-colors text-xs">🛡️</button>
-                </div>
+                <span>İletişim & Geri Bildirim</span>
                 <a href="https://x.com/yokyeredelirme" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-slate-200 hover:text-amber-300 transition-colors font-medium">
                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
@@ -484,61 +481,6 @@
             <button type="button" id="btn-submit-report" class="pixel-btn w-full py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold pixel-title text-xs">
                 Bildir ve Masadan Ayrıl
             </button>
-        </div>
-    </div>
-
-    <!-- Yönetim & Moderasyon Paneli Modalı (Supabase Auth — Kodda Şifre/E-posta Yok) -->
-    <div id="admin-modal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
-        <div class="glass-panel w-full max-w-lg p-4 flex flex-col gap-3 max-h-[85vh]">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h3 class="pixel-title text-xs sm:text-sm font-bold text-amber-300">🛡️ OTURBENİMLE Yönetim Paneli</h3>
-                <button type="button" id="btn-close-admin" class="text-slate-400 hover:text-white px-2">✕</button>
-            </div>
-
-            <!-- Yönetici Giriş Formu -->
-            <form id="admin-auth-box" class="flex flex-col gap-2">
-                <label class="text-xs text-slate-300">Yönetici E-posta ve Şifresi (Supabase Auth):</label>
-                <input id="admin-email-input" type="email" autocomplete="username" placeholder="Yönetici e-posta..." class="pixel-input w-full px-3 py-1.5 text-xs text-white" required>
-                <div class="flex gap-2">
-                    <input id="admin-pass-input" type="password" autocomplete="current-password" placeholder="Şifre..." class="pixel-input flex-1 px-3 py-1.5 text-xs text-white" required>
-                    <button type="submit" id="btn-admin-login" class="pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 text-xs font-semibold">Giriş</button>
-                </div>
-                <p id="admin-auth-error" class="hidden text-xs text-rose-400">E-posta veya şifre hatalı.</p>
-            </form>
-
-            <!-- Panel İçeriği -->
-            <div id="admin-dashboard-box" class="hidden flex flex-col gap-3 overflow-y-auto custom-scroll pr-1">
-                <div class="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded px-2.5 py-1.5 text-[11px]">
-                    <span class="text-emerald-300">🔒 Güvenli Oturum Aktif</span>
-                    <button type="button" id="btn-admin-logout" class="text-rose-300 hover:underline">Çıkış Yap</button>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-slate-900 border border-slate-800 rounded p-2.5">
-                        <div class="text-[11px] text-slate-400">Anlık Çevrimiçi</div>
-                        <div id="admin-stat-online" class="text-base font-bold text-emerald-400">1 Kişi</div>
-                    </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded p-2.5">
-                        <div class="text-[11px] text-slate-400">Toplam Bildirim</div>
-                        <div id="admin-stat-reports" class="text-base font-bold text-rose-400">0 Kayıt</div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="pixel-title text-xs font-semibold text-slate-200">Aktif Kullanıcılar</span>
-                    </div>
-                    <div id="admin-users-list" class="bg-slate-900/80 border border-slate-800 rounded p-2 text-xs text-slate-300 space-y-1 max-h-28 overflow-y-auto custom-scroll"></div>
-                </div>
-
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="pixel-title text-xs font-semibold text-rose-300">Gelen Şikayet / Bildirimler</span>
-                        <button type="button" id="btn-refresh-reports" class="text-[11px] text-amber-300 hover:underline">Yenile</button>
-                    </div>
-                    <div id="admin-reports-list" class="bg-slate-900/80 border border-slate-800 rounded p-2 text-xs text-slate-300 space-y-2 max-h-48 overflow-y-auto custom-scroll"></div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -809,7 +751,7 @@
                     px(6, 31, 3, 2, '#94a3b8');
                 }
 
-                // Oturur Pozisyonda Bacaklar (Dizden bükülü öne uzanan uyluk + aşağı inen alt bacak)
+                // Oturur Pozisyonda Bacaklar
                 px(9, 34, 14, 4, profile.pants);
                 px(9, 37, 6, 7, profile.pants);
                 px(17, 37, 6, 7, profile.pants);
@@ -843,7 +785,7 @@
                     px(22, 5, 2, 6, profile.hair);
                 }
 
-                // Aksesuarlar (Şapka / Kulaklık)
+                // Aksesuarlar
                 if (profile.acc === 'cap') {
                     px(8, 2, 16, 3, '#f59e0b');
                     px(13, 4, 13, 2, '#d97706');
@@ -905,7 +847,6 @@
             const woodMat = new THREE.MeshStandardMaterial({ color: woodColor, roughness: 0.85 });
             const cushMat = new THREE.MeshStandardMaterial({ color: cushionColor, roughness: 0.7 });
 
-            // Oturak & Minder
             const seat = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.08, 0.62), woodMat);
             seat.position.y = 0.45;
             seat.castShadow = true;
@@ -915,13 +856,11 @@
             cushion.position.y = 0.50;
             chair.add(cushion);
 
-            // Sırtlık
             const back = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.64, 0.08), woodMat);
             back.position.set(0, 0.80, -0.27);
             back.castShadow = true;
             chair.add(back);
 
-            // 4 Sandalye Ayağı (Yere tam basan)
             const legPositions = [
                 [-0.24, 0.225, -0.24],
                 [0.24, 0.225, -0.24],
@@ -1165,7 +1104,7 @@
             roof.position.set(0, 2.7, -13);
             environmentGroup.add(roof);
 
-            // Ortak Ahşap Sahil Bankı (4 Ayaklı)
+            // Ortak Ahşap Sahil Bankı
             const benchWoodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.8 });
             const benchIronMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
 
@@ -1643,6 +1582,14 @@
                 btn.addEventListener('click', () => {
                     document.getElementById('teleport-drawer').classList.add('hidden');
                     buildSceneForTheme(t.id);
+                    if (globalPresenceChannel) {
+                        globalPresenceChannel.track({
+                            id: CLIENT_ID,
+                            name: state.playerName || 'Misafir',
+                            theme: t.id,
+                            joinedAt: new Date().toISOString()
+                        });
+                    }
                     appendChatMessage('', `✨ ${state.playerName} ortamı "${t.name}" olarak değiştirdi!`, false, true);
                     if (roomChannel) {
                         roomChannel.send({
@@ -1738,6 +1685,7 @@
                     });
                     const count = Math.max(1, Object.keys(activeUsersMap).length);
                     document.getElementById('online-count-badge').textContent = `${count} kişi çevrimiçi`;
+                    renderThemeCards();
                 };
 
                 globalPresenceChannel
@@ -1951,6 +1899,14 @@
                     const t = THEMES[payload.themeId];
                     if (!t) return;
                     buildSceneForTheme(payload.themeId);
+                    if (globalPresenceChannel) {
+                        globalPresenceChannel.track({
+                            id: CLIENT_ID,
+                            name: state.playerName || 'Misafir',
+                            theme: payload.themeId,
+                            joinedAt: new Date().toISOString()
+                        });
+                    }
                     appendChatMessage('', `✨ ${payload.senderName} ortamı "${t.name}" olarak değiştirdi!`, false, true);
                 })
                 .on('broadcast', { event: 'dance_invite' }, ({ payload }) => {
@@ -2001,86 +1957,40 @@
             document.getElementById('lobby-modal').classList.remove('hidden');
         }
 
-        function renderAdminStats() {
-            const users = Object.values(activeUsersMap);
-            document.getElementById('admin-stat-online').textContent = `${Math.max(1, users.length)} Kişi`;
-            const listEl = document.getElementById('admin-users-list');
-            listEl.innerHTML = '';
-            if (users.length === 0) {
-                listEl.textContent = 'Şu an aktif kullanıcı listesi boş.';
-                return;
-            }
-            users.forEach((u) => {
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between border-b border-slate-800 pb-1';
-                row.textContent = `• ${u.name || 'Misafir'} (${THEMES[u.theme]?.name || 'Kafe'})`;
-                listEl.appendChild(row);
-            });
-        }
-
-        async function loadAdminReports() {
-            const listEl = document.getElementById('admin-reports-list');
-            if (!sbClient) {
-                listEl.textContent = 'Canlı ortamda Supabase bağlantısı üzerinden bildirimler yüklenir.';
-                return;
-            }
-            listEl.textContent = 'Yükleniyor...';
-            const { data, error } = await sbClient
-                .from('reports')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(20);
-
-            if (error || !data) {
-                listEl.textContent = 'Kayıtlar alınamadı (Supabase RLS politikalarını kontrol edin).';
-                return;
-            }
-
-            document.getElementById('admin-stat-reports').textContent = `${data.length} Kayıt`;
-            listEl.innerHTML = '';
-            if (data.length === 0) {
-                listEl.textContent = 'Henüz şikayet bildirimi yok.';
-                return;
-            }
-
-            data.forEach((rep) => {
-                const card = document.createElement('div');
-                card.className = 'bg-slate-950 border border-slate-800 rounded p-2 space-y-1';
-                const header = document.createElement('div');
-                header.className = 'font-bold text-rose-300';
-                header.textContent = `${rep.reported_name || 'Bilinmiyor'} — ${rep.reason || ''}`;
-                const meta = document.createElement('div');
-                meta.className = 'text-[11px] text-slate-400';
-                meta.textContent = `Bildiren: ${rep.reporter_name || 'Misafir'} • ${new Date(rep.created_at).toLocaleString('tr-TR')}`;
-                card.appendChild(header);
-                card.appendChild(meta);
-                if (rep.recent_chat) {
-                    const chatLog = document.createElement('div');
-                    chatLog.className = 'text-[11px] text-slate-300 bg-slate-900 p-1 rounded';
-                    chatLog.textContent = rep.recent_chat;
-                    card.appendChild(chatLog);
-                }
-                listEl.appendChild(card);
-            });
-        }
-
         // ==========================================
         // 9. LOBİ UI VE ETKİLEŞİM DİNLEYİCİLERİ
         // ==========================================
+        function getThemeUserCounts() {
+            const counts = { cafe: 0, campfire: 0, beach: 0, club: 0 };
+            Object.values(activeUsersMap).forEach((u) => {
+                if (u && counts[u.theme] !== undefined) {
+                    counts[u.theme] += 1;
+                }
+            });
+            return counts;
+        }
+
         function renderThemeCards() {
             const grid = document.getElementById('theme-grid');
+            if (!grid) return;
             grid.innerHTML = '';
+            const themeCounts = getThemeUserCounts();
 
             Object.values(THEMES).forEach((t) => {
                 const isSelected = state.theme === t.id;
+                const liveCount = themeCounts[t.id] || 0;
                 const card = document.createElement('button');
                 card.type = 'button';
-                card.className = 'pixel-btn p-2.5 text-left flex items-start gap-2.5 ' +
+                card.className = 'pixel-btn p-2.5 text-left flex items-start gap-2.5 relative ' +
                     (isSelected ? 'bg-amber-950/80 border-amber-500 text-white' : 'bg-[#161b26] hover:bg-[#1e2433] text-slate-300');
 
                 card.innerHTML = `
-                    <span class="text-xl shrink-0">${t.icon}</span>
-                    <div class="min-w-0">
+                    <span class="absolute top-2 right-2.5 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                        <span>${liveCount}</span>
+                    </span>
+                    <span class="text-xl shrink-0 mt-0.5">${t.icon}</span>
+                    <div class="min-w-0 pr-8">
                         <div class="text-xs font-bold text-slate-100">${escapeHtml(t.name)}</div>
                         <div class="text-[11px] text-slate-400 leading-tight mt-0.5">${escapeHtml(t.desc)}</div>
                     </div>
@@ -2089,6 +1999,14 @@
                     state.theme = t.id;
                     renderThemeCards();
                     buildSceneForTheme(t.id);
+                    if (globalPresenceChannel) {
+                        globalPresenceChannel.track({
+                            id: CLIENT_ID,
+                            name: state.playerName || 'Misafir',
+                            theme: t.id,
+                            joinedAt: new Date().toISOString()
+                        });
+                    }
                 });
                 grid.appendChild(card);
             });
@@ -2240,61 +2158,6 @@
             document.getElementById('report-modal').classList.add('hidden');
         });
         document.getElementById('btn-submit-report').addEventListener('click', submitUserReport);
-
-        // Yönetim Paneli Kontrolleri (Supabase Auth Tabanlı — Kaynak Kodda Şifre Yok)
-        async function openAdminModal() {
-            document.getElementById('admin-modal').classList.remove('hidden');
-            if (sbClient) {
-                const { data } = await sbClient.auth.getSession();
-                if (data?.session) {
-                    document.getElementById('admin-auth-box').classList.add('hidden');
-                    document.getElementById('admin-dashboard-box').classList.remove('hidden');
-                    renderAdminStats();
-                    loadAdminReports();
-                    return;
-                }
-            }
-            document.getElementById('admin-auth-box').classList.remove('hidden');
-            document.getElementById('admin-dashboard-box').classList.add('hidden');
-        }
-        document.getElementById('btn-secret-admin').addEventListener('click', openAdminModal);
-        document.getElementById('btn-close-admin').addEventListener('click', () => {
-            document.getElementById('admin-modal').classList.add('hidden');
-        });
-        document.getElementById('admin-auth-box').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const errEl = document.getElementById('admin-auth-error');
-            const email = document.getElementById('admin-email-input').value.trim();
-            const password = document.getElementById('admin-pass-input').value;
-
-            if (!sbClient) {
-                errEl.textContent = 'Canlı ortamda Supabase Auth ile giriş yapılabilir.';
-                errEl.classList.remove('hidden');
-                return;
-            }
-
-            const { error } = await sbClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                errEl.textContent = 'E-posta veya şifre hatalı.';
-                errEl.classList.remove('hidden');
-            } else {
-                errEl.classList.add('hidden');
-                document.getElementById('admin-pass-input').value = '';
-                document.getElementById('admin-auth-box').classList.add('hidden');
-                document.getElementById('admin-dashboard-box').classList.remove('hidden');
-                renderAdminStats();
-                loadAdminReports();
-            }
-        });
-        document.getElementById('btn-admin-logout').addEventListener('click', async () => {
-            if (sbClient) await sbClient.auth.signOut();
-            document.getElementById('admin-dashboard-box').classList.add('hidden');
-            document.getElementById('admin-auth-box').classList.remove('hidden');
-        });
-        document.getElementById('btn-refresh-reports').addEventListener('click', () => {
-            renderAdminStats();
-            loadAdminReports();
-        });
 
         // KVKK Modal Kontrolleri
         document.getElementById('btn-open-kvkk').addEventListener('click', () => {
