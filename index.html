@@ -768,22 +768,6 @@
                     { id: 'energy_shot', icon: '⚡', name: 'Dans Enerji İçeceği', type: 'drink', color: 0x38bdf8, bites: 4, actionText: 'Yudumla', treatMsg: 'Sana Dans Enerji İçeceği ısmarlamak istedim ⚡' },
                     { id: 'nachos', icon: '🌮', name: 'Çıtır Nachos Tabağı', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'Sana Çıtır Nachos Tabağı ısmarlamak istedim 🌮' }
                 ]
-            },
-            openworld: {
-                id: 'openworld',
-                name: 'Açık Dünya Meydanı',
-                icon: '🏙️',
-                desc: 'OTUR BENİMLE parkı, STARBUKSH kafe ve BEN PİRO konseri!',
-                skyColor: 0x0f172a,
-                fogColor: 0x0f172a,
-                ambientLight: 0xe2e8f0,
-                isOpenWorld: true,
-                menu: [
-                    { id: 'street_coffee', icon: '🥤', name: 'STARBUKSH Buzlu Latte', type: 'drink', color: 0x006241, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana STARBUKSH Buzlu Latte ısmarlamak istedim 🥤' },
-                    { id: 'mall_burger', icon: '🍔', name: 'Meydan Burger', type: 'food', color: 0xf59e0b, bites: 4, actionText: 'Ye', treatMsg: 'Sana Meydan Burger ısmarlamak istedim 🍔' },
-                    { id: 'park_waffle', icon: '🧇', name: 'Park Waffle', type: 'food', color: 0xf43f5e, bites: 4, actionText: 'Ye', treatMsg: 'Sana Park Waffle ısmarlamak istedim 🧇' },
-                    { id: 'bubble_tea', icon: '🧋', name: 'Bubble Tea', type: 'drink', color: 0xa855f7, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Bubble Tea ısmarlamak istedim 🧋' }
-                ]
             }
         };
 
@@ -1560,216 +1544,6 @@
             environmentGroup.add(lampLight);
         }
 
-        function createOpenWorldBench(id, x, z, rotY = 0) {
-            const benchGroup = new THREE.Group();
-            const woodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.8 });
-            const ironMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
-
-            const seat = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.08, 0.58), woodMat);
-            seat.position.y = 0.44;
-            benchGroup.add(seat);
-
-            const back = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.48, 0.08), woodMat);
-            back.position.set(0, 0.72, -0.25);
-            benchGroup.add(back);
-
-            [[-0.8, 0.22, -0.2], [0.8, 0.22, -0.2], [-0.8, 0.22, 0.2], [0.8, 0.22, 0.2]].forEach(([lx, ly, lz]) => {
-                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.44, 0.08), ironMat);
-                leg.position.set(lx, ly, lz);
-                benchGroup.add(leg);
-            });
-
-            benchGroup.position.set(x, 0, z);
-            benchGroup.rotation.y = rotY;
-            environmentGroup.add(benchGroup);
-
-            owBenches.push({
-                id,
-                x,
-                z,
-                rotY,
-                seats: [
-                    { x: x + Math.cos(rotY) * -0.45, z: z - Math.sin(rotY) * -0.45 },
-                    { x: x + Math.cos(rotY) * 0.45, z: z - Math.sin(rotY) * 0.45 }
-                ]
-            });
-        }
-
-        function buildOpenWorldScene() {
-            owBenches.length = 0;
-            owConcertNpcs.length = 0;
-            owConcertSpotlights.length = 0;
-            owConcertSpeakers.length = 0;
-            animatedObjects.fountainDrops = [];
-
-            const plazaTex = createPixelTexture(16, 16, (ctx) => {
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(0, 0, 16, 16);
-                ctx.fillStyle = '#293548';
-                ctx.fillRect(0, 0, 7, 7);
-                ctx.fillRect(8, 8, 7, 7);
-            });
-            plazaTex.wrapS = plazaTex.wrapT = THREE.RepeatWrapping;
-            plazaTex.repeat.set(18, 18);
-            const ground = new THREE.Mesh(new THREE.PlaneGeometry(38, 38), new THREE.MeshStandardMaterial({ map: plazaTex, roughness: 0.85 }));
-            ground.rotation.x = -Math.PI / 2;
-            ground.receiveShadow = true;
-            environmentGroup.add(ground);
-
-            const pathMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
-            const hPath = new THREE.Mesh(new THREE.BoxGeometry(24, 0.03, 2.2), pathMat);
-            hPath.position.set(0, 0.016, 2.2);
-            environmentGroup.add(hPath);
-
-            const vPath = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.03, 18), pathMat);
-            vPath.position.set(0, 0.016, -2.5);
-            environmentGroup.add(vPath);
-
-            [[-4.2, 0.8], [4.2, 0.8], [-4.2, 3.8], [4.2, 3.8], [-8.5, 4.2], [8.5, 4.2], [-3.2, -5.2], [3.2, -5.2]].forEach(([lx, lz]) => {
-                createStreetLamp(lx, lz);
-            });
-
-            const fountainRim = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.8, 0.42, 16), new THREE.MeshStandardMaterial({ color: 0x64748b }));
-            fountainRim.position.set(0, 0.21, 2.2);
-            environmentGroup.add(fountainRim);
-
-            const fountainWater = new THREE.Mesh(new THREE.CylinderGeometry(1.48, 1.48, 0.44, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.45 }));
-            fountainWater.position.set(0, 0.22, 2.2);
-            environmentGroup.add(fountainWater);
-
-            for (let d = 0; d < 8; d++) {
-                const drop = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: 0xbae6fd }));
-                drop.position.set(Math.cos(d) * 0.35, 0.6, 2.2 + Math.sin(d) * 0.35);
-                environmentGroup.add(drop);
-                animatedObjects.fountainDrops.push(drop);
-            }
-
-            createOpenWorldBench('plaza_west', -2.7, 2.2, Math.PI / 2);
-            createOpenWorldBench('plaza_east', 2.7, 2.2, -Math.PI / 2);
-
-            const grass = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.05, 13.5), new THREE.MeshStandardMaterial({ color: 0x14532d }));
-            grass.position.set(-9.2, 0.025, -1.2);
-            environmentGroup.add(grass);
-
-            const parkWalk = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 11.5), new THREE.MeshStandardMaterial({ color: 0x78350f }));
-            parkWalk.position.set(-9.2, 0.032, -1.2);
-            environmentGroup.add(parkWalk);
-
-            [-10.6, -7.8].forEach((px) => {
-                const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.8, 0.18), new THREE.MeshStandardMaterial({ color: 0x78350f }));
-                post.position.set(px, 1.4, 5.1);
-                environmentGroup.add(post);
-            });
-            createZoneSign('OTUR BENİMLE', '#064e3b', '#fef3c7', -9.2, 2.75, 5.1, 3.3, 0.72, false);
-
-            const flowerColors = [0xf43f5e, 0xfacc15, 0xc084fc, 0x38bdf8];
-            [[-11.2, 2.2], [-7.2, 2.2], [-11.2, -2.5], [-7.2, -2.5]].forEach(([fx, fz], idx) => {
-                const bed = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.16, 1.2), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
-                bed.position.set(fx, 0.09, fz);
-                environmentGroup.add(bed);
-
-                for (let f = 0; f < 5; f++) {
-                    const blossom = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), new THREE.MeshBasicMaterial({ color: flowerColors[(idx + f) % flowerColors.length] }));
-                    blossom.position.set(fx - 0.55 + f * 0.28, 0.24, fz + (f % 2 === 0 ? 0.18 : -0.18));
-                    environmentGroup.add(blossom);
-                }
-            });
-
-            [[-12.2, -5.5], [-6.4, -5.5], [-12.2, 0.2], [-6.4, 0.2], [-12.2, 4.0]].forEach(([tx, tz]) => {
-                const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.36, 1.35, 0.36), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
-                trunk.position.set(tx, 0.67, tz);
-                environmentGroup.add(trunk);
-
-                const crown = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.15, 6), new THREE.MeshStandardMaterial({ color: 0x15803d }));
-                crown.position.set(tx, 2.15, tz);
-                environmentGroup.add(crown);
-            });
-
-            createOpenWorldBench('park_north', -9.2, -4.6, 0);
-            createOpenWorldBench('park_west', -11.3, -0.6, Math.PI / 2);
-            createOpenWorldBench('park_east', -7.1, -0.6, -Math.PI / 2);
-
-            const stageBase = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.85, 3.8), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 }));
-            stageBase.position.set(0, 0.425, -9.2);
-            environmentGroup.add(stageBase);
-
-            const stageBackdrop = new THREE.Mesh(new THREE.BoxGeometry(8.4, 3.6, 0.25), new THREE.MeshStandardMaterial({ color: 0x1e1b4b }));
-            stageBackdrop.position.set(0, 2.6, -10.9);
-            environmentGroup.add(stageBackdrop);
-
-            createZoneSign('BEN PİRO', '#111827', '#f59e0b', 0, 3.55, -10.72, 3.8, 0.88, true);
-
-            [-3.6, 3.6].forEach((sx) => {
-                const cab = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.6, 1.0), new THREE.MeshStandardMaterial({ color: 0x090d16 }));
-                cab.position.set(sx, 2.15, -9.6);
-                environmentGroup.add(cab);
-
-                [1.55, 2.65].forEach((wy) => {
-                    const woofer = new THREE.Mesh(
-                        new THREE.CylinderGeometry(0.36, 0.36, 0.12, 12),
-                        new THREE.MeshStandardMaterial({ color: 0x334155, emissive: 0x7c3aed, emissiveIntensity: 0.35 })
-                    );
-                    woofer.rotation.x = Math.PI / 2;
-                    woofer.position.set(sx, wy, -9.08);
-                    environmentGroup.add(woofer);
-                    owConcertSpeakers.push(woofer);
-                });
-            });
-
-            const piroTex = createCharacterTexture('male', 2, false, false, true);
-            const piroSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: piroTex, transparent: true }));
-            piroSprite.scale.set(1.3, 1.95, 1);
-            piroSprite.position.set(0, 1.78, -9.0);
-            environmentGroup.add(piroSprite);
-            owConcertNpcs.push({ sprite: piroSprite, baseY: 1.78, phase: 0, amp: 0.14 });
-
-            [0xa855f7, 0xf59e0b, 0xec4899].forEach((col, i) => {
-                const spot = new THREE.PointLight(col, 1.6, 11);
-                spot.position.set(-2.5 + i * 2.5, 4.1, -7.8);
-                environmentGroup.add(spot);
-                owConcertSpotlights.push(spot);
-            });
-
-            const npcConfigs = [
-                { x: -2.1, z: -6.3, g: 'female', p: 0, ph: 0.2 },
-                { x: -1.1, z: -6.7, g: 'male', p: 1, ph: 1.1 },
-                { x: -0.2, z: -6.1, g: 'female', p: 2, ph: 2.0 },
-                { x: 0.9, z: -6.6, g: 'male', p: 0, ph: 2.8 },
-                { x: 1.9, z: -6.2, g: 'female', p: 1, ph: 3.6 },
-                { x: 0.4, z: -5.4, g: 'male', p: 2, ph: 4.4 }
-            ];
-            npcConfigs.forEach((nc) => {
-                const nTex = createCharacterTexture(nc.g, nc.p, false, false, false);
-                const nSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: nTex, transparent: true }));
-                nSprite.scale.set(1.12, 1.68, 1);
-                nSprite.position.set(nc.x, 0.92, nc.z);
-                environmentGroup.add(nSprite);
-                owConcertNpcs.push({ sprite: nSprite, baseY: 0.92, phase: nc.ph, amp: 0.11 });
-            });
-
-            const cafeDeck = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.06, 13.0), new THREE.MeshStandardMaterial({ color: 0x3f2312 }));
-            cafeDeck.position.set(9.2, 0.03, -1.2);
-            environmentGroup.add(cafeDeck);
-
-            const cafeBuilding = new THREE.Mesh(new THREE.BoxGeometry(7.2, 3.6, 3.2), new THREE.MeshStandardMaterial({ color: 0x1f2937 }));
-            cafeBuilding.position.set(9.2, 1.8, -6.2);
-            environmentGroup.add(cafeBuilding);
-
-            createZoneSign('STARBUKSH', '#006241', '#ffffff', 9.2, 3.15, -4.52, 4.1, 0.85, true);
-
-            [[7.5, -2.2], [10.9, -2.2], [7.5, 1.8], [10.9, 1.8]].forEach(([mx, mz], idx) => {
-                const mTop = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.08, 12), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
-                mTop.position.set(mx, 0.78, mz);
-                environmentGroup.add(mTop);
-
-                const mLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.76, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-                mLeg.position.set(mx, 0.38, mz);
-                environmentGroup.add(mLeg);
-
-                createOpenWorldBench(`cafe_bench_${idx}`, mx, mz + 0.95, Math.PI);
-            });
-        }
-
         function createTreatMesh(item) {
             const group = new THREE.Group();
             if (item.type === 'drink') {
@@ -1861,11 +1635,7 @@
             document.getElementById('cf-player-bar').classList.add('hidden');
             document.getElementById('ow-consent-banner').classList.add('hidden');
 
-            if (themeId === 'openworld') {
-                buildOpenWorldScene();
-                joyZone.classList.remove('hidden');
-                owSocialBar.classList.remove('hidden');
-            } else if (themeId === 'campfire') {
+            if (themeId === 'campfire') {
                 buildCampfireScene();
                 if (state.mySeatIndex !== -1) {
                     woodBtn.classList.remove('hidden');
@@ -1892,9 +1662,7 @@
             }
 
             document.getElementById('room-theme-icon').textContent = t.icon;
-            if (themeId === 'openworld') {
-                document.getElementById('hud-theme-name').textContent = `${t.name} • Serbest Gezinti`;
-            } else if (themeId === 'campfire') {
+            if (themeId === 'campfire') {
                 document.getElementById('hud-theme-name').textContent = state.cfPrivateMode
                     ? `${t.name} • Baş Başa Ateş`
                     : `${t.name} • Ateş Başı Çemberi`;
@@ -2352,8 +2120,7 @@
                     standUp(true);
                     state.theme = t.id;
                     updatePresenceLocation(t.id);
-                    if (t.id === 'openworld') enterOpenWorld();
-                    else if (t.id === 'campfire') enterCampfireGroup();
+                    if (t.id === 'campfire') enterCampfireGroup();
                     else if (t.id === 'club') enterClubMulti();
                     else {
                         document.getElementById('lobby-modal').classList.remove('hidden');
@@ -2941,131 +2708,6 @@
             p.sprite.material.needsUpdate = true;
         }
 
-        function enterOpenWorld() {
-            cancelMatchmaking();
-            document.getElementById('lobby-modal').classList.add('hidden');
-            clearGroup(avatarsGroup);
-            state.owPlayers = {};
-            state.mySeatIndex = 0;
-            state.owSeatedBenchId = null;
-            state.owLovePartnerId = null;
-            state.owPairState = null;
-            state.owPendingInvite = null;
-
-            const startX = Number(((Math.random() - 0.5) * 3.2).toFixed(2));
-            const startZ = Number((3.8 + Math.random() * 1.4).toFixed(2));
-            state.owPos = { x: startX, z: startZ };
-            lastSentOwPos = { x: startX, z: startZ };
-
-            buildSceneForTheme('openworld');
-            upsertOpenWorldPlayer({
-                id: CLIENT_ID,
-                name: state.playerName,
-                gender: state.gender,
-                profileIndex: state.profileIndex,
-                x: startX,
-                z: startZ
-            }, true);
-
-            document.getElementById('btn-stand').classList.add('hidden');
-            document.getElementById('btn-report-partner').classList.add('hidden');
-            document.getElementById('bottom-chat-bar').classList.remove('hidden');
-
-            const feed = document.getElementById('chat-feed');
-            feed.innerHTML = '';
-            appendChatMessage('', 'Açık Dünya Meydanına hoş geldin! OTUR BENİMLE parkında oturabilir, STARBUKSH kafeye uğrayabilir veya BEN PİRO konserine katılabilirsin.', false, true);
-
-            if (!sbClient) return;
-            if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
-
-            const owCount = Object.values(activeUsersMap).filter(u => u && u.theme === 'openworld').length;
-            const shardIndex = Math.floor(owCount / OW_MAX_PLAYERS_PER_SHARD) + 1;
-            const shardChannelName = `private_oturbenimle_openworld_${shardIndex}`;
-
-            openWorldChannel = sbClient.channel(shardChannelName, {
-                config: { private: true, presence: { key: CLIENT_ID } }
-            });
-
-            openWorldChannel
-                .on('presence', { event: 'sync' }, () => {
-                    const pState = openWorldChannel.presenceState();
-                    const presentIds = new Set();
-                    Object.values(pState).flat().forEach((u) => {
-                        if (!u || !u.id) return;
-                        presentIds.add(u.id);
-                        if (u.id !== CLIENT_ID) upsertOpenWorldPlayer(u, false);
-                    });
-                    Object.keys(state.owPlayers).forEach((pid) => {
-                        if (pid !== CLIENT_ID && !presentIds.has(pid)) {
-                            if (state.owLovePartnerId === pid) state.owLovePartnerId = null;
-                            if (state.owPairState && state.owPairState.partnerId === pid) state.owPairState = null;
-                            removeOpenWorldPlayer(pid);
-                        }
-                    });
-                })
-                .on('broadcast', { event: 'ow_move' }, ({ payload }) => {
-                    if (!payload || payload.id === CLIENT_ID) return;
-                    upsertOpenWorldPlayer(payload, false);
-                })
-                .on('broadcast', { event: 'ow_chat' }, ({ payload }) => {
-                    if (!payload || payload.id === CLIENT_ID) return;
-                    showOpenWorldBubble(payload.id, payload.text);
-                    appendChatMessage(payload.name, payload.text, false);
-                })
-                .on('broadcast', { event: 'ow_wave' }, ({ payload }) => {
-                    if (!payload || payload.id === CLIENT_ID) return;
-                    setPlayerWavingVisual(payload.id, true);
-                    showOpenWorldBubble(payload.id, 'Selam!');
-                    setTimeout(() => setPlayerWavingVisual(payload.id, false), 1800);
-                })
-                .on('broadcast', { event: 'ow_pair_invite' }, ({ payload }) => {
-                    if (!payload || payload.targetId !== CLIENT_ID) return;
-                    state.owPendingInvite = {
-                        fromId: payload.fromId,
-                        fromName: payload.fromName,
-                        type: payload.type
-                    };
-                    let label = 'el ele tutuşmak istiyor';
-                    if (payload.type === 'love') label = 'aşk yaşamak istiyor';
-                    else if (payload.type === 'hug') label = 'sarılmak istiyor';
-                    document.getElementById('ow-consent-text').textContent = `${payload.fromName} seninle ${label}`;
-                    document.getElementById('ow-consent-banner').classList.remove('hidden');
-                })
-                .on('broadcast', { event: 'ow_pair_accept' }, ({ payload }) => {
-                    if (!payload || payload.targetId !== CLIENT_ID) return;
-                    state.owSeatedBenchId = null;
-                    if (payload.type === 'love') {
-                        state.owLovePartnerId = payload.fromId;
-                        appendChatMessage('', `${payload.fromName} ile aşk yaşamaya başladınız! Sarıl ve El Ele Tutuş butonları açıldı.`, false, true);
-                    } else {
-                        state.owLovePartnerId = payload.fromId;
-                        state.owPairState = { partnerId: payload.fromId, type: payload.type };
-                        const actionLabel = payload.type === 'hug' ? 'sarıldı' : 'el ele tutuştu';
-                        appendChatMessage('', `${payload.fromName} isteğini kabul etti ve ${actionLabel}!`, false, true);
-                    }
-                })
-                .on('broadcast', { event: 'ow_pair_stop' }, ({ payload }) => {
-                    if (!payload) return;
-                    if (state.owLovePartnerId === payload.fromId || (state.owPairState && state.owPairState.partnerId === payload.fromId)) {
-                        state.owLovePartnerId = null;
-                        state.owPairState = null;
-                        appendChatMessage('', 'Birliktelik / temas sona erdi.', false, true);
-                    }
-                })
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await openWorldChannel.track({
-                            id: CLIENT_ID,
-                            name: state.playerName,
-                            gender: state.gender,
-                            profileIndex: state.profileIndex,
-                            x: state.owPos.x,
-                            z: state.owPos.z
-                        });
-                    }
-                });
-        }
-
         function initOpenWorldControls() {
             const zone = document.getElementById('mobile-joystick-zone');
             const knob = document.getElementById('mobile-joystick-knob');
@@ -3448,15 +3090,33 @@
             document.getElementById('admin-warning-modal').classList.add('hidden');
         });
 
-        async function recordAnonymousSiteStats(currentOnline) {
+        // DISK IO FIX: Eskiden her kullanıcı, her presence olayında ve her 4 saniyede
+        // veritabanına yazıyordu. Artık: yeni ziyaretçi bilgisi oturum başına 1 kez,
+        // online sayısı ise sadece "lider" kullanıcıdan en fazla dakikada 1 kez yazılır.
+        let visitRecorded = false;
+        let lastStatsWriteAt = 0;
+        async function recordAnonymousSiteStats(currentOnline, isLeader) {
             if (!sbClient) return;
+            const now = Date.now();
             try {
-                const isNew = !sessionStorage.getItem('ob_visited_flag');
-                if (isNew) sessionStorage.setItem('ob_visited_flag', '1');
-                await sbClient.rpc('record_site_visit', {
-                    p_is_new_visitor: isNew,
-                    p_current_online: currentOnline
-                });
+                if (!visitRecorded) {
+                    visitRecorded = true;
+                    lastStatsWriteAt = now;
+                    const isNew = !sessionStorage.getItem('ob_visited_flag');
+                    if (isNew) sessionStorage.setItem('ob_visited_flag', '1');
+                    await sbClient.rpc('record_site_visit', {
+                        p_is_new_visitor: isNew,
+                        p_current_online: currentOnline
+                    });
+                    return;
+                }
+                if (isLeader && now - lastStatsWriteAt > 60000) {
+                    lastStatsWriteAt = now;
+                    await sbClient.rpc('record_site_visit', {
+                        p_is_new_visitor: false,
+                        p_current_online: currentOnline
+                    });
+                }
             } catch (err) {
                 console.warn('İstatistik güncellenemedi:', err);
             }
@@ -3474,6 +3134,20 @@
             } catch (err) {
                 console.warn('Presence güncellenemedi:', err);
             }
+        }
+
+        let onlineRetryCount = 0;
+        let onlineSyncTimer = null;
+        function scheduleOnlineCounterRetry() {
+            if (onlineRetryCount >= 6) return;
+            const delay = Math.min(30000, 2000 * Math.pow(2, onlineRetryCount++));
+            setTimeout(() => {
+                if (globalPresenceChannel) {
+                    sbClient.removeChannel(globalPresenceChannel);
+                    globalPresenceChannel = null;
+                }
+                initOnlineCounter();
+            }, delay);
         }
 
         function initOnlineCounter() {
@@ -3496,7 +3170,9 @@
                     if (!document.getElementById('lobby-modal').classList.contains('hidden')) {
                         renderThemeCards();
                     }
-                    recordAnonymousSiteStats(count);
+                    const sortedKeys = Object.keys(activeUsersMap).sort();
+                    const isLeader = sortedKeys.length > 0 && sortedKeys[0] === CLIENT_ID;
+                    recordAnonymousSiteStats(count, isLeader);
                 };
 
                 globalPresenceChannel
@@ -3524,6 +3200,7 @@
                     })
                     .subscribe(async (status) => {
                         if (status === 'SUBSCRIBED') {
+                            onlineRetryCount = 0;
                             await globalPresenceChannel.track({
                                 id: CLIENT_ID,
                                 name: state.playerName || 'Misafir',
@@ -3531,10 +3208,12 @@
                                 joinedAt: new Date().toISOString()
                             });
                             syncCount();
+                        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                            scheduleOnlineCounterRetry();
                         }
                     });
 
-                setInterval(syncCount, 4000);
+                if (!onlineSyncTimer) onlineSyncTimer = setInterval(syncCount, 5000);
             } catch (err) {
                 console.warn('Presence devre dışı:', err);
             }
@@ -3580,10 +3259,6 @@
             state.playerName = rawName;
             updatePresenceLocation(state.theme);
 
-            if (state.theme === 'openworld') {
-                enterOpenWorld();
-                return;
-            }
             if (state.theme === 'campfire') {
                 enterCampfireGroup();
                 return;
@@ -3854,7 +3529,7 @@
             const grid = document.getElementById('theme-grid');
             grid.innerHTML = '';
 
-            const themeCounts = { cafe: 0, campfire: 0, beach: 0, club: 0, openworld: 0 };
+            const themeCounts = { cafe: 0, campfire: 0, beach: 0, club: 0 };
             Object.values(activeUsersMap).forEach((u) => {
                 if (u && u.theme && themeCounts[u.theme] !== undefined) {
                     themeCounts[u.theme] += 1;
@@ -3872,7 +3547,6 @@
 
             const orderedThemes = [
                 THEMES.campfire,
-                THEMES.openworld,
                 THEMES.cafe,
                 THEMES.beach,
                 THEMES.club
@@ -3912,8 +3586,7 @@
                     userHasInteracted = true;
                     state.theme = t.id;
                     const matchBtn = document.getElementById('btn-auto-match');
-                    if (t.isOpenWorld) matchBtn.textContent = '🏙️ Açık Dünya Meydanına Gir';
-                    else if (t.id === 'campfire') matchBtn.textContent = '🔥 Kamp Ateşine Katıl';
+                    if (t.id === 'campfire') matchBtn.textContent = '🔥 Kamp Ateşine Katıl';
                     else if (t.id === 'club') matchBtn.textContent = '🪩 Gece Kulübüne Gir';
                     else matchBtn.textContent = '🎲 Gerçek Biriyle Eşleş ve Masaya Otur';
                     updatePresenceLocation(t.id);
@@ -4426,8 +4099,7 @@
             renderThemeCards();
             updateGenderButtons();
             buildSceneForTheme('campfire');
-            ensureAnonymousSession();
-            initOnlineCounter();
+            ensureAnonymousSession().finally(() => initOnlineCounter());
             initChalkboardCanvas();
             initOpenWorldControls();
             animate();
