@@ -2614,11 +2614,15 @@
         function initOnlineCounter() {
             if (!sbClient) return;
             try {
+                if (globalPresenceChannel) {
+                    sbClient.removeChannel(globalPresenceChannel);
+                }
                 globalPresenceChannel = sbClient.channel('private_oturbenimle_online', {
                     config: { private: true, presence: { key: CLIENT_ID } }
                 });
 
                 const syncCount = () => {
+                    if (!globalPresenceChannel) return;
                     const pState = globalPresenceChannel.presenceState();
                     activeUsersMap = {};
                     Object.entries(pState).forEach(([key, arr]) => {
@@ -2633,6 +2637,8 @@
 
                 globalPresenceChannel
                     .on('presence', { event: 'sync' }, syncCount)
+                    .on('presence', { event: 'join' }, syncCount)
+                    .on('presence', { event: 'leave' }, syncCount)
                     .subscribe(async (status) => {
                         if (status === 'SUBSCRIBED') {
                             await globalPresenceChannel.track({
@@ -2641,8 +2647,11 @@
                                 theme: state.theme,
                                 joinedAt: new Date().toISOString()
                             });
+                            syncCount();
                         }
                     });
+
+                setInterval(syncCount, 4000);
             } catch (err) {
                 console.warn('Presence devre dışı:', err);
             }
