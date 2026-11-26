@@ -2614,8 +2614,8 @@
         function initOnlineCounter() {
             if (!sbClient) return;
             try {
-                globalPresenceChannel = sbClient.channel('oturbenimle_online', {
-                    config: { presence: { key: CLIENT_ID } }
+                globalPresenceChannel = sbClient.channel('private_oturbenimle_online', {
+                    config: { private: true, presence: { key: CLIENT_ID } }
                 });
 
                 const syncCount = () => {
