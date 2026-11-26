@@ -337,11 +337,6 @@
                 <span class="pixel-title text-[11px] sm:text-xs">Kalk</span>
             </button>
 
-            <button type="button" id="btn-toggle-music" title="Ortam Müziğini Aç/Kapat" class="glass-panel pixel-btn hover:bg-[#262b38] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 text-xs font-semibold text-amber-300">
-                <span id="music-icon">🔊</span>
-                <span id="music-label" class="pixel-title text-[11px] sm:text-xs">Müzik</span>
-            </button>
-
             <button type="button" id="btn-open-lobby" class="glass-panel pixel-btn hover:bg-[#262b38] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-slate-100">
                 <span>🏠</span>
                 <span class="pixel-title text-[11px] sm:text-xs">Lobiye Dön</span>
@@ -437,6 +432,11 @@
                     <button type="button" id="btn-throw-wood" class="hidden pixel-btn bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
                         <span>🪵</span>
                         <span class="pixel-title text-xs">Odun At</span>
+                    </button>
+
+                    <button type="button" id="btn-jump-fire" class="hidden pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                        <span>🔥</span>
+                        <span class="pixel-title text-xs">Ateşten Atla</span>
                     </button>
 
                     <button type="button" id="btn-club-dance" class="hidden pixel-btn bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
@@ -828,6 +828,7 @@
             owWaveEndTime: 0,
             cfPrivateMode: false,
             cfSelectedPlayerId: null,
+            cfJumpAnim: null,
             fireFuel: 0.72,
             clubDancing: false,
             clubSeatedTableId: null,
@@ -842,208 +843,6 @@
         let lastOwBroadcast = 0;
         let lastSentOwPos = { x: 0, z: 3.5 };
         let userHasInteracted = false;
-
-        // Web Audio API ile her ortama özel döngüsel ortam müziği motoru + gerçek ses dosyası (.mp3) desteği
-        const ambientAudio = {
-            ctx: null,
-            masterGain: null,
-            timerId: null,
-            step: 0,
-            enabled: true,
-            currentTheme: null,
-            trackAudio: null,
-            trackSources: {
-                campfire: './akdeniz-aksamlari.mp3'
-            },
-
-            ensureContext() {
-                if (!userHasInteracted) return;
-                if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    if (!AudioCtx) return;
-                    this.ctx = new AudioCtx();
-                    this.masterGain = this.ctx.createGain();
-                    this.masterGain.gain.value = this.enabled ? 0.04 : 0.0;
-                    this.masterGain.connect(this.ctx.destination);
-                }
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume().catch(() => {});
-                }
-            },
-
-            stopLoop() {
-                if (this.timerId) {
-                    clearInterval(this.timerId);
-                    this.timerId = null;
-                }
-            },
-
-            playTone(freq, duration, type = 'sine', vol = 0.08) {
-                if (!this.enabled || !userHasInteracted) return;
-                this.ensureContext();
-                if (!this.ctx || !this.masterGain) return;
-
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, now);
-
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(vol, now + 0.04);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-                osc.connect(gain);
-                gain.connect(this.masterGain);
-                osc.start(now);
-                osc.stop(now + duration + 0.02);
-            },
-
-            playNoiseBurst(duration, filterFreq = 1200, vol = 0.045) {
-                if (!this.enabled || !userHasInteracted) return;
-                this.ensureContext();
-                if (!this.ctx || !this.masterGain) return;
-
-                const sampleCount = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
-                const buffer = this.ctx.createBuffer(1, sampleCount, this.ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < sampleCount; i++) {
-                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleCount * 0.45));
-                }
-
-                const src = this.ctx.createBufferSource();
-                src.buffer = buffer;
-
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'bandpass';
-                filter.frequency.value = filterFreq;
-
-                const gain = this.ctx.createGain();
-                gain.gain.value = vol;
-
-                src.connect(filter);
-                filter.connect(gain);
-                gain.connect(this.masterGain);
-                src.start();
-            },
-
-            ensureTrackAudio(src) {
-                if (!src) return null;
-                if (!this.trackAudio) {
-                    this.trackAudio = new Audio();
-                    this.trackAudio.loop = true;
-                    this.trackAudio.preload = 'auto';
-                    this.trackAudio.volume = 0.09;
-                    this.trackAudio.addEventListener('ended', () => {
-                        if (this.enabled && userHasInteracted && this.currentTheme === 'campfire' && this.trackSources.campfire) {
-                            this.trackAudio.currentTime = 0;
-                            this.trackAudio.play().catch(() => {});
-                        }
-                    });
-                }
-                if (this.trackAudio.getAttribute('data-src') !== src) {
-                    this.trackAudio.setAttribute('data-src', src);
-                    this.trackAudio.src = src;
-                    this.trackAudio.load();
-                }
-                return this.trackAudio;
-            },
-
-            isTrackPlaying() {
-                return Boolean(
-                    this.enabled &&
-                    userHasInteracted &&
-                    this.currentTheme === 'campfire' &&
-                    this.trackSources.campfire &&
-                    this.trackAudio &&
-                    !this.trackAudio.paused &&
-                    !this.trackAudio.ended
-                );
-            },
-
-            syncTrackForTheme(themeId) {
-                if (themeId !== 'campfire' || !this.enabled || !userHasInteracted) {
-                    if (this.trackAudio && !this.trackAudio.paused) {
-                        this.trackAudio.pause();
-                    }
-                    return;
-                }
-                const src = this.trackSources.campfire;
-                const audioEl = this.ensureTrackAudio(src);
-                if (!audioEl) return;
-                audioEl.volume = 0.09;
-                if (audioEl.paused) {
-                    audioEl.play().catch(() => {});
-                }
-            },
-
-            startForTheme(themeId) {
-                this.currentTheme = themeId || 'campfire';
-                this.stopLoop();
-                this.step = 0;
-
-                // Yalnızca kamp ateşi ortamında ve kullanıcı etkileşiminden sonra çal
-                if (this.currentTheme !== 'campfire') {
-                    if (this.trackAudio && !this.trackAudio.paused) {
-                        this.trackAudio.pause();
-                    }
-                    return;
-                }
-
-                if (!userHasInteracted) return;
-                this.syncTrackForTheme(this.currentTheme);
-
-                // Çok kısık sesle doğa sesleri (gece rüzgarı + ateş çıtırtısı) ile karışan sakin melodi
-                const pat = {
-                    interval: 750,
-                    notes: [196.00, 246.94, 293.66, 246.94, 174.61, 220.00, 261.63, 220.00],
-                    type: 'sine',
-                    vol: 0.055
-                };
-
-                this.timerId = setInterval(() => {
-                    if (!this.enabled || !userHasInteracted || this.currentTheme !== 'campfire') return;
-                    this.syncTrackForTheme(this.currentTheme);
-
-                    if (this.step % 2 === 0) {
-                        this.playNoiseBurst(0.55, 360, 0.045);
-                    }
-                    if (this.step % 2 === 1) {
-                        this.playNoiseBurst(0.08, 2200, 0.035);
-                    }
-
-                    if (!this.isTrackPlaying()) {
-                        const freq = pat.notes[this.step % pat.notes.length];
-                        this.playTone(freq, (pat.interval / 1000) * 0.9, pat.type, pat.vol);
-                    }
-                    this.step += 1;
-                }, pat.interval);
-            },
-
-            setEnabled(val) {
-                this.enabled = Boolean(val);
-                if (this.enabled) userHasInteracted = true;
-                if (this.masterGain && this.ctx) {
-                    this.masterGain.gain.setTargetAtTime(this.enabled ? 0.04 : 0.0, this.ctx.currentTime, 0.05);
-                }
-                if (this.trackAudio) {
-                    this.trackAudio.muted = !this.enabled;
-                    if (!this.enabled && !this.trackAudio.paused) {
-                        this.trackAudio.pause();
-                    }
-                }
-                if (this.enabled) {
-                    this.ensureContext();
-                    this.startForTheme(this.currentTheme || state.theme);
-                } else {
-                    this.stopLoop();
-                }
-                const iconEl = document.getElementById('music-icon');
-                const labelEl = document.getElementById('music-label');
-                if (iconEl) iconEl.textContent = this.enabled ? '🔊' : '🔇';
-                if (labelEl) labelEl.textContent = this.enabled ? 'Müzik' : 'Kapalı';
-            }
-        };
 
         const OW_MAX_PLAYERS_PER_SHARD = 25;
         const owInput = { x: 0, z: 0 };
@@ -1462,6 +1261,31 @@
             animatedObjects.fallingLogs.push({ mesh: logMesh, vy: 0, landTime: 0 });
         }
 
+        function triggerCampfireFireJump(playerId, startX, startZ) {
+            const p = state.owPlayers[playerId];
+            const sx = p ? p.x : (startX || 0);
+            const sz = p ? p.z : (startZ || 2.0);
+            const dist = Math.hypot(sx, sz) || 1.8;
+            const oppX = (-sx / dist) * Math.min(1.45, dist * 0.65);
+            const oppZ = (-sz / dist) * Math.min(1.45, dist * 0.65);
+            const homeX = p && typeof p.homeX === 'number' ? p.homeX : sx;
+            const homeZ = p && typeof p.homeZ === 'number' ? p.homeZ : sz;
+
+            state.cfJumpAnim = {
+                playerId,
+                startX: sx,
+                startZ: sz,
+                oppX,
+                oppZ,
+                homeX,
+                homeZ,
+                elapsed: 0,
+                duration: 1.35
+            };
+            if (p) p.isJumpingFire = true;
+            showOpenWorldBubble(playerId, 'Ateşten atlıyorum! 🔥');
+        }
+
         function buildCampfireScene() {
             cfChairMeshes.length = 0;
             const ground = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), new THREE.MeshStandardMaterial({ color: 0x14261c, roughness: 1 }));
@@ -1550,6 +1374,8 @@
 
                 p.targetX = cx;
                 p.targetZ = cz;
+                p.homeX = cx;
+                p.homeZ = cz;
                 if (p.isMe) {
                     state.owPos.x = cx;
                     state.owPos.z = cz;
@@ -2022,12 +1848,14 @@
             const joyZone = document.getElementById('mobile-joystick-zone');
             const owSocialBar = document.getElementById('ow-social-bar');
             const woodBtn = document.getElementById('btn-throw-wood');
+            const jumpFireBtn = document.getElementById('btn-jump-fire');
             const clubDanceBtn = document.getElementById('btn-club-dance');
             const clubTableBtn = document.getElementById('btn-club-table');
 
             joyZone.classList.add('hidden');
             owSocialBar.classList.add('hidden');
             woodBtn.classList.add('hidden');
+            jumpFireBtn.classList.add('hidden');
             clubDanceBtn.classList.add('hidden');
             clubTableBtn.classList.add('hidden');
             document.getElementById('cf-player-bar').classList.add('hidden');
@@ -2039,7 +1867,10 @@
                 owSocialBar.classList.remove('hidden');
             } else if (themeId === 'campfire') {
                 buildCampfireScene();
-                if (state.mySeatIndex !== -1) woodBtn.classList.remove('hidden');
+                if (state.mySeatIndex !== -1) {
+                    woodBtn.classList.remove('hidden');
+                    jumpFireBtn.classList.remove('hidden');
+                }
             } else if (themeId === 'club') {
                 buildClubScene();
                 if (state.mySeatIndex !== -1) {
@@ -2074,7 +1905,6 @@
             }
 
             applyResponsiveCameraForTheme(themeId);
-            ambientAudio.startForTheme(themeId);
             if (themeId !== 'openworld' && themeId !== 'campfire' && themeId !== 'club') {
                 renderAvatars();
             }
@@ -2203,6 +2033,9 @@
                 z: startZ,
                 targetX: startX,
                 targetZ: startZ,
+                homeX: startX,
+                homeZ: startZ,
+                isJumpingFire: false,
                 isDancing: Boolean(playerData.isDancing),
                 isMe
             };
@@ -2311,6 +2144,7 @@
             state.owPendingInvite = null;
             state.cfPrivateMode = false;
             state.cfSelectedPlayerId = null;
+            state.cfJumpAnim = null;
             state.clubDancing = false;
             state.clubSeatedTableId = null;
             state.clubSeatedSeatIdx = -1;
@@ -2322,6 +2156,7 @@
             document.getElementById('ow-consent-banner').classList.add('hidden');
             document.getElementById('cf-player-bar').classList.add('hidden');
             document.getElementById('btn-throw-wood').classList.add('hidden');
+            document.getElementById('btn-jump-fire').classList.add('hidden');
             document.getElementById('btn-club-dance').classList.add('hidden');
             document.getElementById('btn-club-table').classList.add('hidden');
             document.getElementById('btn-stand').classList.add('hidden');
@@ -2685,6 +2520,7 @@
             state.mySeatIndex = 0;
             state.cfPrivateMode = false;
             state.cfSelectedPlayerId = null;
+            state.cfJumpAnim = null;
             state.fireFuel = 0.78;
             resetXoxGame(true);
 
@@ -2706,7 +2542,7 @@
 
             const feed = document.getElementById('chat-feed');
             feed.innerHTML = '';
-            appendChatMessage('', '🔥 Gece Kamp Ateşine hoş geldin! Ateş sönmeye başladığında "Odun At" butonuna basabilir veya bir oyuncuya tıklayıp baş başa ateşe geçebilirsin.', false, true);
+            appendChatMessage('', '🔥 Gece Kamp Ateşine hoş geldin! Ateş sönmeye başladığında "Odun At" butonuna basabilir, "Ateşten Atla" ile ateşin üzerinden zıplayabilir veya bir oyuncuya tıklayıp baş başa ateşe geçebilirsin.', false, true);
 
             if (!sbClient) return;
             if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
@@ -2739,6 +2575,10 @@
                     state.fireFuel = Math.min(1.35, state.fireFuel + 0.35);
                     spawnFallingFirewoodLog();
                     showOpenWorldBubble(payload.id, 'Odun attım! 🔥');
+                })
+                .on('broadcast', { event: 'cf_jump_fire' }, ({ payload }) => {
+                    if (!payload || payload.id === CLIENT_ID) return;
+                    triggerCampfireFireJump(payload.id, payload.x, payload.z);
                 })
                 .on('broadcast', { event: 'xox_move' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
@@ -2796,6 +2636,7 @@
             state.roomId = roomId;
             state.seats = [null, null];
             state.mySeatIndex = mySeatIdx;
+            state.cfJumpAnim = null;
             state.fireFuel = 0.85;
             resetXoxGame(true);
 
@@ -3293,6 +3134,21 @@
                         event: 'cf_throw_wood',
                         payload: { senderId: CLIENT_ID, name: state.playerName }
                     });
+                }
+            });
+
+            document.getElementById('btn-jump-fire').addEventListener('click', () => {
+                if (state.theme !== 'campfire') return;
+                if (state.cfJumpAnim && state.cfJumpAnim.playerId === CLIENT_ID) return;
+                const me = state.owPlayers[CLIENT_ID];
+                const curX = me ? me.x : state.owPos.x;
+                const curZ = me ? me.z : state.owPos.z;
+                triggerCampfireFireJump(CLIENT_ID, curX, curZ);
+                const payload = { id: CLIENT_ID, senderId: CLIENT_ID, name: state.playerName, x: curX, z: curZ };
+                if (openWorldChannel) {
+                    openWorldChannel.send({ type: 'broadcast', event: 'cf_jump_fire', payload });
+                } else if (roomChannel) {
+                    roomChannel.send({ type: 'broadcast', event: 'cf_jump_fire', payload });
                 }
             });
 
@@ -3942,6 +3798,10 @@
                     spawnFallingFirewoodLog();
                     showOpenWorldBubble(payload.senderId, 'Odun attım! 🔥');
                 })
+                .on('broadcast', { event: 'cf_jump_fire' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    triggerCampfireFireJump(payload.senderId || payload.id, payload.x, payload.z);
+                })
                 .on('broadcast', { event: 'change_theme' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
                     const t = THEMES[payload.themeId];
@@ -4113,11 +3973,6 @@
         document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmaking);
 
         document.getElementById('btn-stand').addEventListener('click', () => standUp(true));
-
-        document.getElementById('btn-toggle-music').addEventListener('click', () => {
-            userHasInteracted = true;
-            ambientAudio.setEnabled(!ambientAudio.enabled);
-        });
 
         document.getElementById('btn-open-lobby').addEventListener('click', () => {
             standUp(true);
@@ -4384,7 +4239,53 @@
             });
 
             if (state.theme === 'campfire' && state.owPlayers[CLIENT_ID]) {
+                let activeJumpId = null;
+                if (state.cfJumpAnim) {
+                    state.cfJumpAnim.elapsed += dt;
+                    const prog = Math.min(1, state.cfJumpAnim.elapsed / state.cfJumpAnim.duration);
+                    const jPlayer = state.owPlayers[state.cfJumpAnim.playerId];
+                    activeJumpId = state.cfJumpAnim.playerId;
+
+                    if (jPlayer) {
+                        if (prog < 0.5) {
+                            const k = prog / 0.5;
+                            jPlayer.x = state.cfJumpAnim.startX + (state.cfJumpAnim.oppX - state.cfJumpAnim.startX) * k;
+                            jPlayer.z = state.cfJumpAnim.startZ + (state.cfJumpAnim.oppZ - state.cfJumpAnim.startZ) * k;
+                            jPlayer.sprite.position.y = 1.04 + Math.sin(k * Math.PI) * 0.95;
+                        } else {
+                            const k = (prog - 0.5) / 0.5;
+                            jPlayer.x = state.cfJumpAnim.oppX + (state.cfJumpAnim.homeX - state.cfJumpAnim.oppX) * k;
+                            jPlayer.z = state.cfJumpAnim.oppZ + (state.cfJumpAnim.homeZ - state.cfJumpAnim.oppZ) * k;
+                            jPlayer.sprite.position.y = 1.04 + Math.sin(k * Math.PI) * 0.85;
+                        }
+                        jPlayer.sprite.position.x = jPlayer.x;
+                        jPlayer.sprite.position.z = jPlayer.z;
+                        jPlayer.labelObj.position.set(jPlayer.x, jPlayer.sprite.position.y + 1.13, jPlayer.z);
+                        if (jPlayer.isMe) {
+                            state.owPos.x = jPlayer.x;
+                            state.owPos.z = jPlayer.z;
+                        }
+                    }
+
+                    if (prog >= 1) {
+                        if (jPlayer) {
+                            jPlayer.isJumpingFire = false;
+                            jPlayer.x = state.cfJumpAnim.homeX;
+                            jPlayer.z = state.cfJumpAnim.homeZ;
+                            jPlayer.targetX = state.cfJumpAnim.homeX;
+                            jPlayer.targetZ = state.cfJumpAnim.homeZ;
+                            if (jPlayer.isMe) {
+                                state.owPos.x = state.cfJumpAnim.homeX;
+                                state.owPos.z = state.cfJumpAnim.homeZ;
+                            }
+                        }
+                        state.cfJumpAnim = null;
+                        activeJumpId = null;
+                    }
+                }
+
                 Object.values(state.owPlayers).forEach((p, idx) => {
+                    if (p.id === activeJumpId) return;
                     p.x += (p.targetX - p.x) * 0.14;
                     p.z += (p.targetZ - p.z) * 0.14;
                     p.sprite.position.set(p.x, 1.04 + Math.sin(t * 2.4 + idx) * 0.02, p.z);
