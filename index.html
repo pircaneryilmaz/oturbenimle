@@ -550,6 +550,13 @@
                     <span id="matching-status-text">Aynı ortamda gerçek bir kullanıcı bekleniyor...</span>
                 </div>
                 <p class="text-[11px] text-slate-400">Başka bir oyuncu bu ortamı seçtiği an otomatik eşleşeceksiniz.</p>
+                <p id="matching-info-text" class="text-[11px] text-emerald-200"></p>
+                <div id="matching-suggest" class="hidden w-full bg-amber-900/30 border border-amber-600/50 rounded p-2 flex flex-col items-center gap-1.5">
+                    <p id="matching-suggest-text" class="text-[11px] text-amber-100"></p>
+                    <button type="button" id="btn-match-suggest-campfire" class="pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 text-xs font-bold">
+                        🔥 Kamp Ateşine Geç
+                    </button>
+                </div>
                 <button type="button" id="btn-cancel-match" class="pixel-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 text-xs">
                     Aramayı İptal Et
                 </button>
@@ -679,6 +686,7 @@
         }
 
         function containsProfanity(text, allowExceptions = true) {
+            return false; // Filtre geçici olarak kaldırıldı (yeniden yazılacak)
             const norm = normalizeTrText(text);
             const words = norm.split(/\s+/).filter(Boolean);
             for (const word of words) {
@@ -2143,7 +2151,7 @@
 
         function updateMinigameButtonVisibility() {
             const btn = document.getElementById('btn-toggle-minigame');
-            const allowed = state.theme === 'cafe' || state.theme === 'beach' || state.theme === 'campfire';
+            const allowed = false; // Mini oyunlar kaldırıldı
             if (allowed && state.mySeatIndex !== -1) {
                 btn.classList.remove('hidden');
             } else {
@@ -2279,7 +2287,8 @@
         // ==========================================
         // 7. ÇOK OYUNCULU KAMP ATEŞİ & GECE KULÜBÜ
         // ==========================================
-        function enterCampfireGroup() {
+        const ROOM_CAPACITY = 15;
+        function enterCampfireGroup(shard = 1) {
             cancelMatchmaking();
             document.getElementById('lobby-modal').classList.add('hidden');
             clearGroup(avatarsGroup);
@@ -2312,15 +2321,24 @@
             appendChatMessage('', '🔥 Gece Kamp Ateşine hoş geldin! Ateş sönmeye başladığında "Odun At" butonuna basabilir, "Ateşten Atla" ile ateşin üzerinden zıplayabilir veya bir oyuncuya tıklayıp baş başa ateşe geçebilirsin.', false, true);
 
             if (!sbClient) return;
+            let roomChecked = false;
             if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
 
-            openWorldChannel = sbClient.channel('private_oturbenimle_campfire_group', {
+            openWorldChannel = sbClient.channel(shard > 1 ? `private_oturbenimle_campfire_group_${shard}` : 'private_oturbenimle_campfire_group', {
                 config: { private: true, presence: { key: CLIENT_ID } }
             });
 
             openWorldChannel
                 .on('presence', { event: 'sync' }, () => {
                     const pState = openWorldChannel.presenceState();
+                    if (!roomChecked) {
+                        roomChecked = true;
+                        const others = Object.values(pState).flat().filter((u) => u && u.id && u.id !== CLIENT_ID).length;
+                        if (others >= ROOM_CAPACITY && shard < 30) { enterCampfireGroup(shard + 1); return; }
+                        if (shard > 1) {
+                            document.getElementById('hud-theme-name').textContent += ` • Oda ${shard}`;
+                        }
+                    }
                     const presentIds = new Set();
                     Object.values(pState).flat().forEach((u) => {
                         if (!u || !u.id) return;
@@ -2441,7 +2459,7 @@
             connectRoomChannel(roomId);
         }
 
-        function enterClubMulti() {
+        function enterClubMulti(shard = 1) {
             cancelMatchmaking();
             document.getElementById('lobby-modal').classList.add('hidden');
             clearGroup(avatarsGroup);
@@ -2479,15 +2497,24 @@
             appendChatMessage('', '🪩 Gece Kulübüne hoş geldin! Pistte herkesle birlikte dans edebilir veya kenardaki 2 kişilik masalara yaklaşarak oturabilirsin.', false, true);
 
             if (!sbClient) return;
+            let roomChecked = false;
             if (openWorldChannel) sbClient.removeChannel(openWorldChannel);
 
-            openWorldChannel = sbClient.channel('private_oturbenimle_club_multi', {
+            openWorldChannel = sbClient.channel(shard > 1 ? `private_oturbenimle_club_multi_${shard}` : 'private_oturbenimle_club_multi', {
                 config: { private: true, presence: { key: CLIENT_ID } }
             });
 
             openWorldChannel
                 .on('presence', { event: 'sync' }, () => {
                     const pState = openWorldChannel.presenceState();
+                    if (!roomChecked) {
+                        roomChecked = true;
+                        const others = Object.values(pState).flat().filter((u) => u && u.id && u.id !== CLIENT_ID).length;
+                        if (others >= ROOM_CAPACITY && shard < 30) { enterClubMulti(shard + 1); return; }
+                        if (shard > 1) {
+                            document.getElementById('hud-theme-name').textContent += ` • Oda ${shard}`;
+                        }
+                    }
                     const presentIds = new Set();
                     Object.values(pState).flat().forEach((u) => {
                         if (!u || !u.id) return;
@@ -3122,18 +3149,31 @@
             }
         }
 
+        // Supabase: istemci başına 30 sn'de en fazla 5 presence çağrısı. Hızlı kart tıklamalarında
+        // ClientPresenceRateLimitReached hatası oluşmasın diye çağrılar en az 7 sn arayla gönderilir.
+        let presenceTrackTimer = null;
+        let lastPresenceTrackAt = 0;
+        let pendingPresenceTheme = null;
         function updatePresenceLocation(themeId) {
             if (!globalPresenceChannel) return;
-            try {
-                globalPresenceChannel.track({
-                    id: CLIENT_ID,
-                    name: state.playerName || 'Misafir',
-                    theme: themeId || state.theme,
-                    joinedAt: new Date().toISOString()
-                });
-            } catch (err) {
-                console.warn('Presence güncellenemedi:', err);
-            }
+            pendingPresenceTheme = themeId || state.theme;
+            if (presenceTrackTimer) return;
+            const wait = Math.max(0, 7000 - (Date.now() - lastPresenceTrackAt));
+            presenceTrackTimer = setTimeout(() => {
+                presenceTrackTimer = null;
+                lastPresenceTrackAt = Date.now();
+                try {
+                    if (!globalPresenceChannel) return;
+                    globalPresenceChannel.track({
+                        id: CLIENT_ID,
+                        name: state.playerName || 'Misafir',
+                        theme: pendingPresenceTheme || state.theme,
+                        joinedAt: new Date().toISOString()
+                    });
+                } catch (err) {
+                    console.warn('Presence güncellenemedi:', err);
+                }
+            }, wait);
         }
 
         let onlineRetryCount = 0;
@@ -3201,6 +3241,7 @@
                     .subscribe(async (status) => {
                         if (status === 'SUBSCRIBED') {
                             onlineRetryCount = 0;
+                            lastPresenceTrackAt = Date.now();
                             await globalPresenceChannel.track({
                                 id: CLIENT_ID,
                                 name: state.playerName || 'Misafir',
@@ -3219,7 +3260,41 @@
             }
         }
 
+        let matchInfoTimer = null;
+        let matchSuggestTimer = null;
+        const MATCH_SUGGEST_AFTER_MS = 20000;
+
+        function updateMatchingInfo() {
+            const total = Math.max(1, Object.keys(activeUsersMap).length);
+            const el = document.getElementById('matching-info-text');
+            if (el) el.textContent = total > 1
+                ? `Şu an sitede ${total} kişi çevrimiçi.`
+                : 'Şu an sitede başka kimse görünmüyor.';
+        }
+
+        function startMatchingHelpers() {
+            stopMatchingHelpers();
+            updateMatchingInfo();
+            matchInfoTimer = setInterval(updateMatchingInfo, 2000);
+            matchSuggestTimer = setTimeout(() => {
+                if (!state.isMatching) return;
+                const total = Math.max(1, Object.keys(activeUsersMap).length);
+                document.getElementById('matching-suggest-text').textContent = total > 1
+                    ? `Henüz eşleşme olmadı. Sitede ${total} kişi çevrimiçi; beklemek yerine Kamp Ateşinde herkesle birlikte sohbet edebilirsin.`
+                    : 'Henüz eşleşme olmadı. Kamp Ateşine geçersen biri geldiğinde seni hemen görür.';
+                document.getElementById('matching-suggest').classList.remove('hidden');
+            }, MATCH_SUGGEST_AFTER_MS);
+        }
+
+        function stopMatchingHelpers() {
+            if (matchInfoTimer) { clearInterval(matchInfoTimer); matchInfoTimer = null; }
+            if (matchSuggestTimer) { clearTimeout(matchSuggestTimer); matchSuggestTimer = null; }
+            const box = document.getElementById('matching-suggest');
+            if (box) box.classList.add('hidden');
+        }
+
         function cancelMatchmaking() {
+            stopMatchingHelpers();
             state.isMatching = false;
             document.getElementById('matching-overlay').classList.add('hidden');
             document.getElementById('btn-auto-match').classList.remove('hidden');
@@ -3276,6 +3351,7 @@
             state.isMatching = true;
             document.getElementById('btn-auto-match').classList.add('hidden');
             document.getElementById('matching-overlay').classList.remove('hidden');
+            startMatchingHelpers();
 
             await ensureAnonymousSession();
 
@@ -3619,6 +3695,12 @@
             startRealMatchmaking();
         });
         document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmaking);
+        document.getElementById('btn-match-suggest-campfire').addEventListener('click', () => {
+            cancelMatchmaking();
+            state.theme = 'campfire';
+            updatePresenceLocation('campfire');
+            enterCampfireGroup();
+        });
 
         document.getElementById('btn-stand').addEventListener('click', () => standUp(true));
 
