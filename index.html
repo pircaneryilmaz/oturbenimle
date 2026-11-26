@@ -3279,32 +3279,7 @@
 
             await ensureAnonymousSession();
 
-            try {
-                const { data, error } = await sbClient.rpc('find_or_create_match', {
-                    p_theme: state.theme,
-                    p_client_id: CLIENT_ID,
-                    p_name: state.playerName,
-                    p_gender: state.gender,
-                    p_profile_index: state.profileIndex
-                });
-
-                if (!error && Array.isArray(data) && data.length > 0) {
-                    const match = data[0];
-                    if (match.status === 'matched' && match.room_id) {
-                        const partnerProfile = {
-                            id: match.partner_id,
-                            name: match.partner_name,
-                            gender: match.partner_gender,
-                            profileIndex: match.partner_profile_index,
-                            isMe: false
-                        };
-                        enterMatchedRoom(match.room_id, 1, partnerProfile);
-                        return;
-                    }
-                }
-            } catch (err) {
-                console.warn('Sunucu eşleşme RPC yedek moda geçti:', err);
-            }
+            // Eşleşme artık yalnızca Realtime Presence kuyruğu ile yapılıyor (veritabanına yazmaz).
 
             const queueName = `private_queue_${state.theme}`;
             if (queueChannel) sbClient.removeChannel(queueChannel);
