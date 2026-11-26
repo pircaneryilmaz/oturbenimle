@@ -517,7 +517,7 @@
 
             <div class="flex flex-col gap-1.5">
                 <button type="button" id="btn-auto-match" class="pixel-btn w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold pixel-title text-xs sm:text-sm tracking-wide">
-                    🎲 Gerçek Biriyle Eşleş ve Masaya Otur
+                    🔥 Kamp Ateşine Katıl
                 </button>
                 <p class="text-[11px] text-slate-400 text-center">🔒 Hiçbir mesaj ve kişisel veri kaydedilmez; çıkış yaptığınızda oturumunuz anında silinir.</p>
             </div>
@@ -786,7 +786,7 @@
             playerName: '',
             gender: 'female',
             profileIndex: Math.floor(Math.random() * 5),
-            theme: 'cafe',
+            theme: 'campfire',
             roomId: null,
             mySeatIndex: -1,
             seats: [null, null],
@@ -3719,20 +3719,46 @@
                 }
             });
 
-            Object.values(THEMES).forEach((t) => {
+            // En kalabalık ortamı belirle (varsayılan olarak Gece Kamp Ateşi öne çıkar)
+            let hottestThemeId = 'campfire';
+            let maxCount = themeCounts.campfire || 0;
+            Object.entries(themeCounts).forEach(([tid, cnt]) => {
+                if (cnt > maxCount) {
+                    maxCount = cnt;
+                    hottestThemeId = tid;
+                }
+            });
+
+            const orderedThemes = [
+                THEMES.campfire,
+                THEMES.openworld,
+                THEMES.cafe,
+                THEMES.beach,
+                THEMES.club
+            ];
+
+            orderedThemes.forEach((t) => {
                 const isSelected = state.theme === t.id;
+                const isHottest = t.id === hottestThemeId;
                 const count = themeCounts[t.id] || 0;
                 const card = document.createElement('button');
                 card.type = 'button';
                 card.className = 'pixel-btn p-2.5 text-left flex items-start gap-2.5 ' +
-                    (t.isOpenWorld ? 'sm:col-span-2 ' : '') +
+                    (t.id === 'campfire' ? 'sm:col-span-2 ' : '') +
                     (isSelected ? 'bg-amber-950/80 border-amber-500 text-white' : 'bg-[#161b26] hover:bg-[#1e2433] text-slate-300');
+
+                const hotBadge = isHottest
+                    ? `<span class="text-[10px] px-1.5 py-0.2 rounded bg-orange-600/90 text-white font-bold">🔥 En Kalabalık</span>`
+                    : '';
 
                 card.innerHTML = `
                     <span class="text-xl shrink-0">${t.icon}</span>
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center justify-between gap-1.5">
-                            <span class="text-xs font-bold text-slate-100 truncate">${escapeHtml(t.name)}</span>
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="text-xs font-bold text-slate-100 truncate">${escapeHtml(t.name)}</span>
+                                ${hotBadge}
+                            </div>
                             <span class="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
                                 <span>${count}</span>
@@ -4204,7 +4230,7 @@
             handleViewportResize();
             renderThemeCards();
             updateGenderButtons();
-            buildSceneForTheme('cafe');
+            buildSceneForTheme('campfire');
             ensureAnonymousSession();
             initOnlineCounter();
             initChalkboardCanvas();
