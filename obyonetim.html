@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Yönetim Merkezi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel:wght@400..700&family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
+        }
+        body {
+            background-color: #0b0e14;
+            color: #f1f5f9;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-2xl bg-[#131720] border border-slate-800 rounded-md p-5 flex flex-col gap-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+                <h1 class="text-base sm:text-lg font-bold text-amber-300">🛡️ OTURBENİMLE — Moderasyon & Yönetim</h1>
+                <p class="text-xs text-slate-400">Canlı çevrimiçi durumu ve kullanıcı bildirimleri</p>
+            </div>
+            <button type="button" id="btn-logout" class="hidden text-xs bg-rose-900/70 hover:bg-rose-800 text-rose-200 px-3 py-1.5 rounded border border-rose-700/60">
+                Çıkış Yap
+            </button>
+        </div>
+
+        <!-- Yönetici Giriş Ekranı -->
+        <form id="login-form" class="flex flex-col gap-3 max-w-sm mx-auto w-full py-4">
+            <div class="flex flex-col gap-1">
+                <label for="email-input" class="text-xs text-slate-300">Yönetici E-posta</label>
+                <input id="email-input" type="email" autocomplete="username" required placeholder="E-posta adresiniz..." class="bg-[#0d1118] border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label for="pass-input" class="text-xs text-slate-300">Şifre</label>
+                <input id="pass-input" type="password" autocomplete="current-password" required placeholder="Şifreniz..." class="bg-[#0d1118] border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+            </div>
+            <p id="login-error" class="hidden text-xs text-rose-400">Giriş başarısız. E-posta veya şifrenizi kontrol edin.</p>
+            <button type="submit" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded text-sm mt-1">
+                Güvenli Giriş Yap
+            </button>
+        </form>
+
+        <!-- Yönetim Paneli İçeriği -->
+        <div id="dashboard-view" class="hidden flex flex-col gap-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
+                    <div class="text-xs text-slate-400">Anlık Çevrimiçi Oyuncu</div>
+                    <div id="stat-online" class="text-xl font-bold text-emerald-400 mt-1">0 Kişi</div>
+                </div>
+                <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
+                    <div class="text-xs text-slate-400">Toplam Şikayet Kaydı</div>
+                    <div id="stat-reports" class="text-xl font-bold text-rose-400 mt-1">0 Kayıt</div>
+                </div>
+            </div>
+
+            <!-- Aktif Kullanıcılar -->
+            <div class="flex flex-col gap-1.5">
+                <h2 class="text-xs font-bold text-slate-300">🟢 Şu An Sitede Aktif Olanlar</h2>
+                <div id="active-users-box" class="bg-[#0d1118] border border-slate-800 rounded p-3 text-xs text-slate-300 space-y-1.5 max-h-36 overflow-y-auto">
+                    Bağlanıyor...
+                </div>
+            </div>
+
+            <!-- Gelen Bildirimler -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold text-rose-300">⚠️ Gelen Şikayet ve Bildirimler</h2>
+                    <button type="button" id="btn-refresh" class="text-xs text-amber-300 hover:underline">Listeyi Yenile</button>
+                </div>
+                <div id="reports-box" class="bg-[#0d1118] border border-slate-800 rounded p-3 text-xs text-slate-300 space-y-2.5 max-h-80 overflow-y-auto">
+                    Yükleniyor...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://awgpooufynwlbiwhtsnp.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_lbDpjEAfBJUMLTuBSYBY_A_O8LXxXQ0';
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const THEME_NAMES = {
+            cafe: 'Sıcak Kafe',
+            campfire: 'Gece Kamp Ateşi',
+            beach: 'Sahilde Bank',
+            club: 'Gece Kulübü'
+        };
+
+        let presenceChannel = null;
+
+        async function checkSession() {
+            const { data } = await sb.auth.getSession();
+            if (data?.session) {
+                showDashboard();
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            document.getElementById('btn-logout').classList.remove('hidden');
+            startPresenceListener();
+            fetchReports();
+        }
+
+        function startPresenceListener() {
+            if (presenceChannel) sb.removeChannel(presenceChannel);
+            presenceChannel = sb.channel('oturbenimle_online');
+            presenceChannel
+                .on('presence', { event: 'sync' }, () => {
+                    const state = presenceChannel.presenceState();
+                    const users = Object.values(state).flat();
+                    document.getElementById('stat-online').textContent = `${users.length} Kişi`;
+
+                    const box = document.getElementById('active-users-box');
+                    box.innerHTML = '';
+                    if (users.length === 0) {
+                        box.textContent = 'Şu an aktif kullanıcı yok.';
+                        return;
+                    }
+                    users.forEach((u) => {
+                        const row = document.createElement('div');
+                        row.className = 'flex items-center justify-between border-b border-slate-800/80 pb-1';
+                        row.textContent = `• ${u.name || 'Misafir'} — ${THEME_NAMES[u.theme] || 'Lobi'}`;
+                        box.appendChild(row);
+                    });
+                })
+                .subscribe();
+        }
+
+        async function fetchReports() {
+            const box = document.getElementById('reports-box');
+            box.textContent = 'Yükleniyor...';
+
+            const { data, error } = await sb
+                .from('reports')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error || !data) {
+                box.textContent = 'Bildirimler yüklenemedi. RLS okuma yetkisini kontrol edin.';
+                return;
+            }
+
+            document.getElementById('stat-reports').textContent = `${data.length} Kayıt`;
+            box.innerHTML = '';
+
+            if (data.length === 0) {
+                box.textContent = 'Henüz bildirim kaydı bulunmuyor.';
+                return;
+            }
+
+            data.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'bg-[#131720] border border-slate-800 rounded p-2.5 flex flex-col gap-1';
+
+                const title = document.createElement('div');
+                title.className = 'font-bold text-rose-300';
+                title.textContent = `Şikayet Edilen: ${item.reported_name || 'Bilinmiyor'} — ${item.reason || ''}`;
+
+                const meta = document.createElement('div');
+                meta.className = 'text-[11px] text-slate-400';
+                meta.textContent = `Bildiren: ${item.reporter_name || 'Misafir'} • ${new Date(item.created_at).toLocaleString('tr-TR')}`;
+
+                card.appendChild(title);
+                card.appendChild(meta);
+
+                if (item.recent_chat) {
+                    const chat = document.createElement('div');
+                    chat.className = 'text-[11px] text-slate-300 bg-[#0b0e14] p-2 rounded border border-slate-800/80 mt-1';
+                    chat.textContent = item.recent_chat;
+                    card.appendChild(chat);
+                }
+
+                box.appendChild(card);
+            });
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('login-error');
+            const email = document.getElementById('email-input').value.trim();
+            const password = document.getElementById('pass-input').value;
+
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) {
+                errEl.classList.remove('hidden');
+            } else {
+                errEl.classList.add('hidden');
+                document.getElementById('pass-input').value = '';
+                showDashboard();
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            await sb.auth.signOut();
+            location.reload();
+        });
+
+        document.getElementById('btn-refresh').addEventListener('click', fetchReports);
+
+        checkSession();
+    </script>
+</body>
+</html>
