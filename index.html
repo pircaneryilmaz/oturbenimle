@@ -694,6 +694,32 @@
             }).filter(Boolean);
         }
 
+        // ---- Takma ad kontrolü: küfür (daha sıkı) + siyasi/politik isimler ----
+        const PF_POLITICS_SUBSTR = ['erdogan','tayyip','tayip','kilicdaroglu','bahceli','imamoglu','ataturk','mustafakemal',
+            'ocalan','ozgurozel','hitler','stalin','mussolini','netanyahu','akparti','iyiparti','zaferpartisi','chp','mhp','hdp','pkk',
+            'fasist','komunist','sosyalist','kapitalist','ulkucu','turkcu','kurtcu','islamci','solcu','sagci','siyonist',
+            'filistin','israil','gazze','hamas','siyaset','politik'];
+        const PF_POLITICS_TOKEN = ['apo','lenin','putin','trump','biden','nazi','feto','isis','isid','daes','deas','akp','rte'];
+        const PF_NICK_SAFE = ['besiktas','musik','mosik'];
+
+        function isNicknameBlocked(name) {
+            if (containsProfanity(name, false)) return true;
+            const base = String(name || '').toLocaleLowerCase('tr')
+                .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ç/g, 'c')
+                .replace(/ı/g, 'i').replace(/ö/g, 'o');
+            // "sik" ile başlayan/içeren her şey takma adda yasak (sikici, sikik, AliSikici...)
+            const leet = base.replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a')
+                .replace(/5/g, 's').replace(/7/g, 't').replace(/@/g, 'a').replace(/\$/g, 's').replace(/!/g, 'i');
+            let compactSafe = leet.replace(/[^a-z]/g, '');
+            PF_NICK_SAFE.forEach((w) => { compactSafe = compactSafe.split(w).join(''); });
+            if (compactSafe.includes('sik') || compactSafe.includes('amk') || /(^|[^a-z])aq([^a-z]|$)/.test(base)) return true;
+            // siyasi / politik isimler
+            const compact = base.replace(/[^a-z]/g, '');
+            if (PF_POLITICS_SUBSTR.some((r) => compact.includes(r))) return true;
+            const toks = base.split(/[^a-z]+/).filter(Boolean);
+            return toks.some((t) => PF_POLITICS_TOKEN.includes(t));
+        }
+
         function containsProfanity(text, allowExceptions = true) {
             const strictTokens = pfTokens(text, true);   // ı ve ö korunur
             const looseTokens = pfTokens(text, false);   // ı->i, ö->o
@@ -3345,8 +3371,8 @@
                 return;
             }
 
-            if (containsProfanity(rawName, false)) {
-                nickWarning.textContent = 'Bu takma ad topluluk kurallarına uygun değil, lütfen farklı bir ad seçin.';
+            if (isNicknameBlocked(rawName)) {
+                nickWarning.textContent = 'Bu takma ad uygun değil (küfür, siyasi veya politik isimler kullanılamaz), lütfen farklı bir ad seçin.';
                 nickWarning.classList.remove('hidden');
                 nickInput.focus();
                 return;
