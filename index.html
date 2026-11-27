@@ -119,6 +119,19 @@
             border-color: #d97706;
         }
 
+        .crown-float {
+            font-size: 22px;
+            line-height: 1;
+            margin-bottom: 1px;
+            filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.85));
+            animation: crownBob 1.6s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes crownBob {
+            0%, 100% { transform: translateY(0) rotate(-6deg); }
+            50% { transform: translateY(-5px) rotate(6deg); }
+        }
+
         .seat-label-wrapper {
             display: flex;
             flex-direction: column;
@@ -489,7 +502,7 @@
                     <input
                         id="nickname-input"
                         type="text"
-                        maxlength="16"
+                        maxlength="34"
                         required
                         placeholder=""
                         class="pixel-input px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500"
@@ -3271,7 +3284,19 @@
         async function startRealMatchmaking() {
             const nickInput = document.getElementById('nickname-input');
             const nickWarning = document.getElementById('nickname-warning');
-            const rawName = nickInput.value.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+            let rawName = nickInput.value.replace(/[\u0000-\u001F\u007F\u2060]/g, '').trim();
+            let crowned = false;
+            const crownMatch = rawName.match(/-\s*([^\s-]+)$/);
+            if (crownMatch && await crownCodeOk(crownMatch[1])) {
+                rawName = rawName.slice(0, rawName.length - crownMatch[0].length).trim();
+                crowned = true;
+            }
+            if (rawName.length > 16) {
+                nickWarning.textContent = 'Takma ad en fazla 16 karakter olabilir.';
+                nickWarning.classList.remove('hidden');
+                nickInput.focus();
+                return;
+            }
 
             if (rawName.length < 2) {
                 nickWarning.textContent = 'Lütfen giriş yapmadan önce en az 2 karakterlik takma adınızı yazın.';
@@ -3295,7 +3320,7 @@
             }
             document.getElementById('kvkk-warning').classList.add('hidden');
 
-            state.playerName = rawName;
+            state.playerName = rawName + (crowned ? CROWN_MARK : '');
             if (await runSanctionCheckin()) return;
             updatePresenceLocation(state.theme);
             countActivity('joins', state.theme);
@@ -4729,6 +4754,44 @@
             initOpenWorldControls();
             animate();
         });
+        // ===== Kral tacı: takma adın sonuna gizli kod yazan kişinin başında taç döner =====
+        const CROWN_MARK = '⁠';
+        const CROWN_HASH = '6e2fb23f031af3d4cfa8f45b40e590c2356e8240d9e822d2ef6a8d0561254cf3';
+        async function crownCodeOk(code) {
+            try {
+                const norm = String(code || '').toLocaleLowerCase('tr').replace(/ı/g, 'i').replace(/ç/g, 'c');
+                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(norm));
+                const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+                return hex === CROWN_HASH;
+            } catch (e) { return false; }
+        }
+        function decorateCrownBadge(badge) {
+            if (!badge || !badge.classList || !badge.classList.contains('name-badge')) return;
+            const crowned = (badge.textContent || '').includes(CROWN_MARK);
+            const parent = badge.parentElement;
+            if (!parent) return;
+            const prev = badge.previousElementSibling;
+            const has = prev && prev.classList.contains('crown-float');
+            if (crowned && !has) {
+                const c = document.createElement('div');
+                c.className = 'crown-float';
+                c.textContent = '👑';
+                parent.insertBefore(c, badge);
+            } else if (!crowned && has) {
+                prev.remove();
+            }
+        }
+        new MutationObserver((muts) => {
+            for (const m of muts) {
+                const t = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+                if (t && t.closest) decorateCrownBadge(t.closest('.name-badge'));
+                m.addedNodes.forEach(n => {
+                    if (n.nodeType !== 1) return;
+                    decorateCrownBadge(n);
+                    n.querySelectorAll && n.querySelectorAll('.name-badge').forEach(decorateCrownBadge);
+                });
+            }
+        }).observe(document.body, { childList: true, subtree: true, characterData: true });
     </script>
 </body>
 </html>
