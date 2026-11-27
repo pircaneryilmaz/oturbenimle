@@ -2962,9 +2962,9 @@
         function showBanScreen(untilIso, message, banId) {
             isBannedNow = true;
             try { localStorage.setItem(BAN_MARKER_KEY, JSON.stringify({ id: banId || null, until: untilIso || null })); } catch (e) {}
-            try { standUp(false); } catch (e) {}
+            try { standUp(true); } catch (e) {}
             try { cancelMatchmaking(); } catch (e) {}
-            try { if (sbClient) sbClient.removeAllChannels(); } catch (e) {}
+            setTimeout(() => { try { if (sbClient) sbClient.removeAllChannels(); } catch (e) {} }, 800);
             document.getElementById('lobby-modal').classList.add('hidden');
             document.getElementById('bottom-chat-bar').classList.add('hidden');
             if (message) document.getElementById('ban-screen-text').textContent = message;
