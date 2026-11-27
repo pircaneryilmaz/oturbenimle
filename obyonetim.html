@@ -1,107 +1,149 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" translate="no">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="google" content="notranslate">
     <title>Yönetim Merkezi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel:wght@400..700&family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            font-family: "Geist Pixel", 'Pixelify Sans', monospace !important;
-        }
-        body {
-            background-color: #0b0e14;
-            color: #f1f5f9;
-        }
+        * { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #0b0e14; color: #e2e8f0; }
+        .card { background: #131720; border: 1px solid #1f2937; border-radius: 10px; }
+        .inner { background: #0d1118; border: 1px solid #1f2937; border-radius: 8px; }
+        .btn { font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-warn { background: #3b2a0a; color: #fcd34d; border-color: #92400e; } .btn-warn:hover { background: #78350f; }
+        .btn-kick { background: #1e293b; color: #cbd5e1; border-color: #334155; } .btn-kick:hover { background: #334155; }
+        .btn-mute { background: #172554; color: #93c5fd; border-color: #1d4ed8; } .btn-mute:hover { background: #1e3a8a; }
+        .btn-ban { background: #450a0a; color: #fca5a5; border-color: #b91c1c; } .btn-ban:hover { background: #7f1d1d; }
+        .btn-primary { background: #d97706; color: white; } .btn-primary:hover { background: #f59e0b; }
+        .btn-ghost { background: transparent; color: #94a3b8; border-color: #334155; } .btn-ghost:hover { color: white; border-color: #64748b; }
+        .chip { font-size: 13px; padding: 7px 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #cbd5e1; cursor: pointer; }
+        .chip.active { background: #d97706; border-color: #f59e0b; color: white; }
+        .tab { padding: 9px 14px; font-size: 14px; font-weight: 600; color: #94a3b8; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+        .tab.active { color: #fcd34d; border-color: #f59e0b; }
+        .badge { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; }
+        input[type=text], input[type=email], input[type=password], textarea { background: #0d1118; border: 1px solid #334155; border-radius: 6px; padding: 8px 10px; font-size: 14px; color: white; outline: none; }
+        input:focus, textarea:focus { border-color: #f59e0b; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen p-3 sm:p-6">
 
-    <div class="w-full max-w-2xl bg-[#131720] border border-slate-800 rounded-md p-5 flex flex-col gap-4">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div class="w-full max-w-6xl mx-auto flex flex-col gap-4">
+        <div class="card p-4 flex items-center justify-between gap-3">
             <div>
-                <h1 class="text-base sm:text-lg font-bold text-amber-300">🛡️ OTURBENİMLE — Moderasyon & Yönetim</h1>
-                <p class="text-xs text-slate-400">Canlı çevrimiçi durumu ve kullanıcı bildirimleri</p>
+                <h1 class="text-lg sm:text-xl font-bold text-amber-300">🛡️ OTURBENİMLE — Moderasyon & Yönetim</h1>
+                <p class="text-sm text-slate-400">Canlı kullanıcılar, susturma, ban ve şikâyetler</p>
             </div>
-            <div class="flex items-center gap-2">
-                <button type="button" id="btn-download-html" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded border border-slate-700 cursor-pointer">
-                    İndir (.html)
-                </button>
-                <button type="button" id="btn-logout" class="hidden text-xs bg-rose-900/70 hover:bg-rose-800 text-rose-200 px-3 py-1.5 rounded border border-rose-700/60 cursor-pointer">
-                    Çıkış Yap
-                </button>
-            </div>
+            <button type="button" id="btn-logout" class="hidden btn btn-ban">Çıkış Yap</button>
         </div>
 
-        <form id="login-form" class="flex flex-col gap-3 max-w-sm mx-auto w-full py-4">
-            <div class="flex flex-col gap-1">
-                <label for="email-input" class="text-xs text-slate-300">Yönetici E-posta</label>
-                <input id="email-input" type="email" autocomplete="username" required placeholder="E-posta adresiniz..." class="bg-[#0d1118] border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
-            </div>
-            <div class="flex flex-col gap-1">
-                <label for="pass-input" class="text-xs text-slate-300">Şifre</label>
-                <input id="pass-input" type="password" autocomplete="current-password" required placeholder="Şifreniz..." class="bg-[#0d1118] border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
-            </div>
-            <p id="login-error" class="hidden text-xs text-rose-400">Giriş başarısız. E-posta veya şifrenizi kontrol edin.</p>
-            <button type="submit" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded text-sm mt-1 cursor-pointer">
-                Güvenli Giriş Yap
-            </button>
+        <form id="login-form" class="card p-6 flex flex-col gap-3 max-w-sm mx-auto w-full">
+            <label for="email-input" class="text-sm text-slate-300">Yönetici E-posta</label>
+            <input id="email-input" type="email" autocomplete="username" required placeholder="E-posta adresiniz...">
+            <label for="pass-input" class="text-sm text-slate-300">Şifre</label>
+            <input id="pass-input" type="password" autocomplete="current-password" required placeholder="Şifreniz...">
+            <p id="login-error" class="hidden text-sm text-rose-400">Giriş başarısız. E-posta veya şifrenizi kontrol edin.</p>
+            <button type="submit" class="btn btn-primary py-2.5 mt-1">Güvenli Giriş Yap</button>
         </form>
 
         <div id="dashboard-view" class="hidden flex flex-col gap-4">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
-                    <div class="text-[11px] text-slate-400">Anlık Çevrimiçi</div>
-                    <div id="stat-online" class="text-lg font-bold text-emerald-400 mt-1">0 Kişi</div>
-                </div>
-                <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
-                    <div class="text-[11px] text-slate-400">En Çok Aynı Anda</div>
-                    <div id="stat-peak" class="text-lg font-bold text-amber-300 mt-1">0 Kişi</div>
-                </div>
-                <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
-                    <div class="text-[11px] text-slate-400">Son 24 Saat Giriş</div>
-                    <div id="stat-visits" class="text-lg font-bold text-sky-400 mt-1">0 Kişi</div>
-                </div>
-                <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
-                    <div class="text-[11px] text-slate-400">Şikayet Kaydı</div>
-                    <div id="stat-reports" class="text-lg font-bold text-rose-400 mt-1">0 Kayıt</div>
-                </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="card p-4"><div class="text-sm text-slate-400">Anlık Çevrimiçi</div><div id="stat-online" class="text-2xl font-bold text-emerald-400 mt-1">0</div></div>
+                <div class="card p-4"><div class="text-sm text-slate-400">Aktif Susturma</div><div id="stat-mutes" class="text-2xl font-bold text-sky-400 mt-1">0</div></div>
+                <div class="card p-4"><div class="text-sm text-slate-400">Aktif Ban</div><div id="stat-bans" class="text-2xl font-bold text-rose-400 mt-1">0</div></div>
+                <div class="card p-4"><div class="text-sm text-slate-400">Şikâyet Kaydı</div><div id="stat-reports" class="text-2xl font-bold text-amber-300 mt-1">0</div></div>
             </div>
 
-            <div class="flex flex-col gap-1.5">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-xs font-bold text-slate-300">📊 Son 24 Saat (5 dk'da bir yenilenir)</h2>
-                    <span id="stats-updated" class="text-[11px] text-slate-500"></span>
-                </div>
-                <div class="grid grid-cols-3 gap-2.5">
-                    <div class="bg-[#0d1118] border border-slate-800 rounded p-3"><div class="text-[11px] text-slate-400">Toplam Mesaj</div><div id="stat-msgs" class="text-lg font-bold text-emerald-400 mt-1">0 Mesaj</div></div>
-                    <div class="bg-[#0d1118] border border-slate-800 rounded p-3"><div class="text-[11px] text-slate-400">Giriş Başı Ort. Mesaj</div><div id="stat-avg" class="text-lg font-bold text-sky-400 mt-1">0</div></div>
-                    <div class="bg-[#0d1118] border border-slate-800 rounded p-3"><div class="text-[11px] text-slate-400">En Çok Tercih Edilen</div><div id="stat-top-theme" class="text-lg font-bold text-amber-300 mt-1">-</div></div>
-                </div>
-                <table class="w-full text-xs text-slate-300 bg-[#0d1118] border border-slate-800 rounded"><thead><tr class="text-slate-400"><th class="text-left p-1.5">Ortam</th><th class="text-right p-1.5">Giriş sayısı</th></tr></thead><tbody id="theme-table" class="px-1.5"></tbody></table>
-            </div>
+            <p id="mod-action-status" class="text-sm min-h-[20px] text-emerald-300"></p>
 
-            <div class="flex flex-col gap-1.5">
-                <h2 class="text-xs font-bold text-slate-300">🟢 Şu An Sitede Aktif Olanlar</h2>
-                <p id="mod-action-status" class="text-[11px] text-amber-300 min-h-[16px]"></p>
-                <div id="active-users-box" class="bg-[#0d1118] border border-slate-800 rounded p-3 text-xs text-slate-300 space-y-1.5 max-h-36 overflow-y-auto">
-                    Bağlanıyor...
+            <div class="card">
+                <div class="flex gap-1 border-b border-slate-800 px-2 overflow-x-auto">
+                    <button type="button" class="tab active" data-tab="live">🟢 Canlı</button>
+                    <button type="button" class="tab" data-tab="search">🔍 Kullanıcı Ara</button>
+                    <button type="button" class="tab" data-tab="sanctions">⛔ Yaptırımlar</button>
+                    <button type="button" class="tab" data-tab="reports">⚠️ Şikâyetler</button>
+                    <button type="button" class="tab" data-tab="stats">📊 İstatistik</button>
+                </div>
+
+                <!-- CANLI -->
+                <div class="tab-panel p-4 flex flex-col gap-3" data-panel="live">
+                    <input id="live-filter" type="text" placeholder="İsimle filtrele...">
+                    <div id="active-users-box" class="flex flex-col gap-2 text-sm">Bağlanıyor...</div>
+                </div>
+
+                <!-- ARA -->
+                <div class="tab-panel hidden p-4 flex flex-col gap-3" data-panel="search">
+                    <form id="search-form" class="flex gap-2">
+                        <input id="search-input" type="text" class="flex-1" placeholder="Kullanıcı adı yaz (boş bırakırsan son girenler listelenir)">
+                        <button type="submit" class="btn btn-primary">Ara</button>
+                    </form>
+                    <p class="text-xs text-slate-500">Son girenler ve sitede şu an olmayanlar da listelenir.</p>
+                    <div id="search-results" class="flex flex-col gap-2 text-sm"></div>
+                </div>
+
+                <!-- YAPTIRIMLAR -->
+                <div class="tab-panel hidden p-4 flex flex-col gap-3" data-panel="sanctions">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-semibold text-slate-300">Aktif olanlar üstte, geçmiş altta</h2>
+                        <button type="button" id="btn-refresh-sanctions" class="btn btn-ghost">Yenile</button>
+                    </div>
+                    <div id="sanctions-box" class="flex flex-col gap-2 text-sm">Yükleniyor...</div>
+                </div>
+
+                <!-- ŞİKAYETLER -->
+                <div class="tab-panel hidden p-4 flex flex-col gap-3" data-panel="reports">
+                    <div class="flex gap-2">
+                        <input id="reports-filter" type="text" class="flex-1" placeholder="Bildirilen / bildiren isme göre filtrele...">
+                        <button type="button" id="btn-refresh" class="btn btn-ghost">Yenile</button>
+                    </div>
+                    <div id="reports-box" class="flex flex-col gap-2 text-sm">Yükleniyor...</div>
+                </div>
+
+                <!-- İSTATİSTİK -->
+                <div class="tab-panel hidden p-4 flex flex-col gap-3" data-panel="stats">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-semibold text-slate-300">📊 Son 24 Saat (5 dk'da bir yenilenir)</h2>
+                        <span id="stats-updated" class="text-xs text-slate-500"></span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div class="inner p-3"><div class="text-xs text-slate-400">Giriş (24 sa)</div><div id="stat-visits" class="text-lg font-bold text-sky-400 mt-1">0</div></div>
+                        <div class="inner p-3"><div class="text-xs text-slate-400">En Çok Aynı Anda</div><div id="stat-peak" class="text-lg font-bold text-amber-300 mt-1">0</div></div>
+                        <div class="inner p-3"><div class="text-xs text-slate-400">Toplam Mesaj</div><div id="stat-msgs" class="text-lg font-bold text-emerald-400 mt-1">0</div></div>
+                        <div class="inner p-3"><div class="text-xs text-slate-400">Giriş Başı Mesaj</div><div id="stat-avg" class="text-lg font-bold text-sky-400 mt-1">0</div></div>
+                        <div class="inner p-3"><div class="text-xs text-slate-400">En Çok Tercih</div><div id="stat-top-theme" class="text-lg font-bold text-amber-300 mt-1">-</div></div>
+                    </div>
+                    <table class="w-full text-sm text-slate-300 inner"><thead><tr class="text-slate-400"><th class="text-left p-2">Ortam</th><th class="text-right p-2">Giriş sayısı</th></tr></thead><tbody id="theme-table"></tbody></table>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="flex flex-col gap-1.5">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-xs font-bold text-rose-300">⚠️ Gelen Şikayet ve Bildirimler</h2>
-                    <button type="button" id="btn-refresh" class="text-xs text-amber-300 hover:underline cursor-pointer">Listeyi Yenile</button>
-                </div>
-                <div id="reports-box" class="bg-[#0d1118] border border-slate-800 rounded p-3 text-xs text-slate-300 space-y-2.5 max-h-80 overflow-y-auto">
-                    Yükleniyor...
-                </div>
+    <!-- İşlem penceresi (Sustur / Banla / Uyarı) -->
+    <div id="action-modal" class="hidden fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3">
+        <div class="card w-full max-w-lg p-5 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+                <h3 id="am-title" class="text-base font-bold text-amber-300">İşlem</h3>
+                <button type="button" id="am-close" class="btn btn-ghost">✕</button>
+            </div>
+            <div id="am-target" class="text-sm text-slate-300"></div>
+            <div id="am-durations" class="flex flex-wrap gap-2"></div>
+            <label for="am-message" class="text-sm text-slate-400">Kişinin ekranında görünecek mesaj (düzenleyebilirsin):</label>
+            <textarea id="am-message" rows="3"></textarea>
+            <label id="am-ip-row" class="hidden flex items-start gap-2 text-sm text-slate-300">
+                <input id="am-ip" type="checkbox" checked class="mt-1 accent-rose-500">
+                <span>IP adresini de banla <span class="block text-xs text-slate-500">Mobil hatlarda (Turkcell/Vodafone/Türk Telekom) aynı IP'yi başka masum kişiler de kullanabilir; mobil kullanıcıya uzun ban veriyorsan bunu kapatmayı düşün.</span></span>
+            </label>
+            <p id="am-error" class="hidden text-sm text-rose-400"></p>
+            <div class="flex justify-end gap-2 mt-1">
+                <button type="button" id="am-cancel" class="btn btn-ghost">Vazgeç</button>
+                <button type="button" id="am-confirm" class="btn btn-ban">Onayla</button>
             </div>
         </div>
     </div>
@@ -111,316 +153,356 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_lbDpjEAfBJUMLTuBSYBY_A_O8LXxXQ0';
         const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const THEME_NAMES = {
-            cafe: 'Kafe',
-            campfire: 'Gece Kamp Ateşi',
-            beach: 'Sahilde Bank',
-            club: 'Gece Kulübü',
-            openworld: 'Açık Dünya Meydanı'
-        };
+        const THEME_NAMES = { cafe: 'Kafe', campfire: 'Gece Kamp Ateşi', beach: 'Sahilde Bank', club: 'Gece Kulübü' };
+        const MUTE_OPTIONS = [[1, '1 dk'], [5, '5 dk'], [10, '10 dk']];
+        const BAN_OPTIONS = [[30, '30 dk'], [60, '1 saat'], [180, '3 saat'], [360, '6 saat'], [720, '12 saat'], [1440, '1 gün'], [null, 'Süresiz']];
+        const WARN_MESSAGE = '⚠️ Kurallara aykırı davranışın nedeniyle uyarı aldın. Aranızdayım, sizi izliyorum. Tekrar edersen siteden uzaklaştırılırsın.';
+        const muteMessage = (label) => `⚠️ Kurallara uymadığın için ${label} susturuldun. Aranızdayım, sizi izliyorum. Tekrar edersen siteden uzaklaştırılırsın.`;
+        const BAN_MESSAGE = 'Topluluk kurallarını ihlal ettiğin için siteden uzaklaştırıldın.';
 
         let presenceChannel = null;
         let modChannel = null;
-        let isPresenceSubscribed = false;
+        let modReady = false;
+        let onlineUsers = [];
+        let allReports = [];
 
-        // Sayfanın güncel HTML kaynağını obyonetim.html olarak bilgisayara indirir
-        document.getElementById('btn-download-html').addEventListener('click', () => {
-            try {
-                const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'obyonetim.html';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            } catch (err) {
-                console.error('İndirme hatası:', err);
-            }
-        });
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmtDate = (iso) => iso ? new Date(iso).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
+        function fmtLeft(iso) {
+            if (!iso) return 'Süresiz';
+            const ms = new Date(iso).getTime() - Date.now();
+            if (ms <= 0) return 'Bitti';
+            const m = Math.ceil(ms / 60000);
+            if (m < 60) return `${m} dk kaldı`;
+            const h = Math.floor(m / 60);
+            if (h < 24) return `${h} sa ${m % 60} dk kaldı`;
+            return `${Math.floor(h / 24)} gün ${h % 24} sa kaldı`;
+        }
+        function setStatus(msg, isErr = false) {
+            const el = document.getElementById('mod-action-status');
+            el.className = 'text-sm min-h-[20px] ' + (isErr ? 'text-rose-400' : 'text-emerald-300');
+            el.textContent = msg;
+        }
 
+        // ---------- Sekmeler ----------
+        document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => openTab(t.dataset.tab)));
+        function openTab(name) {
+            document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
+            document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== name));
+            if (name === 'sanctions') fetchSanctions();
+            if (name === 'reports') fetchReports();
+            if (name === 'stats') fetchSiteStats();
+            if (name === 'search' && !document.getElementById('search-results').innerHTML) runSearch('');
+        }
+
+        // ---------- Oturum ----------
         async function checkSession() {
             try {
                 const { data } = await sb.auth.getSession();
-                if (data?.session && !data.session.user.is_anonymous) {
-                    showDashboard();
-                }
-            } catch (err) {
-                console.error('Oturum kontrolü hatası:', err);
-            }
+                if (data?.session && !data.session.user.is_anonymous) showDashboard();
+            } catch (err) { console.error('Oturum kontrolü hatası:', err); }
         }
 
         function showDashboard() {
             document.getElementById('login-form').classList.add('hidden');
             document.getElementById('dashboard-view').classList.remove('hidden');
             document.getElementById('btn-logout').classList.remove('hidden');
-            startPresenceListener();
+            startChannels();
             fetchSiteStats();
             fetchReports();
+            fetchSanctions();
         }
 
-        async function fetchSiteStats() {
-            try {
-                const { data, error } = await sb.rpc('admin_stats');
-                if (error || !data) { console.error('İstatistik hatası:', error); return; }
-                const v = data.visits_24h || 0, m = data.messages_24h || 0;
-                document.getElementById('stat-visits').textContent = `${v} Giriş`;
-                document.getElementById('stat-peak').textContent = `${data.peak_all_time || 0} Kişi`;
-                document.getElementById('stat-msgs').textContent = `${m} Mesaj`;
-                document.getElementById('stat-avg').textContent = v ? (m / v).toFixed(1) : '0';
-                const joins = data.joins || {};
-                const rows = Object.entries(joins).sort((x, y) => y[1] - x[1]);
-                document.getElementById('stat-top-theme').textContent = rows.length ? (THEME_NAMES[rows[0][0]] || rows[0][0]) : '-';
-                document.getElementById('theme-table').innerHTML = rows.length
-                    ? rows.map(([k, n]) => `<tr><td class="py-1">${THEME_NAMES[k] || k}</td><td class="py-1 text-right">${n}</td></tr>`).join('')
-                    : '<tr><td class="py-1 text-slate-500" colspan="2">Henüz veri yok</td></tr>';
-                document.getElementById('stats-updated').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
-            } catch (err) {
-                console.error('İstatistik hatası:', err);
-            }
-        }
-
-        function startPresenceListener() {
+        // ---------- Canlı kanal & komutlar ----------
+        function startChannels() {
             if (!modChannel) {
                 modChannel = sb.channel('private_oturbenimle_mod', { config: { private: true, broadcast: { ack: true } } });
-                modChannel.subscribe();
+                modChannel.subscribe((st) => { if (st === 'SUBSCRIBED') { modReady = true; setStatus('🟢 Canlı moderasyon kanalı aktif.'); } });
             }
             if (presenceChannel) sb.removeChannel(presenceChannel);
-            isPresenceSubscribed = false;
-
             presenceChannel = sb.channel('private_oturbenimle_online', {
-                config: {
-                    private: true,
-                    broadcast: { ack: true },
-                    presence: { key: 'admin_monitor_' + Date.now() }
-                }
+                config: { private: true, presence: { key: 'admin_monitor_' + Date.now() } }
             });
-
-            const setModStatus = (msg, isErr = false) => {
-                const el = document.getElementById('mod-action-status');
-                if (!el) return;
-                el.className = 'text-[11px] min-h-[16px] ' + (isErr ? 'text-rose-400' : 'text-emerald-300');
-                el.textContent = msg;
-            };
-
-            const sendModBroadcast = async (eventName, payload) => {
-                if (!presenceChannel) {
-                    setModStatus('Kanal bağlı değil, yeniden bağlanılıyor...', true);
-                    startPresenceListener();
-                    return false;
-                }
-                if (!isPresenceSubscribed) {
-                    await new Promise((resolve) => {
-                        let settled = false;
-                        const timer = setTimeout(() => {
-                            if (!settled) { settled = true; resolve(); }
-                        }, 1500);
-                        presenceChannel.subscribe((status) => {
-                            if (status === 'SUBSCRIBED') {
-                                isPresenceSubscribed = true;
-                                if (!settled) { settled = true; clearTimeout(timer); resolve(); }
-                            }
-                        });
-                    });
-                }
-                const res = await modChannel.send({
-                    type: 'broadcast',
-                    event: eventName,
-                    payload
-                });
-                if (res === 'error' || res === 'timed out') {
-                    setModStatus(`Sinyal iletilemedi (${res}). Sayfayı yenileyip tekrar deneyin.`, true);
-                    return false;
-                }
-                return true;
-            };
-
-            const syncUsers = () => {
-                if (!presenceChannel) return;
-                const pState = presenceChannel.presenceState();
-                const users = Object.entries(pState)
-                    .filter(([key]) => !key.startsWith('admin_monitor_'))
-                    .map(([presenceKey, arr]) => {
-                        const first = (arr && arr[0]) || {};
-                        return {
-                            ...first,
-                            resolvedId: String(first.id || presenceKey || '').trim()
-                        };
-                    })
-                    .filter(u => u.resolvedId);
-
-                document.getElementById('stat-online').textContent = `${users.length} Kişi`;
-                const box = document.getElementById('active-users-box');
-
-                if (users.length === 0) {
-                    box.innerHTML = '<span class="text-slate-500">Şu an aktif kullanıcı yok.</span>';
-                    return;
-                }
-
-                box.innerHTML = users.map(u => {
-                    const themeLabel = THEME_NAMES[u.theme] || u.theme || 'Lobi';
-                    const safeName = String(u.name || 'Misafir').replace(/[<>&"]/g, '');
-                    const safeId = String(u.resolvedId || '').replace(/[^a-zA-Z0-9_-]/g, '');
-                    return `<div class="flex items-center justify-between gap-2 border-b border-slate-800/70 pb-1.5 last:border-0">
-                        <div class="min-w-0">
-                            <span class="text-emerald-300 font-semibold">• ${safeName}</span>
-                            <span class="text-slate-400 text-[11px] ml-1.5">(${themeLabel})</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            <button type="button" data-kick-id="${safeId}" data-kick-name="${safeName}" class="kick-user-btn text-[11px] bg-rose-950/90 hover:bg-rose-700 text-rose-200 border border-rose-700/70 px-2 py-0.5 rounded cursor-pointer">
-                                Oyundan Çıkar
-                            </button>
-                            <button type="button" data-warn-id="${safeId}" data-warn-name="${safeName}" class="warn-user-btn text-[11px] bg-amber-950/90 hover:bg-amber-600 text-amber-200 border border-amber-600/70 px-2 py-0.5 rounded cursor-pointer">
-                                Uyarı Gönder
-                            </button>
-                        </div>
-                    </div>`;
-                }).join('');
-
-                box.querySelectorAll('.kick-user-btn').forEach((btn) => {
-                    btn.addEventListener('click', async () => {
-                        const targetId = btn.getAttribute('data-kick-id');
-                        const targetName = btn.getAttribute('data-kick-name') || 'Kullanıcı';
-                        if (!targetId) return;
-
-                        btn.disabled = true;
-                        btn.textContent = 'Çıkarılıyor...';
-
-                        const ok = await sendModBroadcast('admin_kick', {
-                            targetId,
-                            targetName
-                        });
-                        if (ok) {
-                            setModStatus(`✅ "${targetName}" için oyundan çıkarma komutu gönderildi.`);
-                        }
-
-                        setTimeout(() => {
-                            btn.disabled = false;
-                            btn.textContent = 'Oyundan Çıkar';
-                            syncUsers();
-                        }, 1000);
-                    });
-                });
-
-                box.querySelectorAll('.warn-user-btn').forEach((btn) => {
-                    btn.addEventListener('click', async () => {
-                        const targetId = btn.getAttribute('data-warn-id');
-                        const targetName = btn.getAttribute('data-warn-name') || 'Kullanıcı';
-                        if (!targetId) return;
-
-                        btn.disabled = true;
-                        btn.textContent = 'Gönderildi';
-
-                        const ok = await sendModBroadcast('admin_warning', {
-                            targetId,
-                            targetName,
-                            seconds: 10,
-                            message: 'Gerekli bir sebepten dolayı uyarı yedin. Aranızdayım, sizi izliyorum. Tekrar etme, kalıcı banlanırsın.'
-                        });
-                        if (ok) {
-                            setModStatus(`🚨 "${targetName}" ekranına 10 saniyelik uyarı gönderildi.`);
-                        }
-
-                        setTimeout(() => {
-                            btn.disabled = false;
-                            btn.textContent = 'Uyarı Gönder';
-                        }, 1500);
-                    });
-                });
-            };
-
             presenceChannel
                 .on('presence', { event: 'sync' }, syncUsers)
                 .on('presence', { event: 'join' }, syncUsers)
                 .on('presence', { event: 'leave' }, syncUsers)
-                .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') {
-                        isPresenceSubscribed = true;
-                        setModStatus('🟢 Canlı moderasyon kanalı aktif.');
-                        syncUsers();
-                    }
-                });
-
-            setInterval(syncUsers, 3500);
+                .subscribe((st) => { if (st === 'SUBSCRIBED') syncUsers(); });
+            setInterval(syncUsers, 4000);
         }
 
+        async function sendMod(eventName, payload) {
+            if (!modChannel) startChannels();
+            for (let i = 0; i < 15 && !modReady; i++) await new Promise((r) => setTimeout(r, 100));
+            const res = await modChannel.send({ type: 'broadcast', event: eventName, payload });
+            if (res === 'error' || res === 'timed out') { setStatus(`Komut iletilemedi (${res}). Sayfayı yenileyip tekrar dene.`, true); return false; }
+            return true;
+        }
+
+        function syncUsers() {
+            if (!presenceChannel) return;
+            const pState = presenceChannel.presenceState();
+            onlineUsers = Object.entries(pState)
+                .filter(([key]) => !key.startsWith('admin_monitor_'))
+                .map(([key, arr]) => { const f = (arr && arr[0]) || {}; return { ...f, id: String(f.id || key || '').trim() }; })
+                .filter((u) => u.id);
+            document.getElementById('stat-online').textContent = onlineUsers.length;
+            renderLive();
+        }
+
+        function actionButtons(clientId, name, uid, online) {
+            const d = `data-id="${esc(clientId || '')}" data-uid="${esc(uid || '')}" data-name="${esc(name)}"`;
+            return `<div class="flex flex-wrap gap-1.5">
+                ${online ? `<button type="button" class="btn btn-warn act" data-act="warn" ${d}>Uyarı</button>
+                <button type="button" class="btn btn-kick act" data-act="kick" ${d}>Çıkar</button>` : ''}
+                <button type="button" class="btn btn-mute act" data-act="mute" ${d}>Sustur</button>
+                <button type="button" class="btn btn-ban act" data-act="ban" ${d}>Banla</button>
+            </div>`;
+        }
+
+        function renderLive() {
+            const box = document.getElementById('active-users-box');
+            const q = document.getElementById('live-filter').value.trim().toLocaleLowerCase('tr');
+            const list = onlineUsers.filter((u) => !q || String(u.name || '').toLocaleLowerCase('tr').includes(q));
+            if (!list.length) { box.innerHTML = `<span class="text-slate-500">${onlineUsers.length ? 'Eşleşen kullanıcı yok.' : 'Şu an aktif kullanıcı yok.'}</span>`; return; }
+            box.innerHTML = list.map((u) => {
+                const name = u.name || 'Misafir';
+                const since = u.joinedAt ? Math.max(0, Math.round((Date.now() - new Date(u.joinedAt).getTime()) / 60000)) : null;
+                return `<div class="inner p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <div class="font-semibold text-emerald-300 truncate">• ${esc(name)}</div>
+                        <div class="text-xs text-slate-400">${esc(THEME_NAMES[u.theme] || u.theme || 'Lobi')}${since !== null ? ` · ${since} dk önce bağlandı` : ''}</div>
+                    </div>
+                    ${actionButtons(u.id, name, '', true)}
+                </div>`;
+            }).join('');
+        }
+        document.getElementById('live-filter').addEventListener('input', renderLive);
+
+        // Buton tıklamaları (tüm listeler için tek dinleyici)
+        document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.act');
+            if (!btn) return;
+            const target = { clientId: btn.dataset.id || null, uid: btn.dataset.uid || null, name: btn.dataset.name || 'Kullanıcı' };
+            const act = btn.dataset.act;
+            if (act === 'kick') {
+                if (!target.clientId) return;
+                btn.disabled = true;
+                if (await sendMod('admin_kick', { targetId: target.clientId, targetName: target.name })) setStatus(`✅ "${target.name}" oyundan çıkarıldı.`);
+                setTimeout(() => { btn.disabled = false; }, 1200);
+            } else if (act === 'warn') {
+                openActionModal('warn', target);
+            } else if (act === 'mute') {
+                openActionModal('mute', target);
+            } else if (act === 'ban') {
+                openActionModal('ban', target);
+            } else if (act === 'find') {
+                document.getElementById('search-input').value = target.name;
+                openTab('search');
+                runSearch(target.name);
+            } else if (act === 'revoke') {
+                btn.disabled = true;
+                const { error } = await sb.rpc('admin_revoke_sanction', { p_id: Number(btn.dataset.sid) });
+                if (error) { setStatus('Kaldırılamadı: ' + error.message, true); btn.disabled = false; return; }
+                if (btn.dataset.kind === 'mute' && target.clientId) await sendMod('admin_unmute', { targetId: target.clientId });
+                setStatus(`✅ "${target.name}" için ${btn.dataset.kind === 'ban' ? 'ban' : 'susturma'} kaldırıldı.`);
+                fetchSanctions();
+            }
+        });
+
+        // ---------- İşlem penceresi ----------
+        let modalState = null;
+        function openActionModal(kind, target) {
+            modalState = { kind, target, minutes: kind === 'mute' ? 5 : (kind === 'ban' ? 60 : null) };
+            const titles = { warn: '⚠️ Uyarı Gönder', mute: '🔇 Sustur', ban: '⛔ Banla' };
+            document.getElementById('am-title').textContent = titles[kind];
+            document.getElementById('am-target').innerHTML = `Kişi: <b class="text-white">${esc(target.name)}</b>`;
+            document.getElementById('am-ip-row').classList.toggle('hidden', kind !== 'ban');
+            document.getElementById('am-ip').checked = true;
+            document.getElementById('am-error').classList.add('hidden');
+            const confirmBtn = document.getElementById('am-confirm');
+            confirmBtn.className = 'btn ' + (kind === 'ban' ? 'btn-ban' : kind === 'mute' ? 'btn-mute' : 'btn-warn');
+            confirmBtn.textContent = kind === 'ban' ? 'Banla' : kind === 'mute' ? 'Sustur' : 'Uyarıyı Gönder';
+            confirmBtn.disabled = false;
+            const opts = kind === 'mute' ? MUTE_OPTIONS : kind === 'ban' ? BAN_OPTIONS : [];
+            const durBox = document.getElementById('am-durations');
+            durBox.innerHTML = opts.map(([m, l]) => `<button type="button" class="chip${m === modalState.minutes ? ' active' : ''}" data-min="${m === null ? '' : m}" data-label="${l}">${l}</button>`).join('');
+            durBox.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => {
+                durBox.querySelectorAll('.chip').forEach((x) => x.classList.remove('active'));
+                c.classList.add('active');
+                modalState.minutes = c.dataset.min === '' ? null : Number(c.dataset.min);
+                if (kind === 'mute') document.getElementById('am-message').value = muteMessage(c.dataset.label);
+            }));
+            document.getElementById('am-message').value = kind === 'mute' ? muteMessage('5 dk') : kind === 'ban' ? BAN_MESSAGE : WARN_MESSAGE;
+            document.getElementById('action-modal').classList.remove('hidden');
+        }
+        const closeModal = () => { document.getElementById('action-modal').classList.add('hidden'); modalState = null; };
+        document.getElementById('am-close').addEventListener('click', closeModal);
+        document.getElementById('am-cancel').addEventListener('click', closeModal);
+
+        document.getElementById('am-confirm').addEventListener('click', async () => {
+            if (!modalState) return;
+            const { kind, target, minutes } = modalState;
+            const message = document.getElementById('am-message').value.trim().slice(0, 300);
+            const errEl = document.getElementById('am-error');
+            const btn = document.getElementById('am-confirm');
+            btn.disabled = true;
+            try {
+                if (kind === 'warn') {
+                    if (await sendMod('admin_warning', { targetId: target.clientId, targetName: target.name, seconds: 10, message })) setStatus(`🚨 "${target.name}" ekranına uyarı gönderildi.`);
+                    closeModal();
+                    return;
+                }
+                const { data, error } = await sb.rpc('admin_sanction', {
+                    p_client_id: target.clientId,
+                    p_uid: target.uid || null,
+                    p_kind: kind,
+                    p_minutes: minutes,
+                    p_message: message,
+                    p_by_ip: kind === 'ban' ? document.getElementById('am-ip').checked : false
+                });
+                if (error || !data) throw new Error(error?.message || 'Bilinmeyen hata');
+                const liveId = data.client_id || target.clientId;
+                if (liveId) {
+                    await sendMod(kind === 'ban' ? 'admin_ban' : 'admin_mute', {
+                        targetId: liveId, until: data.expires_at, message, banId: data.id
+                    });
+                }
+                const label = minutes === null ? 'süresiz' : (minutes >= 60 ? `${minutes / 60} saat` : `${minutes} dk`);
+                setStatus(kind === 'ban' ? `⛔ "${target.name}" ${label} banlandı.` : `🔇 "${target.name}" ${label} susturuldu.`);
+                closeModal();
+                fetchSanctions();
+            } catch (err) {
+                const msg = String(err.message || err);
+                errEl.textContent = msg.includes('kullanici bulunamadi')
+                    ? 'Bu kişinin kaydı henüz oluşmamış (siteyi eski sürümle açmış olabilir). "Çıkar" ile at, sayfayı yenileyince kaydı oluşur.'
+                    : 'İşlem başarısız: ' + msg;
+                errEl.classList.remove('hidden');
+                btn.disabled = false;
+            }
+        });
+
+        // ---------- Arama ----------
+        async function runSearch(q) {
+            const box = document.getElementById('search-results');
+            box.innerHTML = '<span class="text-slate-500">Aranıyor...</span>';
+            const { data, error } = await sb.rpc('admin_find_visitors', { p_query: q || '' });
+            if (error) { box.innerHTML = `<span class="text-rose-400">Arama yapılamadı: ${esc(error.message)}</span>`; return; }
+            if (!data || !data.length) { box.innerHTML = '<span class="text-slate-500">Kimse bulunamadı.</span>'; return; }
+            const onlineIds = new Set(onlineUsers.map((u) => u.id));
+            box.innerHTML = data.map((v) => {
+                const online = onlineIds.has(v.client_id);
+                const badges = [
+                    online ? '<span class="badge bg-emerald-900 text-emerald-300">çevrimiçi</span>' : '',
+                    v.banned ? `<span class="badge bg-rose-900 text-rose-200">banlı · ${esc(fmtLeft(v.ban_until))}</span>` : '',
+                    v.mute_until ? `<span class="badge bg-blue-900 text-blue-200">susturulmuş · ${esc(fmtLeft(v.mute_until))}</span>` : '',
+                    v.report_count > 0 ? `<span class="badge bg-amber-900 text-amber-200">${v.report_count} şikâyet</span>` : ''
+                ].join(' ');
+                return `<div class="inner p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <div class="font-semibold text-white">${esc(v.name || '(isimsiz)')} ${badges}</div>
+                        <div class="text-xs text-slate-400">Son görülme: ${esc(fmtDate(v.last_seen))} · ${esc(THEME_NAMES[v.theme] || v.theme || 'Lobi')} · IP: ${esc(v.ip || '-')}</div>
+                    </div>
+                    ${actionButtons(v.client_id, v.name || 'Kullanıcı', v.uid, online)}
+                </div>`;
+            }).join('');
+        }
+        document.getElementById('search-form').addEventListener('submit', (e) => { e.preventDefault(); runSearch(document.getElementById('search-input').value.trim()); });
+
+        // ---------- Yaptırımlar ----------
+        async function fetchSanctions() {
+            const box = document.getElementById('sanctions-box');
+            const { data, error } = await sb.rpc('admin_list_sanctions');
+            if (error) { box.innerHTML = `<span class="text-rose-400">Yüklenemedi: ${esc(error.message)}</span>`; return; }
+            const list = (data || []).sort((a, b) => (b.active - a.active) || (new Date(b.created_at) - new Date(a.created_at)));
+            document.getElementById('stat-mutes').textContent = list.filter((s) => s.active && s.kind === 'mute').length;
+            document.getElementById('stat-bans').textContent = list.filter((s) => s.active && s.kind === 'ban').length;
+            if (!list.length) { box.innerHTML = '<span class="text-slate-500">Henüz susturma veya ban yok.</span>'; return; }
+            box.innerHTML = list.map((s) => {
+                const kindLabel = s.kind === 'ban' ? '<span class="badge bg-rose-900 text-rose-200">BAN</span>' : '<span class="badge bg-blue-900 text-blue-200">SUSTURMA</span>';
+                const state = s.active ? `<span class="text-amber-300">${esc(fmtLeft(s.expires_at))}</span>`
+                    : `<span class="text-slate-500">${s.revoked_at ? 'Kaldırıldı' : 'Süresi doldu'}</span>`;
+                return `<div class="inner p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${s.active ? '' : 'opacity-60'}">
+                    <div class="min-w-0">
+                        <div class="font-semibold text-white">${kindLabel} ${esc(s.target_name || '(isimsiz)')} · ${state}</div>
+                        <div class="text-xs text-slate-400">Verildi: ${esc(fmtDate(s.created_at))}${s.target_ip ? ` · IP: ${esc(s.target_ip)}` : ''}${s.message ? ` · "${esc(s.message)}"` : ''}</div>
+                    </div>
+                    ${s.active ? `<button type="button" class="btn btn-ghost act" data-act="revoke" data-sid="${s.id}" data-kind="${s.kind}" data-name="${esc(s.target_name || '')}" data-id="${esc(s.client_id || '')}" data-uid="${esc(s.target_uid || '')}">Kaldır</button>` : ''}
+                </div>`;
+            }).join('');
+        }
+        document.getElementById('btn-refresh-sanctions').addEventListener('click', fetchSanctions);
+
+        // ---------- Şikâyetler ----------
         async function fetchReports() {
             const box = document.getElementById('reports-box');
+            const { data, error } = await sb.from('reports').select('*').order('created_at', { ascending: false }).limit(100);
+            if (error) { box.innerHTML = '<span class="text-rose-400">Bildirimler yüklenemedi.</span>'; return; }
+            allReports = data || [];
+            document.getElementById('stat-reports').textContent = allReports.length;
+            renderReports();
+        }
+        function renderReports() {
+            const box = document.getElementById('reports-box');
+            const q = document.getElementById('reports-filter').value.trim().toLocaleLowerCase('tr');
+            const list = allReports.filter((r) => !q || `${r.reported_name} ${r.reporter_name}`.toLocaleLowerCase('tr').includes(q));
+            if (!list.length) { box.innerHTML = `<span class="text-slate-500">${allReports.length ? 'Eşleşen şikâyet yok.' : 'Henüz şikâyet kaydı yok.'}</span>`; return; }
+            box.innerHTML = list.map((r) => `<div class="inner p-3 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-rose-300 font-semibold">Bildirilen: ${esc(r.reported_name)}</span>
+                    <span class="text-xs text-slate-500">${esc(new Date(r.created_at).toLocaleString('tr-TR'))}</span>
+                </div>
+                <div class="text-amber-300 text-sm">Sebep: ${esc(r.reason)} <span class="text-slate-400">(Bildiren: ${esc(r.reporter_name)})</span></div>
+                ${r.recent_chat ? `<div class="text-slate-300 text-sm bg-black/30 p-2 rounded break-words">${esc(r.recent_chat)}</div>` : ''}
+                <div><button type="button" class="btn btn-ghost act" data-act="find" data-name="${esc(r.reported_name)}" data-id="" data-uid="">🔍 Bu kişiyi bul</button></div>
+            </div>`).join('');
+        }
+        document.getElementById('reports-filter').addEventListener('input', renderReports);
+        document.getElementById('btn-refresh').addEventListener('click', fetchReports);
+
+        // ---------- İstatistik ----------
+        async function fetchSiteStats() {
             try {
-                const { data, error } = await sb
-                    .from('reports')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(50);
-
-                if (error) {
-                    box.innerHTML = '<span class="text-rose-400">Bildirimler yüklenemedi.</span>';
-                    return;
-                }
-
-                document.getElementById('stat-reports').textContent = `${data.length} Kayıt`;
-
-                if (data.length === 0) {
-                    box.innerHTML = '<span class="text-slate-500">Henüz şikayet kaydı yok.</span>';
-                    return;
-                }
-
-                box.innerHTML = data.map(r => {
-                    const dateStr = new Date(r.created_at).toLocaleString('tr-TR');
-                    const safeReported = String(r.reported_name || '').replace(/[<>&"]/g, '');
-                    const safeReporter = String(r.reporter_name || '').replace(/[<>&"]/g, '');
-                    const safeReason = String(r.reason || '').replace(/[<>&"]/g, '');
-                    const safeChat = String(r.recent_chat || '').replace(/[<>&"]/g, '');
-                    return `<div class="bg-[#131823] border border-slate-800 rounded p-2.5 flex flex-col gap-1">
-                        <div class="flex items-center justify-between text-[11px]">
-                            <span class="text-rose-400 font-bold">Bildirilen: ${safeReported}</span>
-                            <span class="text-slate-500">${dateStr}</span>
-                        </div>
-                        <div class="text-amber-300 text-[11px]">Sebep: ${safeReason} (Bildiren: ${safeReporter})</div>
-                        ${safeChat ? `<div class="text-slate-400 text-[11px] bg-black/30 p-1.5 rounded mt-1 break-words">${safeChat}</div>` : ''}
-                    </div>`;
-                }).join('');
-            } catch (err) {
-                box.innerHTML = '<span class="text-rose-400">Bildirimler yüklenirken hata oluştu.</span>';
-            }
+                const { data, error } = await sb.rpc('admin_stats');
+                if (error || !data) return;
+                const v = data.visits_24h || 0, m = data.messages_24h || 0;
+                document.getElementById('stat-visits').textContent = v;
+                document.getElementById('stat-peak').textContent = data.peak_all_time || 0;
+                document.getElementById('stat-msgs').textContent = m;
+                document.getElementById('stat-avg').textContent = v ? (m / v).toFixed(1) : '0';
+                const rows = Object.entries(data.joins || {}).sort((x, y) => y[1] - x[1]);
+                document.getElementById('stat-top-theme').textContent = rows.length ? (THEME_NAMES[rows[0][0]] || rows[0][0]) : '-';
+                document.getElementById('theme-table').innerHTML = rows.length
+                    ? rows.map(([k, n]) => `<tr><td class="p-2">${esc(THEME_NAMES[k] || k)}</td><td class="p-2 text-right">${n}</td></tr>`).join('')
+                    : '<tr><td class="p-2 text-slate-500" colspan="2">Henüz veri yok</td></tr>';
+                document.getElementById('stats-updated').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
+            } catch (err) { console.error('İstatistik hatası:', err); }
         }
 
+        // ---------- Giriş / Çıkış ----------
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email-input').value.trim();
             const password = document.getElementById('pass-input').value;
             const errEl = document.getElementById('login-error');
             errEl.classList.add('hidden');
-
             try {
                 const { error } = await sb.auth.signInWithPassword({ email, password });
-                if (error) {
-                    errEl.classList.remove('hidden');
-                    return;
-                }
-                await sb.auth.getSession().then(({ data }) => { if (data?.session?.user?.is_anonymous) throw new Error('anon'); });
+                if (error) { errEl.classList.remove('hidden'); return; }
+                const { data } = await sb.auth.getSession();
+                if (data?.session?.user?.is_anonymous) throw new Error('anon');
                 showDashboard();
-            } catch (err) {
-                errEl.classList.remove('hidden');
-            }
+            } catch (err) { errEl.classList.remove('hidden'); }
         });
-
         document.getElementById('btn-logout').addEventListener('click', async () => {
-            try {
-                await sb.auth.signOut();
-            } finally {
-                location.reload();
-            }
+            try { await sb.auth.signOut(); } finally { location.reload(); }
         });
 
-        document.getElementById('btn-refresh').addEventListener('click', () => {
-            fetchSiteStats();
-            fetchReports();
-        });
-
-        setInterval(() => { if (!document.getElementById('dashboard-view').classList.contains('hidden')) { fetchSiteStats(); fetchReports(); } }, 300000);
+        setInterval(() => {
+            if (document.getElementById('dashboard-view').classList.contains('hidden')) return;
+            fetchSiteStats(); fetchReports(); fetchSanctions();
+        }, 300000);
+        setInterval(() => { if (!document.getElementById('dashboard-view').classList.contains('hidden')) fetchSanctions(); }, 60000);
         checkSession();
     </script>
 </body>

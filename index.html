@@ -282,6 +282,19 @@
         </div>
     </div>
 
+    <!-- Ban Ekranı (siteden uzaklaştırma) -->
+    <div id="ban-screen" class="hidden fixed inset-0 z-[60] bg-[#0b0507] flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#160b0e] border-2 border-rose-600 rounded-md p-6 flex flex-col items-center text-center gap-4 shadow-2xl">
+            <div class="text-5xl">🚫</div>
+            <h2 class="pixel-title text-base sm:text-lg font-bold text-rose-400">SİTEDEN UZAKLAŞTIRILDIN</h2>
+            <p id="ban-screen-text" class="text-sm sm:text-base font-semibold text-white leading-relaxed">
+                Topluluk kurallarını ihlal ettiğin için siteye erişimin engellendi.
+            </p>
+            <div id="ban-screen-until" class="w-full bg-rose-950 border border-rose-700/70 rounded px-3 py-2 text-xs sm:text-sm text-rose-200"></div>
+            <p class="text-[11px] text-slate-400">Bunun bir hata olduğunu düşünüyorsan X üzerinden <span class="text-amber-300">@yokyeredelirme</span> hesabına yazabilirsin.</p>
+        </div>
+    </div>
+
     <!-- 10 Saniyelik Moderasyon Uyarı Ekranı -->
     <div id="admin-warning-modal" class="hidden fixed inset-0 z-50 bg-rose-950/95 flex items-center justify-center p-4">
         <div class="w-full max-w-md bg-[#160b0e] border-2 border-rose-500 rounded-md p-5 flex flex-col items-center text-center gap-4 shadow-2xl">
@@ -856,7 +869,8 @@
             fireFuel: 0.72,
             clubDancing: false,
             clubSeatedTableId: null,
-            clubSeatedSeatIdx: -1
+            clubSeatedSeatIdx: -1,
+            mutedUntil: 0
         };
 
         let lastOwBroadcast = 0;
@@ -2933,6 +2947,98 @@
         }
 
         // --- Moderasyon kanalı: sadece yönetici gönderebilir (Supabase politikası ile korunur) ---
+        // ---- Susturma & Ban (yönetim panelinden) ----
+        const BAN_MARKER_KEY = 'ob_ban_marker';
+        let muteTimer = null;
+        let isBannedNow = false;
+
+        function formatRemaining(ms) {
+            const total = Math.max(0, Math.ceil(ms / 1000));
+            const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), sec = total % 60;
+            if (h > 0) return `${h} sa ${m} dk`;
+            return `${m}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function showBanScreen(untilIso, message, banId) {
+            isBannedNow = true;
+            try { localStorage.setItem(BAN_MARKER_KEY, JSON.stringify({ id: banId || null, until: untilIso || null })); } catch (e) {}
+            try { standUp(true); } catch (e) {}
+            try { cancelMatchmaking(); } catch (e) {}
+            setTimeout(() => { try { if (sbClient) sbClient.removeAllChannels(); } catch (e) {} }, 800);
+            document.getElementById('lobby-modal').classList.add('hidden');
+            document.getElementById('bottom-chat-bar').classList.add('hidden');
+            if (message) document.getElementById('ban-screen-text').textContent = message;
+            const untilEl = document.getElementById('ban-screen-until');
+            if (untilIso) {
+                const until = new Date(untilIso);
+                untilEl.textContent = `Uzaklaştırma bitişi: ${until.toLocaleString('tr-TR')}`;
+                const left = until.getTime() - Date.now();
+                if (left > 0 && left < 2147483000) setTimeout(() => location.reload(), left + 1500);
+            } else {
+                untilEl.textContent = 'Süre: Süresiz';
+            }
+            document.getElementById('ban-screen').classList.remove('hidden');
+        }
+
+        function isMutedNow() {
+            return state.mutedUntil && Date.now() < state.mutedUntil;
+        }
+
+        function refreshMuteUi() {
+            const input = document.getElementById('chat-input');
+            if (!input) return;
+            if (isMutedNow()) {
+                input.disabled = true;
+                input.placeholder = `🔇 Susturuldun – ${formatRemaining(state.mutedUntil - Date.now())}`;
+            } else {
+                state.mutedUntil = 0;
+                input.disabled = false;
+                input.placeholder = 'Bir şeyler yaz...';
+                if (muteTimer) { clearInterval(muteTimer); muteTimer = null; }
+            }
+        }
+
+        function applyMute(untilIso, message, showModal = true) {
+            const until = new Date(untilIso).getTime();
+            if (!until || until <= Date.now()) return;
+            state.mutedUntil = until;
+            if (showModal && message) triggerAdminWarningModal(message, 5);
+            appendChatMessage('', `🔇 ${formatRemaining(until - Date.now())} süreyle susturuldun.`, false, true);
+            refreshMuteUi();
+            if (muteTimer) clearInterval(muteTimer);
+            muteTimer = setInterval(refreshMuteUi, 1000);
+        }
+
+        // Sunucuya "ben geldim" der; banlı/susturulmuş mu öğrenir. Banlıysa true döner.
+        async function runSanctionCheckin() {
+            if (!sbClient) return false;
+            let marker = null;
+            try {
+                const raw = JSON.parse(localStorage.getItem(BAN_MARKER_KEY) || 'null');
+                if (raw && raw.id && (!raw.until || new Date(raw.until).getTime() > Date.now())) marker = raw.id;
+                else if (raw) localStorage.removeItem(BAN_MARKER_KEY);
+            } catch (e) {}
+            try {
+                await ensureAnonymousSession();
+                const { data, error } = await sbClient.rpc('visitor_checkin', {
+                    p_client_id: CLIENT_ID,
+                    p_name: state.playerName || '',
+                    p_theme: state.theme || '',
+                    p_marker: marker
+                });
+                if (error || !data) return isBannedNow;
+                if (data.banned) {
+                    showBanScreen(data.ban_until, data.ban_message, data.ban_id);
+                    return true;
+                }
+                try { localStorage.removeItem(BAN_MARKER_KEY); } catch (e) {}
+                if (data.muted && data.mute_until && !isMutedNow()) applyMute(data.mute_until, null, false);
+            } catch (err) {
+                console.warn('Yaptırım kontrolü yapılamadı:', err);
+            }
+            return isBannedNow;
+        }
+
         let modChannel = null;
         function initModChannel() {
             if (!sbClient || modChannel) return;
@@ -2941,6 +3047,15 @@
             modChannel = sbClient.channel('private_oturbenimle_mod', { config: { private: true } })
                 .on('broadcast', { event: 'admin_warning' }, ({ payload }) => {
                     if (mine(payload)) triggerAdminWarningModal(payload.message, payload.seconds || 10);
+                })
+                .on('broadcast', { event: 'admin_mute' }, ({ payload }) => {
+                    if (payload && payload.targetId === CLIENT_ID) applyMute(payload.until, payload.message, true);
+                })
+                .on('broadcast', { event: 'admin_unmute' }, ({ payload }) => {
+                    if (payload && payload.targetId === CLIENT_ID) { state.mutedUntil = 0; refreshMuteUi(); appendChatMessage('', '🔊 Susturman kaldırıldı.', false, true); }
+                })
+                .on('broadcast', { event: 'admin_ban' }, ({ payload }) => {
+                    if (payload && payload.targetId === CLIENT_ID) showBanScreen(payload.until, payload.message, payload.banId);
                 })
                 .on('broadcast', { event: 'admin_kick' }, ({ payload }) => {
                     if (mine(payload)) {
@@ -3113,6 +3228,7 @@
             document.getElementById('kvkk-warning').classList.add('hidden');
 
             state.playerName = rawName;
+            if (await runSanctionCheckin()) return;
             updatePresenceLocation(state.theme);
             countActivity('joins', state.theme);
 
@@ -3541,6 +3657,11 @@
             const text = input.value.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 140);
             if (!text || state.mySeatIndex === -1) return;
 
+            if (isMutedNow()) {
+                appendChatMessage('', `🔇 Susturuldun, ${formatRemaining(state.mutedUntil - Date.now())} sonra tekrar yazabilirsin.`, false, true);
+                return;
+            }
+
             if (containsProfanity(text, true)) {
                 appendChatMessage('', '⚠️ Mesajınız topluluk kurallarına aykırı kelimeler içerdiği için gönderilmedi.', false, true);
                 return;
@@ -3882,7 +4003,7 @@
             renderThemeCards();
             updateGenderButtons();
             buildSceneForTheme('campfire');
-            ensureAnonymousSession().finally(() => { initOnlineCounter(); initModChannel(); });
+            ensureAnonymousSession().finally(async () => { if (await runSanctionCheckin()) return; initOnlineCounter(); initModChannel(); });
             initChalkboardCanvas();
             initOpenWorldControls();
             animate();
