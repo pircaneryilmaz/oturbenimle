@@ -119,6 +119,17 @@
             border-color: #d97706;
         }
 
+        .ob-deco { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; }
+        .ob-label-pill {
+            background: linear-gradient(90deg, #f59e0b, #ec4899);
+            color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .02em;
+            padding: 1px 7px; border-radius: 999px; white-space: nowrap;
+            box-shadow: 0 1px 4px rgba(0,0,0,.35);
+        }
+        .queen-crown { display: inline-block; filter: hue-rotate(290deg) saturate(1.6) drop-shadow(0 0 6px rgba(244,114,182,.9)); }
+        .sparkle-spin { display: inline-block; animation: sparkleSpin 2.4s linear infinite; filter: drop-shadow(0 0 6px rgba(253,224,71,.9)); }
+        @keyframes sparkleSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .deco-icon { display: inline-block; margin-left: 2px; }
         .crown-float {
             font-size: 22px;
             line-height: 1;
@@ -724,6 +735,7 @@
             const raw = String(name || '').toLocaleLowerCase('tr');
             // "31" (aradaki boşluk/işaretlerle birlikte: 3 1, 3.1, 3_1)
             if (/3[\s._\-*'`~]*1/.test(raw)) return true;
+            if (/4[\s._\-*'`~]*2/.test(raw)) return true;
             const loose = String(leetLoose || '').replace(/[^a-z]/g, '');
             if (NICK_BAN_SUBSTR.some((w) => loose.includes(w))) return true;
             // "seks" ama "seksen" serbest
@@ -1373,6 +1385,7 @@
 
         function buildCampfireScene() {
             cfChairMeshes.length = 0;
+            try { addMovieScreen(); } catch (e) { console.warn('Perde:', e); }
             const ground = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), new THREE.MeshStandardMaterial({ color: 0x14261c, roughness: 1 }));
             ground.rotation.x = -Math.PI / 2;
             ground.receiveShadow = true;
@@ -2456,6 +2469,13 @@
                     showOpenWorldBubble(payload.id, payload.text);
                     appendChatMessage(payload.name, payload.text, false);
                 })
+                .on('broadcast', { event: 'cf_video' }, ({ payload }) => { if (payload) receiveVideo(payload); })
+                .on('broadcast', { event: 'cf_video_stop' }, ({ payload }) => { stopVideo(payload && payload.name, false); })
+                .on('broadcast', { event: 'cf_video_req' }, () => {
+                    if (movie.current && movie.current.by === state.playerName && openWorldChannel) {
+                        openWorldChannel.send({ type: 'broadcast', event: 'cf_video', payload: movie.current });
+                    }
+                })
                 .on('broadcast', { event: 'cf_fan_grill' }, ({ payload }) => {
                     if (payload && payload.id !== CLIENT_ID) {
                         animatedObjects.grillFanUntil = clock.getElapsedTime() + 5.5;
@@ -2502,6 +2522,8 @@
                             gender: state.gender,
                             profileIndex: state.profileIndex
                         });
+                        stopVideo(null, false, true);
+                        setTimeout(() => { if (openWorldChannel) openWorldChannel.send({ type: 'broadcast', event: 'cf_video_req', payload: {} }); }, 1200);
                     }
                 });
         }
@@ -3171,6 +3193,22 @@
                 .on('broadcast', { event: 'admin_ban' }, ({ payload }) => {
                     if (payload && payload.targetId === CLIENT_ID) showBanScreen(payload.until, payload.message, payload.banId);
                 })
+                .on('broadcast', { event: 'admin_decor' }, ({ payload }) => {
+                    if (!payload || !payload.targetName) return;
+                    const decor = (payload.label || payload.icon) ? { label: payload.label || null, icon: payload.icon || null } : null;
+                    setDecor(payload.targetName, decor);
+                    if (payload.targetId === CLIENT_ID || baseNick(payload.targetName) === baseNick(state.playerName)) {
+                        try {
+                            if (decor) localStorage.setItem('ob_decor', JSON.stringify({ name: baseNick(state.playerName), ...decor }));
+                            else localStorage.removeItem('ob_decor');
+                        } catch (e) {}
+                        if (decor) appendChatMessage('', `🎖️ Yönetici sana yeni bir etiket verdi: ${decor.icon || ''} ${decor.label || ''}`.trim(), false, true);
+                    }
+                })
+                .on('broadcast', { event: 'decor_sync' }, ({ payload }) => {
+                    if (payload && payload.name) setDecor(payload.name, payload.decor || null);
+                })
+                .on('broadcast', { event: 'decor_request' }, () => { announceMyDecor(false); })
                 .on('broadcast', { event: 'admin_kick' }, ({ payload }) => {
                     if (mine(payload)) {
                         standUp(false);
@@ -3318,12 +3356,26 @@
         async function startRealMatchmaking() {
             const nickInput = document.getElementById('nickname-input');
             const nickWarning = document.getElementById('nickname-warning');
-            let rawName = nickInput.value.replace(/[\u0000-\u001F\u007F\u2060]/g, '').trim();
-            let crowned = false;
+            const typedName = nickInput.value.replace(/[\u0000-\u001F\u007F\u2060\u2061\u2062]/g, '').trim();
+            let rawName = typedName;
+            let crowned = null;
+            if (await specialNameHash(typedName) === MEL_HASH) { rawName = 'Mel'; crowned = 'sparkle'; }
             const crownMatch = rawName.match(/-\s*([^\s-]+)$/);
-            if (crownMatch && await crownCodeOk(crownMatch[1])) {
-                rawName = rawName.slice(0, rawName.length - crownMatch[0].length).trim();
-                crowned = true;
+            if (crownMatch && !crowned) {
+                const kind = await crownCodeOk(crownMatch[1]);
+                if (kind) {
+                    rawName = rawName.slice(0, rawName.length - crownMatch[0].length).trim();
+                    crowned = kind;
+                }
+            }
+            // Bu cihazda daha önce kullanılan ad sabit kalır
+            let savedNick = null;
+            try { savedNick = localStorage.getItem('ob_nick_base'); } catch (e) {}
+            if (savedNick && savedNick.toLocaleLowerCase('tr') !== rawName.toLocaleLowerCase('tr')) {
+                nickWarning.textContent = `Bu cihazda takma adın "${savedNick}" olarak kayıtlı, değiştiremezsin.`;
+                nickWarning.classList.remove('hidden');
+                nickInput.value = savedNick;
+                return;
             }
             if (rawName.length > 16) {
                 nickWarning.textContent = 'Takma ad en fazla 16 karakter olabilir.';
@@ -3354,7 +3406,9 @@
             }
             document.getElementById('kvkk-warning').classList.add('hidden');
 
-            state.playerName = rawName + (crowned ? CROWN_MARK : '');
+            state.playerName = rawName + (crowned === 'king' ? CROWN_MARK : crowned === 'queen' ? QUEEN_MARK : crowned === 'sparkle' ? SPARKLE_MARK : '');
+            try { localStorage.setItem('ob_nick_base', rawName); localStorage.setItem('ob_nick_typed', typedName); } catch (e) {}
+            setTimeout(announceMyDecor, 1500);
             if (await runSanctionCheckin()) return;
             updatePresenceLocation(state.theme);
             countActivity('joins', state.theme);
@@ -3697,6 +3751,10 @@
             updateGenderButtons();
         });
 
+        try {
+            const prev = localStorage.getItem('ob_nick_typed') || localStorage.getItem('ob_nick_base');
+            if (prev) document.getElementById('nickname-input').value = prev;
+        } catch (e) {}
         document.getElementById('nickname-input').addEventListener('input', () => {
             document.getElementById('nickname-warning').classList.add('hidden');
         });
@@ -4238,6 +4296,169 @@
             });
         })();
 
+        // ---- Kamp alanı: büyük beyaz perde, birlikte YouTube izleme ----
+        const movie = { mesh: null, corners: null, overlay: null, current: null, joined: false };
+        function addMovieScreen() {
+            const W = 7.2, H = 4.05, cx = 0, cy = 3.1, cz = -7.2;
+            const g = new THREE.Group();
+            const screen = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ color: 0xf1f5f9 }));
+            screen.position.set(cx, cy, cz);
+            g.add(screen);
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8 });
+            const top = new THREE.Mesh(new THREE.BoxGeometry(W + 0.3, 0.15, 0.12), frameMat); top.position.set(cx, cy + H / 2 + 0.07, cz - 0.02); g.add(top);
+            const bot = new THREE.Mesh(new THREE.BoxGeometry(W + 0.3, 0.15, 0.12), frameMat); bot.position.set(cx, cy - H / 2 - 0.07, cz - 0.02); g.add(bot);
+            [-1, 1].forEach((sd) => {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, cy + H / 2 + 0.1, 0.14), frameMat);
+                leg.position.set(cx + sd * (W / 2 + 0.12), (cy + H / 2 + 0.1) / 2, cz - 0.04);
+                g.add(leg);
+            });
+            const tex = (() => {
+                const c = document.createElement('canvas'); c.width = 512; c.height = 288;
+                const x = c.getContext('2d');
+                x.fillStyle = '#f1f5f9'; x.fillRect(0, 0, 512, 288);
+                x.fillStyle = '#ef4444'; x.beginPath(); x.roundRect(206, 104, 100, 70, 16); x.fill();
+                x.fillStyle = '#fff'; x.beginPath(); x.moveTo(244, 120); x.lineTo(276, 139); x.lineTo(244, 158); x.closePath(); x.fill();
+                x.fillStyle = '#334155'; x.font = 'bold 26px sans-serif'; x.textAlign = 'center';
+                x.fillText('Dokun, YouTube linki at', 256, 214);
+                x.font = '20px sans-serif'; x.fillStyle = '#64748b'; x.fillText('beraber izleyelim', 256, 244);
+                return new THREE.CanvasTexture(c);
+            })();
+            screen.material = new THREE.MeshBasicMaterial({ map: tex });
+            environmentGroup.add(g);
+            movie.mesh = screen;
+            movie.corners = [[cx - W / 2, cy + H / 2, cz], [cx + W / 2, cy + H / 2, cz], [cx - W / 2, cy - H / 2, cz], [cx + W / 2, cy - H / 2, cz]].map((a) => new THREE.Vector3(...a));
+        }
+        function parseYouTubeId(url) {
+            const u = String(url || '').trim();
+            const m = u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/) || u.match(/^([\w-]{11})$/);
+            return m ? m[1] : null;
+        }
+        function ensureMovieOverlay() {
+            if (movie.overlay) return movie.overlay;
+            const o = document.createElement('div');
+            o.id = 'movie-overlay';
+            o.style.cssText = 'position:fixed;z-index:15;display:none;background:#000;border-radius:4px;overflow:hidden;box-shadow:0 0 40px rgba(255,255,255,.15)';
+            document.body.appendChild(o);
+            movie.overlay = o;
+            return o;
+        }
+        function renderMovieOverlay() {
+            const o = ensureMovieOverlay();
+            o.replaceChildren();
+            if (!movie.current) { o.style.display = 'none'; return; }
+            if (!movie.joined) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.style.cssText = 'width:100%;height:100%;background:rgba(15,23,42,.92);color:#fff;font:600 15px sans-serif;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px';
+                const t1 = document.createElement('span'); t1.textContent = '▶ İzlemeye katıl'; t1.style.fontSize = '18px';
+                const t2 = document.createElement('span'); t2.textContent = `${String(movie.current.by || 'Biri').replace(/[⁠⁡⁢]/g, '')} bir video açtı`; t2.style.cssText = 'font-size:12px;opacity:.75';
+                b.append(t1, t2);
+                b.addEventListener('click', () => { movie.joined = true; SoundFX && SoundFX.duck && SoundFX.duck(true); renderMovieOverlay(); });
+                o.appendChild(b);
+                return;
+            }
+            const start = Math.max(0, Math.floor((Date.now() - movie.current.startAt) / 1000));
+            const f = document.createElement('iframe');
+            f.src = `https://www.youtube-nocookie.com/embed/${movie.current.videoId}?autoplay=1&playsinline=1&rel=0&start=${start}`;
+            f.allow = 'autoplay; encrypted-media; picture-in-picture';
+            f.setAttribute('allowfullscreen', '');
+            f.style.cssText = 'width:100%;height:100%;border:0';
+            o.appendChild(f);
+            const x = document.createElement('button');
+            x.type = 'button'; x.textContent = '✕';
+            x.title = 'Videoyu herkes için kapat';
+            x.style.cssText = 'position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:999px;border:0;background:rgba(0,0,0,.7);color:#fff;cursor:pointer;font-size:13px';
+            x.addEventListener('click', () => stopVideo(state.playerName, true));
+            o.appendChild(x);
+        }
+        function receiveVideo(p) {
+            const id = parseYouTubeId(p.videoId);
+            if (!id || !p.startAt) return;
+            if (movie.current && movie.current.videoId === id && movie.current.startAt === p.startAt) return;
+            movie.current = { videoId: id, startAt: Number(p.startAt), by: p.by || '' };
+            movie.joined = false;
+            if (p.by && p.by !== state.playerName) appendChatMessage('', `🎬 ${String(p.by).replace(/[⁠⁡⁢]/g, '')} perdede bir video açtı. İzlemek için perdeye dokun.`, false, true);
+            renderMovieOverlay();
+        }
+        function stopVideo(byName, broadcast, silent) {
+            if (!movie.current) return;
+            movie.current = null; movie.joined = false;
+            renderMovieOverlay();
+            if (!silent && byName) appendChatMessage('', `🎬 ${String(byName).replace(/[⁠⁡⁢]/g, '')} videoyu kapattı.`, false, true);
+            if (broadcast && openWorldChannel) openWorldChannel.send({ type: 'broadcast', event: 'cf_video_stop', payload: { name: state.playerName } });
+        }
+        function openVideoPrompt() {
+            let m = document.getElementById('video-modal');
+            if (!m) {
+                m = document.createElement('div');
+                m.id = 'video-modal';
+                m.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:12px';
+                const card = document.createElement('div');
+                card.style.cssText = 'background:#111827;border:1px solid #334155;border-radius:10px;padding:16px;width:100%;max-width:420px;color:#e2e8f0;font-family:inherit;display:flex;flex-direction:column;gap:10px';
+                const h = document.createElement('div'); h.textContent = '🎬 Perdede ne izleyelim?'; h.style.cssText = 'font-weight:700;color:#fbbf24';
+                const inp = document.createElement('input'); inp.type = 'url'; inp.placeholder = 'YouTube linkini yapıştır'; inp.id = 'video-url';
+                inp.style.cssText = 'padding:10px;border-radius:6px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:16px';
+                const err = document.createElement('div'); err.style.cssText = 'color:#fb7185;font-size:13px;display:none';
+                const note = document.createElement('div'); note.textContent = 'Video ateş başındaki herkesin perdesinde açılır. Uygunsuz video açanlar uzaklaştırılır.'; note.style.cssText = 'font-size:12px;color:#94a3b8';
+                const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+                const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = 'Vazgeç';
+                cancel.style.cssText = 'padding:8px 14px;border-radius:6px;background:#1f2937;color:#cbd5e1;border:1px solid #334155';
+                const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = 'Perdede aç';
+                ok.style.cssText = 'padding:8px 14px;border-radius:6px;background:#dc2626;color:#fff;border:0;font-weight:700';
+                row.append(cancel, ok);
+                card.append(h, inp, err, note, row);
+                m.appendChild(card);
+                document.body.appendChild(m);
+                cancel.addEventListener('click', () => { m.style.display = 'none'; });
+                m.addEventListener('click', (e) => { if (e.target === m) m.style.display = 'none'; });
+                const go = () => {
+                    const id = parseYouTubeId(inp.value);
+                    if (!id) { err.textContent = 'Geçerli bir YouTube linki değil.'; err.style.display = 'block'; return; }
+                    if (isMutedNow && isMutedNow()) { err.textContent = 'Susturulmuşken video açamazsın.'; err.style.display = 'block'; return; }
+                    const payload = { videoId: id, startAt: Date.now() + 1500, by: state.playerName };
+                    if (openWorldChannel) openWorldChannel.send({ type: 'broadcast', event: 'cf_video', payload });
+                    receiveVideo(payload);
+                    movie.joined = true;
+                    renderMovieOverlay();
+                    appendChatMessage('', '🎬 Videoyu perdede açtın. Diğerleri "İzlemeye katıl"a basınca aynı yerden izleyecek.', false, true);
+                    m.style.display = 'none';
+                };
+                ok.addEventListener('click', go);
+                inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+            }
+            m.style.display = 'flex';
+            const inp = document.getElementById('video-url'); inp.value = ''; m.querySelector('div > div:nth-child(3)').style.display = 'none';
+            setTimeout(() => inp.focus(), 50);
+        }
+        (function initScreenTap() {
+            const ray = new THREE.Raycaster(); const ndc = new THREE.Vector2();
+            let dx = 0, dy = 0;
+            renderer.domElement.addEventListener('pointerdown', (e) => { dx = e.clientX; dy = e.clientY; });
+            renderer.domElement.addEventListener('pointerup', (e) => {
+                if (Math.hypot(e.clientX - dx, e.clientY - dy) > 8) return;
+                if (state.theme !== 'campfire' || state.cfPrivateMode || !movie.mesh) return;
+                const r = renderer.domElement.getBoundingClientRect();
+                ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1; ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+                ray.setFromCamera(ndc, camera);
+                if (ray.intersectObject(movie.mesh, false).length) openVideoPrompt();
+            });
+        })();
+        const _v = new THREE.Vector3();
+        function tickMovie() {
+            const o = movie.overlay;
+            if (!o) return;
+            const show = movie.current && state.theme === 'campfire' && !state.cfPrivateMode && movie.mesh &&
+                document.getElementById('lobby-modal').classList.contains('hidden');
+            if (!show) { o.style.display = 'none'; return; }
+            const r = renderer.domElement.getBoundingClientRect();
+            const pts = movie.corners.map((c) => { _v.copy(c).project(camera); return [r.left + (_v.x + 1) / 2 * r.width, r.top + (1 - _v.y) / 2 * r.height, _v.z]; });
+            if (pts.some((p) => p[2] > 1)) { o.style.display = 'none'; return; }
+            const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+            const L = Math.min(...xs), T = Math.min(...ys), Wd = Math.max(...xs) - L, Hd = Math.max(...ys) - T;
+            o.style.display = 'block';
+            o.style.left = L + 'px'; o.style.top = T + 'px'; o.style.width = Math.max(120, Wd) + 'px'; o.style.height = Math.max(68, Hd) + 'px';
+        }
+
         // ---- Kamp ateşi hayvanları (nadir, sürpriz) ----
         const emojiTexCache = {};
         function emojiTexture(emoji) {
@@ -4324,6 +4545,7 @@
         let extraButtonsTimer = 0;
         function extrasTick(dt, t) {
             tickWildlife(dt, t);
+            try { tickMovie(); } catch (e) {}
             if (typeof tickBeachExtras === 'function') tickBeachExtras(dt, t);
             extraButtonsTimer += dt;
             if (extraButtonsTimer > 0.6) {
@@ -4788,32 +5010,81 @@
             initOpenWorldControls();
             animate();
         });
-        // ===== Kral tacı: takma adın sonuna gizli kod yazan kişinin başında taç döner =====
+        // ===== Taçlar ve etiketler: isim üstünde dönen süsler =====
         const CROWN_MARK = '⁠';
-        const CROWN_HASH = '6e2fb23f031af3d4cfa8f45b40e590c2356e8240d9e822d2ef6a8d0561254cf3';
+        const QUEEN_MARK = '⁡';
+        const SPARKLE_MARK = '⁢';
+        const MEL_HASH = 'b9c0138abfed5228c16b33624392d9b62ae5e3d40ca75871f6cce78297fbc7f4';
+        async function specialNameHash(v) {
+            try {
+                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(v || '').trim().toLocaleLowerCase('tr')));
+                return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) { return ''; }
+        }
+        const KING_HASH = 'de53ae6c1c42222d723dd0316c9a693899ee6bd7587a85e84df72c01704bb49c';
+        const QUEEN_HASH = 'bb9d23550bbd0b69bf98ee3c36eaae3cc87307b35dad3ededa2cbd28b4124b75';
         async function crownCodeOk(code) {
             try {
                 const norm = String(code || '').toLocaleLowerCase('tr').replace(/ı/g, 'i').replace(/ç/g, 'c');
                 const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(norm));
                 const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-                return hex === CROWN_HASH;
-            } catch (e) { return false; }
+                return hex === KING_HASH ? 'king' : hex === QUEEN_HASH ? 'queen' : null;
+            } catch (e) { return null; }
+        }
+        const baseNick = (n) => String(n || '').replace(/[⁠⁡⁢]/g, '').trim().toLocaleLowerCase('tr');
+        const decorMap = {};
+        function setDecor(name, decor) {
+            const k = baseNick(name);
+            if (!k) return;
+            if (decor && (decor.label || decor.icon)) decorMap[k] = { label: decor.label || null, icon: decor.icon || null };
+            else delete decorMap[k];
+            document.querySelectorAll('.name-badge').forEach(decorateCrownBadge);
+        }
+        function myDecor() {
+            try {
+                const d = JSON.parse(localStorage.getItem('ob_decor') || 'null');
+                if (d && baseNick(d.name) === baseNick(state.playerName)) return { label: d.label || null, icon: d.icon || null };
+            } catch (e) {}
+            return null;
+        }
+        let decorRequested = false;
+        function announceMyDecor(ask = true) {
+            if (!modChannel || !state.playerName) return;
+            const d = myDecor();
+            if (d) { setDecor(state.playerName, d); modChannel.send({ type: 'broadcast', event: 'decor_sync', payload: { name: state.playerName, decor: d } }); }
+            if (ask && !decorRequested) { decorRequested = true; modChannel.send({ type: 'broadcast', event: 'decor_request', payload: {} }); }
         }
         function decorateCrownBadge(badge) {
             if (!badge || !badge.classList || !badge.classList.contains('name-badge')) return;
-            const crowned = (badge.textContent || '').includes(CROWN_MARK);
             const parent = badge.parentElement;
             if (!parent) return;
+            const txt = badge.textContent || '';
+            const crown = txt.includes(CROWN_MARK) ? 'king' : txt.includes(QUEEN_MARK) ? 'queen' : txt.includes(SPARKLE_MARK) ? 'sparkle' : '';
+            const d = decorMap[baseNick(txt)] || null;
+            const sig = crown + '|' + (d ? (d.icon || '') + '|' + (d.label || '') : '');
+            if (badge.dataset.deco === sig && (sig === '|' || (badge.previousElementSibling && badge.previousElementSibling.classList.contains('ob-deco')))) return;
+            badge.dataset.deco = sig;
             const prev = badge.previousElementSibling;
-            const has = prev && prev.classList.contains('crown-float');
-            if (crowned && !has) {
-                const c = document.createElement('div');
-                c.className = 'crown-float';
-                c.textContent = '👑';
-                parent.insertBefore(c, badge);
-            } else if (!crowned && has) {
-                prev.remove();
+            if (prev && (prev.classList.contains('ob-deco') || prev.classList.contains('crown-float'))) prev.remove();
+            if (sig === '|') return;
+            const box = document.createElement('div');
+            box.className = 'ob-deco';
+            if (crown || (d && d.icon)) {
+                const f = document.createElement('div');
+                f.className = 'crown-float';
+                if (crown === 'king') { const c = document.createElement('span'); c.textContent = '👑'; f.appendChild(c); }
+                if (crown === 'sparkle') { const c = document.createElement('span'); c.className = 'sparkle-spin'; c.textContent = '✨'; f.appendChild(c); }
+                if (crown === 'queen') { const c = document.createElement('span'); c.className = 'queen-crown'; c.textContent = '👑'; f.appendChild(c); }
+                if (d && d.icon) { const c = document.createElement('span'); c.className = 'deco-icon'; c.textContent = d.icon; f.appendChild(c); }
+                box.appendChild(f);
             }
+            if (d && d.label) {
+                const l = document.createElement('div');
+                l.className = 'ob-label-pill';
+                l.textContent = d.label;
+                box.appendChild(l);
+            }
+            parent.insertBefore(box, badge);
         }
         new MutationObserver((muts) => {
             for (const m of muts) {
