@@ -4376,6 +4376,75 @@
             document.body.appendChild(s);
         }
 
+        // ---- Kulüp: ortak çalma listesi (resmî YouTube videoları, herkes aynı anda aynı yeri duyar) ----
+        const CLUB_PLAYLIST = [
+            { id: 'qBc8cgtcR9A', dur: 148, title: 'Ilkay Sencan & Mahmut Orhan - Şaşkın' },
+            { id: 'cr9MDILiBY0', dur: 182, title: 'ILTIMAS X SUBMARINER (feat. Lvbel C5)' },
+            { id: 'a58xaPrYhcQ', dur: 160, title: 'YAMA' },
+            { id: 'lIdrRRofKm0', dur: 170, title: 'Anyma & Rebūke - Syren' }
+        ];
+        const CLUB_EPOCH = Date.UTC(2026, 10, 28, 0, 0, 0);
+        const clubMusic = { on: false, box: null, frameBox: null, titleEl: null, btn: null, timer: null, idx: -1 };
+        function clubNow() {
+            const total = CLUB_PLAYLIST.reduce((a, t) => a + t.dur, 0);
+            let t = ((Date.now() - CLUB_EPOCH) / 1000) % total;
+            for (let i = 0; i < CLUB_PLAYLIST.length; i++) {
+                if (t < CLUB_PLAYLIST[i].dur) return { i, off: Math.floor(t), left: CLUB_PLAYLIST[i].dur - t };
+                t -= CLUB_PLAYLIST[i].dur;
+            }
+            return { i: 0, off: 0, left: CLUB_PLAYLIST[0].dur };
+        }
+        function ensureClubMusicBox() {
+            if (clubMusic.box) return;
+            const b = document.createElement('div');
+            b.id = 'club-music';
+            b.style.cssText = 'position:fixed;top:64px;left:8px;z-index:20;display:none;align-items:center;gap:8px;background:rgba(17,20,31,.92);border:1px solid #a21caf;border-radius:10px;padding:6px 8px;max-width:min(92vw,360px);color:#f5d0fe;font-size:12px;box-shadow:0 4px 20px rgba(162,28,175,.35)';
+            const fb = document.createElement('div'); fb.style.cssText = 'width:96px;height:54px;border-radius:6px;overflow:hidden;background:#000;flex:none;display:none';
+            const info = document.createElement('div'); info.style.cssText = 'min-width:0;flex:1';
+            const l1 = document.createElement('div'); l1.textContent = '🎧 Kulüp DJ'; l1.style.cssText = 'font-weight:700;color:#f0abfc';
+            const l2 = document.createElement('div'); l2.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85';
+            info.append(l1, l2);
+            const btn = document.createElement('button'); btn.type = 'button';
+            btn.style.cssText = 'flex:none;padding:6px 10px;border-radius:8px;border:0;background:#a21caf;color:#fff;font-weight:700;font-size:12px;cursor:pointer';
+            btn.addEventListener('click', () => { clubMusic.on = !clubMusic.on; renderClubMusic(true); });
+            b.append(fb, info, btn);
+            document.body.appendChild(b);
+            Object.assign(clubMusic, { box: b, frameBox: fb, titleEl: l2, btn });
+        }
+        function renderClubMusic(force) {
+            ensureClubMusicBox();
+            const now = clubNow();
+            const tr = CLUB_PLAYLIST[now.i];
+            clubMusic.titleEl.textContent = '▶ ' + tr.title;
+            clubMusic.btn.textContent = clubMusic.on ? '🔇 Kapat' : '🎵 Müziği aç';
+            if (clubMusic.timer) { clearTimeout(clubMusic.timer); clubMusic.timer = null; }
+            if (!clubMusic.on) {
+                clubMusic.frameBox.replaceChildren(); clubMusic.frameBox.style.display = 'none'; clubMusic.idx = -1;
+                try { SoundFX.setTheme('club'); } catch (e) {}
+                return;
+            }
+            try { SoundFX.setTheme('club_music'); } catch (e) {}
+            if (force || clubMusic.idx !== now.i) {
+                const f = document.createElement('iframe');
+                f.src = `https://www.youtube-nocookie.com/embed/${tr.id}?autoplay=1&playsinline=1&controls=0&rel=0&start=${now.off}`;
+                f.allow = 'autoplay; encrypted-media';
+                f.style.cssText = 'width:100%;height:100%;border:0';
+                clubMusic.frameBox.replaceChildren(f); clubMusic.frameBox.style.display = 'block';
+                clubMusic.idx = now.i;
+            }
+            clubMusic.timer = setTimeout(() => renderClubMusic(false), Math.max(1000, now.left * 1000 + 600));
+        }
+        function tickClubMusic() {
+            const inClub = state.theme === 'club' && document.getElementById('lobby-modal').classList.contains('hidden');
+            ensureClubMusicBox();
+            if (inClub) {
+                if (clubMusic.box.style.display !== 'flex') { clubMusic.box.style.display = 'flex'; renderClubMusic(false); }
+            } else if (clubMusic.box.style.display !== 'none') {
+                clubMusic.box.style.display = 'none';
+                if (clubMusic.on) { clubMusic.on = false; renderClubMusic(false); }
+            }
+        }
+
         // ---- Kamp alanı: büyük beyaz perde, birlikte YouTube izleme ----
         const movie = { mesh: null, corners: null, overlay: null, current: null, joined: false };
         function addMovieScreen() {
@@ -4626,6 +4695,7 @@
         function extrasTick(dt, t) {
             tickWildlife(dt, t);
             try { tickMovie(); } catch (e) {}
+            try { tickClubMusic(); } catch (e) {}
             if (typeof tickBeachExtras === 'function') tickBeachExtras(dt, t);
             extraButtonsTimer += dt;
             if (extraButtonsTimer > 0.6) {
