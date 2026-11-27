@@ -634,7 +634,14 @@
         const PF_STRONG = ['orospu','orspu','pezevenk','siktir','ziktir','amcik','kahpe','fahise','surtuk','kaltak',
             'gavat','yavsak','gotveren','götveren','aminakoy','aminoglu','sikerim','sikeyim','sikecem','sikicem',
             // Hakaretler: kelimenin içinde geçse bile yakalanır ("salaksın", "aptallar", "salaksınsahil")
-            'salak','aptal','gerizekali','dangalak','ahmak','embesil','serefsiz','haysiyetsiz','oglanci'].map(PF_COLLAPSE);
+            'salak','aptal','gerizekali','dangalak','ahmak','embesil','serefsiz','haysiyetsiz','oglanci',
+            // Cinsel içerik ve türetilmiş birleşik küfürler ("pornobagimlisi", "amsiken", "gotsiken", "sexting")
+            'porn','sex','amsik','gotsik','amcig','amcuk','pezeveng'].map(PF_COLLAPSE);
+        // Tek başına kelime olarak yasak olanlar ("tamam", "akşam", "seksen" gibi masum kelimeler etkilenmez)
+        const PF_EXACT_EXTRA = ['am','ami','amı','amın','amina','amına','amini','amını','amda','amdan','amlar',
+            'seks','seksi','seksler','sexy'].map(PF_COLLAPSE);
+        // Bu köklerle başlayan kelimeler yasak (muaf olanlar hariç): "seksüel", "seksiyim"... ama "seksen" serbest
+        const PF_PREFIX = [{ root: 'seks', safe: ['seksen'] }];
         // Tam kelime olarak eşleşenler (ı korunur: "sıkım" ≠ "sikim")
         const PF_EXACT_STRICT = ['sik','sikim','sikime','sikimi','sikimin','amk','aq','amq','oc','ocu','göt','götu','götune','götunu','götlek'].map(PF_COLLAPSE);
         // Kök + Türkçe ek zinciri ("yarağı", "bokum", "ibneler")
@@ -710,7 +717,7 @@
             const looseTokens = pfTokens(text, false);   // ı->i, ö->o
             for (const w of strictTokens) {
                 if (allowExceptions && ALLOWED_SLANG.has(w)) continue;
-                if (PF_EXACT_STRICT.includes(w)) return true;
+                if (PF_EXACT_STRICT.includes(w) || PF_EXACT_EXTRA.includes(w)) return true;
             }
             for (let i = 0; i < looseTokens.length - 1; i++) {
                 if (looseTokens[i] === 'amina' && looseTokens[i + 1].startsWith('ko')) return true;
@@ -718,6 +725,10 @@
             for (const w of looseTokens) {
                 if (allowExceptions && ALLOWED_SLANG.has(w)) continue;
                 for (const bad of PF_STRONG) if (w.includes(PF_COLLAPSE(bad.replace(/ö/g, 'o')))) return true;
+                if (PF_EXACT_EXTRA.includes(w)) return true;
+                for (const p of PF_PREFIX) {
+                    if (w.startsWith(p.root) && !p.safe.some((x) => w.startsWith(x))) return true;
+                }
                 for (const root of PF_ROOTS) {
                     if (w.startsWith(root) && PF_SUFFIX.test(w.slice(root.length))) return true;
                 }
