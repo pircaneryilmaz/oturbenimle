@@ -666,40 +666,50 @@
 
         // Küfür Filtresi (amk, amq, aq hariç)
         const ALLOWED_SLANG = new Set(['amk', 'amq', 'aq']);
-        const BLOCKED_PROFANITY = [
-            'gotten', 'got', 'siker', 'sikey', 'siki', 'sikim', 'siktir', 'sik',
-            'yarrak', 'yarak', 'tasak', 'tassak', 'dasak', 'amcik', 'orospu',
-            'kahpe', 'pezevenk', 'gavat', 'ibne', 'ipne', 'pust', 'pic',
-            'surtuk', 'fahise', 'kaltak', 'dol', 'sikik', 'siksok', 'sikis', 'boktan', 'bok', 'ziktir'
-        ];
+        // ---- Küfür filtresi (v2): kelime bazlı eşleşme, "sıkıldım", "oynayarak", "boks" gibi masum kelimeleri engellemez ----
+        const PF_COLLAPSE = (w) => w.replace(/(.)\1+/g, '$1');
+        // Kelimenin içinde geçmesi bile yeterli olan, masum anlamı olmayan uzun kökler
+        const PF_STRONG = ['orospu','orspu','pezevenk','siktir','ziktir','amcik','kahpe','fahise','surtuk','kaltak',
+            'gavat','yavsak','gotveren','götveren','aminakoy','aminoglu','sikerim','sikeyim','sikecem','sikicem'].map(PF_COLLAPSE);
+        // Tam kelime olarak eşleşenler (ı korunur: "sıkım" ≠ "sikim")
+        const PF_EXACT_STRICT = ['sik','sikim','sikime','sikimi','sikimin','amk','aq','amq','oc','ocu','göt','götu','götune','götunu','götlek'].map(PF_COLLAPSE);
+        // Kök + Türkçe ek zinciri ("yarağı", "bokum", "ibneler")
+        const PF_ROOTS = ['bok','yarak','yarag','tasak','tasag','dasak','dasag','pust','ibne','ipne','pic'].map(PF_COLLAPSE);
+        const PF_SUFFIX = /^(?:lar|ler|im|in|i|u|a|e|da|de|dan|den|la|le|ci|cu|lik|luk|li|lu|si|su|um|un|sin|sun|na|ne|ni|nu|yi|yu|ya|ye|ki)*$/;
 
-        function normalizeTrText(str) {
-            return String(str || '')
-                .toLowerCase()
-                .replace(/ğ/g, 'g')
-                .replace(/ü/g, 'u')
-                .replace(/ş/g, 's')
-                .replace(/ı/g, 'i')
-                .replace(/ö/g, 'o')
-                .replace(/ç/g, 'c')
-                .replace(/[^a-z0-9\s]/g, '');
+        function pfTokens(text, keepDotless) {
+            let t = String(text || '').toLocaleLowerCase('tr')
+                .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ç/g, 'c');
+            if (!keepDotless) t = t.replace(/ı/g, 'i').replace(/ö/g, 'o');
+            // "s i k t i r" -> "siktir", "s.i.k.t.i.r" -> "siktir"
+            t = t.replace(/(?:^|\s)((?:[a-zıö]\s+){2,}[a-zıö])(?=\s|$)/g, (m, g) => ' ' + g.replace(/\s+/g, ''));
+            t = t.replace(/(?<=[a-zıö])[.\-_*'’`~]+(?=[a-zıö])/g, '');
+            t = t.replace(/[^a-z0-9ıö\s@$!]/g, ' ');
+            return t.split(/\s+/).filter(Boolean).map((w) => {
+                if ((w.match(/[a-zıö]/g) || []).length >= 2) {
+                    w = w.replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a')
+                         .replace(/5/g, 's').replace(/7/g, 't').replace(/@/g, 'a').replace(/\$/g, 's').replace(/!/g, 'i');
+                }
+                return PF_COLLAPSE(w.replace(/[^a-zıö]/g, ''));
+            }).filter(Boolean);
         }
 
         function containsProfanity(text, allowExceptions = true) {
-            return false; // Filtre geçici olarak kaldırıldı (yeniden yazılacak)
-            const norm = normalizeTrText(text);
-            const words = norm.split(/\s+/).filter(Boolean);
-            for (const word of words) {
-                if (allowExceptions && ALLOWED_SLANG.has(word)) continue;
-                for (const bad of BLOCKED_PROFANITY) {
-                    if (word === bad || (bad.length >= 3 && word.includes(bad))) {
-                        return true;
-                    }
-                }
+            const strictTokens = pfTokens(text, true);   // ı ve ö korunur
+            const looseTokens = pfTokens(text, false);   // ı->i, ö->o
+            for (const w of strictTokens) {
+                if (allowExceptions && ALLOWED_SLANG.has(w)) continue;
+                if (PF_EXACT_STRICT.includes(w)) return true;
             }
-            const compact = words.filter(w => !(allowExceptions && ALLOWED_SLANG.has(w))).join('');
-            for (const bad of BLOCKED_PROFANITY) {
-                if (bad.length >= 4 && compact.includes(bad)) return true;
+            for (let i = 0; i < looseTokens.length - 1; i++) {
+                if (looseTokens[i] === 'amina' && looseTokens[i + 1].startsWith('ko')) return true;
+            }
+            for (const w of looseTokens) {
+                if (allowExceptions && ALLOWED_SLANG.has(w)) continue;
+                for (const bad of PF_STRONG) if (w.includes(PF_COLLAPSE(bad.replace(/ö/g, 'o')))) return true;
+                for (const root of PF_ROOTS) {
+                    if (w.startsWith(root) && PF_SUFFIX.test(w.slice(root.length))) return true;
+                }
             }
             return false;
         }
