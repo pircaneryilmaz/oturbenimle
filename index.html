@@ -434,6 +434,11 @@
                         <span class="pixel-title text-xs">Odun At</span>
                     </button>
 
+                    <button type="button" id="btn-fan-grill" class="hidden pixel-btn bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1">
+                        <span>💨</span>
+                        <span class="pixel-title text-xs">Mangalı Yelle</span>
+                    </button>
+
                     <button type="button" id="btn-jump-fire" class="hidden pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
                         <span>🔥</span>
                         <span class="pixel-title text-xs">Ateşten Atla</span>
@@ -1396,6 +1401,87 @@
             fireLight.position.set(0, 1.15, 0);
             environmentGroup.add(fireLight);
             animatedObjects.fireLight = fireLight;
+            addCampfireExtras();
+        }
+
+        // Kamp Ateşi eklentileri: mangal (et + duman), orman, çadırlar
+        function addCampfireExtras() {
+            // Orman: arka ve yan taraflarda ağaç halkası (kamera tarafı boş kalır)
+            const leafMat = [0x14532d, 0x166534, 0x0f3d24].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 1 }));
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a2c17, roughness: 1 });
+            for (let i = 0; i < 26; i++) {
+                const ang = (i / 26) * Math.PI * 2 + (i % 3) * 0.07;
+                const r = 9.5 + (i % 4) * 1.1;
+                const x = Math.cos(ang) * r, z = Math.sin(ang) * r;
+                if (z > 3.5 || Math.abs(x) > 13 || z < -13) continue;
+                const h = 3.2 + (i % 5) * 0.55;
+                const tree = new THREE.Group();
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 1.1, 6), trunkMat);
+                trunk.position.y = 0.55;
+                const top = new THREE.Mesh(new THREE.ConeGeometry(1.1 + (i % 3) * 0.2, h, 7), leafMat[i % 3]);
+                top.position.y = 1.1 + h / 2;
+                tree.add(trunk, top);
+                tree.position.set(x, 0, z);
+                environmentGroup.add(tree);
+            }
+            // Küçük çadırlar
+            const tentColors = [0xdc2626, 0xf59e0b, 0x2563eb, 0x7c3aed];
+            [[-8.6, -6.4], [-3.2, -9.4], [4.4, -9.0], [9.0, -5.4]].forEach(([x, z], k) => {
+                const tent = new THREE.Mesh(new THREE.ConeGeometry(1.35, 1.5, 4), new THREE.MeshStandardMaterial({ color: tentColors[k], roughness: 0.9 }));
+                tent.rotation.y = Math.PI / 4 + k * 0.3;
+                tent.position.set(x, 0.75, z);
+                environmentGroup.add(tent);
+                const door = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.8), new THREE.MeshBasicMaterial({ color: 0x111827 }));
+                door.position.set(x + Math.sin(tent.rotation.y + Math.PI / 4) * 0.62, 0.4, z + Math.cos(tent.rotation.y + Math.PI / 4) * 0.62);
+                door.rotation.y = tent.rotation.y + Math.PI / 4;
+                environmentGroup.add(door);
+            });
+
+            // Mangal
+            const gx = -5.2, gz = 3.2;
+            const grill = new THREE.Group();
+            const metal = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.6, metalness: 0.5 });
+            const bowl = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 0.8), metal);
+            bowl.position.y = 0.75;
+            grill.add(bowl);
+            [[-0.65, -0.3], [0.65, -0.3], [-0.65, 0.3], [0.65, 0.3]].forEach(([lx, lz]) => {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.75, 6), metal);
+                leg.position.set(lx, 0.375, lz);
+                grill.add(leg);
+            });
+            const coals = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.06, 0.65), new THREE.MeshBasicMaterial({ color: 0xff4d00 }));
+            coals.position.y = 0.92;
+            grill.add(coals);
+            animatedObjects.grillCoals = coals;
+            for (let k = 0; k < 7; k++) {
+                const bar = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.02, 0.02), metal);
+                bar.position.set(0, 1.02, -0.27 + k * 0.09);
+                grill.add(bar);
+            }
+            const meatColors = [0x7c2d12, 0x92400e, 0x6b1d0f];
+            [-0.42, 0, 0.42].forEach((mx, k) => {
+                const meat = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.1, 0.24), new THREE.MeshStandardMaterial({ color: meatColors[k], roughness: 0.8 }));
+                meat.position.set(mx, 1.09, (k % 2 ? 0.08 : -0.08));
+                meat.rotation.y = 0.2 * (k - 1);
+                grill.add(meat);
+            });
+            const glow = new THREE.PointLight(0xff6a00, 0.7, 3.5);
+            glow.position.set(0, 1.2, 0);
+            grill.add(glow);
+            grill.position.set(gx, 0, gz);
+            grill.rotation.y = 0.5;
+            environmentGroup.add(grill);
+
+            // Duman parçacıkları
+            animatedObjects.grillSmoke = [];
+            for (let k = 0; k < 14; k++) {
+                const mat = new THREE.MeshBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.3, depthWrite: false });
+                const puff = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), mat);
+                puff.position.set(gx, 1.2, gz);
+                environmentGroup.add(puff);
+                animatedObjects.grillSmoke.push({ mesh: puff, phase: k / 14, dx: (Math.random() - 0.5) * 0.5 });
+            }
+            animatedObjects.grillBase = { x: gx, z: gz };
         }
 
         function syncCampfireCircleLayout() {
@@ -1675,6 +1761,7 @@
             animatedObjects.fireLight = null;
             animatedObjects.flames = [];
             animatedObjects.fallingLogs = [];
+            animatedObjects.grillSmoke = [];
             animatedObjects.clubLights = [];
             animatedObjects.clubEqualizer = [];
             animatedObjects.seaWaves = [];
@@ -1693,6 +1780,7 @@
             joyZone.classList.add('hidden');
             owSocialBar.classList.add('hidden');
             woodBtn.classList.add('hidden');
+            document.getElementById('btn-fan-grill').classList.add('hidden');
             jumpFireBtn.classList.add('hidden');
             clubDanceBtn.classList.add('hidden');
             clubTableBtn.classList.add('hidden');
@@ -1703,6 +1791,7 @@
                 buildCampfireScene();
                 if (state.mySeatIndex !== -1) {
                     woodBtn.classList.remove('hidden');
+                document.getElementById('btn-fan-grill').classList.remove('hidden');
                     jumpFireBtn.classList.remove('hidden');
                 }
             } else if (themeId === 'club') {
@@ -1988,6 +2077,7 @@
             document.getElementById('ow-consent-banner').classList.add('hidden');
             document.getElementById('cf-player-bar').classList.add('hidden');
             document.getElementById('btn-throw-wood').classList.add('hidden');
+            document.getElementById('btn-fan-grill').classList.add('hidden');
             document.getElementById('btn-jump-fire').classList.add('hidden');
             document.getElementById('btn-club-dance').classList.add('hidden');
             document.getElementById('btn-club-table').classList.add('hidden');
@@ -2410,6 +2500,12 @@
                     if (!payload || payload.id === CLIENT_ID) return;
                     showOpenWorldBubble(payload.id, payload.text);
                     appendChatMessage(payload.name, payload.text, false);
+                })
+                .on('broadcast', { event: 'cf_fan_grill' }, ({ payload }) => {
+                    if (payload && payload.id !== CLIENT_ID) {
+                        animatedObjects.grillFanUntil = clock.getElapsedTime() + 4;
+                        showOpenWorldBubble(payload.id, 'Mangalı yelledi! 💨');
+                    }
                 })
                 .on('broadcast', { event: 'cf_throw_wood' }, ({ payload }) => {
                     if (!payload || payload.id === CLIENT_ID) return;
@@ -3771,6 +3867,14 @@
             startRealMatchmaking();
         });
         document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmaking);
+        document.getElementById('btn-fan-grill').addEventListener('click', () => {
+            if (state.theme !== 'campfire') return;
+            animatedObjects.grillFanUntil = clock.getElapsedTime() + 4;
+            showOpenWorldBubble(CLIENT_ID, 'Mangalı yelledim! 💨');
+            if (openWorldChannel) {
+                openWorldChannel.send({ type: 'broadcast', event: 'cf_fan_grill', payload: { id: CLIENT_ID } });
+            }
+        });
         document.getElementById('btn-match-suggest-campfire').addEventListener('click', () => {
             cancelMatchmaking();
             state.theme = 'campfire';
@@ -4019,6 +4123,21 @@
                         0.55 + fuelScale * 0.55
                     );
                 });
+            }
+
+            if (state.theme === 'campfire' && animatedObjects.grillSmoke && animatedObjects.grillSmoke.length) {
+                const fan = (animatedObjects.grillFanUntil || 0) > t ? 1 : 0;
+                const base = animatedObjects.grillBase;
+                animatedObjects.grillSmoke.forEach((sp) => {
+                    const life = (t * (0.28 + fan * 0.22) + sp.phase) % 1;
+                    sp.mesh.position.set(base.x + sp.dx * life * 2 + Math.sin(t + sp.phase * 9) * 0.1, 1.25 + life * (2.4 + fan * 0.8), base.z + Math.cos(t + sp.phase * 7) * 0.08);
+                    const sc = 0.5 + life * (1.6 + fan * 0.8);
+                    sp.mesh.scale.set(sc, sc, sc);
+                    sp.mesh.material.opacity = (1 - life) * (0.28 + fan * 0.3);
+                });
+                if (animatedObjects.grillCoals) {
+                    animatedObjects.grillCoals.material.color.setHex(fan ? 0xffb020 : (Math.sin(t * 5) > 0 ? 0xff4d00 : 0xe63e00));
+                }
             }
 
             for (let i = animatedObjects.fallingLogs.length - 1; i >= 0; i--) {
