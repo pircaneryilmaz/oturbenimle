@@ -123,7 +123,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            transform: translateY(-50%);
+            transform: translateY(-100%);
             pointer-events: none;
         }
 
@@ -354,7 +354,7 @@
     <div id="bottom-chat-bar" class="hidden fixed bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex flex-col items-center pointer-events-none pb-[env(safe-area-inset-bottom)]">
         <div class="w-full max-w-xl flex flex-col gap-1.5 pointer-events-auto">
 
-            <div id="chat-feed" class="glass-panel px-2.5 py-2 max-h-24 sm:max-h-28 overflow-y-auto custom-scroll flex flex-col gap-1 text-xs sm:text-sm"></div>
+            <div id="chat-feed" class="glass-panel px-2.5 py-2 max-h-32 sm:max-h-36 overflow-y-auto custom-scroll flex flex-col gap-1 text-sm sm:text-base"></div>
 
             <!-- Menü Çekmecesi -->
             <div id="order-drawer" class="hidden glass-panel p-2.5 flex flex-col gap-2">
@@ -378,6 +378,9 @@
             <div id="cf-player-bar" class="hidden glass-panel border-orange-500/70 px-2.5 py-1.5 flex items-center justify-between gap-2">
                 <span id="cf-selected-name" class="text-xs font-semibold text-orange-200 truncate">Oyuncu seçildi</span>
                 <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" id="btn-cf-gift" class="pixel-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 text-[11px] font-bold">
+                        🎁 Bir Şey Ismarla
+                    </button>
                     <button type="button" id="btn-cf-private" class="pixel-btn bg-orange-600 hover:bg-orange-500 text-white px-2.5 py-1 text-[11px] font-bold">
                         🔥 Gruptan Ayrı Baş Başa Takıl
                     </button>
@@ -818,7 +821,7 @@
                 ambientLight: 0x93c5fd,
                 menu: [
                     { id: 'marshmallow', icon: '🍡', name: 'Közde Marshmallow', type: 'food', color: 0xf8fafc, bites: 3, actionText: 'Ye', treatMsg: 'Sana Közde Marshmallow ısmarlamak istedim 🍡' },
-                    { id: 'camp_tea', icon: '🍵', name: 'Demlik Kamp Çayı', type: 'drink', color: 0xb45309, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Demlik Kamp Çayı ısmarlamak istedim 🍵' },
+                    { id: 'camp_tea', icon: '🍵', name: 'Tavşan Kanı Çay', type: 'drink', color: 0xb45309, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Demlik Kamp Çayı ısmarlamak istedim 🍵' },
                     { id: 'hot_choco', icon: '🍫', name: 'Sıcak Çikolata', type: 'drink', color: 0x5c2d16, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Sıcak Çikolata ısmarlamak istedim 🍫' },
                     { id: 'roasted_corn', icon: '🌽', name: 'Közlenmiş Mısır', type: 'food', color: 0xfacc15, bites: 4, actionText: 'Ye', treatMsg: 'Sana Közlenmiş Mısır ısmarlamak istedim 🌽' }
                 ]
@@ -1510,8 +1513,10 @@
                 tableGroup.add(chair);
                 cfChairMeshes.push(chair);
 
-                p.targetX = cx;
-                p.targetZ = cz;
+                if (!(p.awayUntil && p.awayUntil > Date.now())) {
+                    p.targetX = cx;
+                    p.targetZ = cz;
+                }
                 p.homeX = cx;
                 p.homeZ = cz;
                 if (p.isMe) {
@@ -1988,9 +1993,10 @@
             const target = state.owPlayers[playerId];
             if (!target || target.isMe) return;
 
-            if (state.theme === 'campfire' && !state.cfPrivateMode) {
+            if ((state.theme === 'campfire' && !state.cfPrivateMode) || state.theme === 'club') {
                 state.cfSelectedPlayerId = playerId;
-                document.getElementById('cf-selected-name').textContent = `🔥 ${target.name} seçildi`;
+                document.getElementById('cf-selected-name').textContent = `${state.theme === 'club' ? '🪩' : '🔥'} ${target.name} seçildi`;
+                document.getElementById('btn-cf-private').classList.toggle('hidden', state.theme !== 'campfire');
                 document.getElementById('cf-player-bar').classList.remove('hidden');
             }
         }
@@ -2056,6 +2062,7 @@
             }
 
             state.mySeatIndex = -1;
+            state.roomShard = 0;
             state.seats = [null, null];
             state.heldItems = [null, null];
             state.isDancing = false;
@@ -2128,7 +2135,11 @@
 
         function renderMenuDrawer() {
             const t = THEMES[state.theme] || THEMES.cafe;
-            document.getElementById('order-drawer-title').textContent = `${t.icon} ${t.name.toUpperCase()} MENÜSÜ`;
+            const giftTarget = state.giftTargetId && state.owPlayers[state.giftTargetId];
+            if (!giftTarget) state.giftTargetId = null;
+            document.getElementById('order-drawer-title').textContent = giftTarget
+                ? `🎁 ${giftTarget.name.toUpperCase()} KİŞİSİNE ISMARLA`
+                : `${t.icon} ${t.name.toUpperCase()} MENÜSÜ`;
             const grid = document.getElementById('order-items-grid');
             grid.innerHTML = '';
 
@@ -2150,18 +2161,22 @@
                 const selfBtn = document.createElement('button');
                 selfBtn.type = 'button';
                 selfBtn.className = 'pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-2 py-1 text-[11px] font-semibold';
-                selfBtn.textContent = isMultiRoom ? 'Ismarla' : 'Al';
+                selfBtn.textContent = (isMultiRoom && giftTarget) ? 'Ismarla' : 'Al';
                 selfBtn.addEventListener('click', () => {
                     document.getElementById('order-drawer').classList.add('hidden');
                     if (isMultiRoom) {
-                        showOpenWorldBubble(CLIENT_ID, item.treatMsg);
-                        appendChatMessage(state.playerName, item.treatMsg, true);
+                        const itemName = item.name.toLocaleLowerCase('tr');
+                        const msg = giftTarget
+                            ? `${giftTarget.name}, sana ${itemName} ısmarlayayım ${item.icon}`
+                            : `Güzel bir ${itemName} alayım ben ${item.icon}`;
+                        state.giftTargetId = null;
+                        showOpenWorldBubble(CLIENT_ID, msg);
+                        appendChatMessage(state.playerName, msg, true);
+                        const channel = openWorldChannel || roomChannel;
                         if (openWorldChannel) {
-                            openWorldChannel.send({
-                                type: 'broadcast',
-                                event: 'ow_chat',
-                                payload: { id: CLIENT_ID, name: state.playerName, text: item.treatMsg }
-                            });
+                            openWorldChannel.send({ type: 'broadcast', event: 'ow_chat', payload: { id: CLIENT_ID, name: state.playerName, text: msg } });
+                        } else if (roomChannel) {
+                            roomChannel.send({ type: 'broadcast', event: 'chat_msg', payload: { senderId: CLIENT_ID, name: state.playerName, text: msg } });
                         }
                         return;
                     }
@@ -2315,6 +2330,8 @@
         const ROOM_CAPACITY = 15;
         function enterCampfireGroup(shard = 1) {
             cancelMatchmaking();
+            state.roomShard = shard;
+            updatePresenceLocation('campfire');
             document.getElementById('lobby-modal').classList.add('hidden');
             clearGroup(avatarsGroup);
             state.owPlayers = {};
@@ -2357,7 +2374,7 @@
                     if (!roomChecked) {
                         roomChecked = true;
                         const others = Object.values(pState).flat().filter((u) => u && u.id && u.id !== CLIENT_ID).length;
-                        if (others >= ROOM_CAPACITY && shard < 30) { enterCampfireGroup(shard + 1); return; }
+                        if (others >= ROOM_CAPACITY && shard < 30) { appendChatMessage('', `Oda ${shard} dolu, Oda ${shard + 1}'e alınıyorsun...`, false, true); enterCampfireGroup(shard + 1); return; }
                         if (shard > 1) {
                             document.getElementById('hud-theme-name').textContent += ` • Oda ${shard}`;
                         }
@@ -2380,7 +2397,8 @@
                 })
                 .on('broadcast', { event: 'cf_fan_grill' }, ({ payload }) => {
                     if (payload && payload.id !== CLIENT_ID) {
-                        animatedObjects.grillFanUntil = clock.getElapsedTime() + 4;
+                        animatedObjects.grillFanUntil = clock.getElapsedTime() + 5.5;
+                        walkPlayerToGrill(payload.id);
                         showOpenWorldBubble(payload.id, 'Mangalı yelledi! 💨');
                     }
                 })
@@ -2428,6 +2446,7 @@
         }
 
         function enterPrivateCampfireRoom(roomId, mySeatIdx, partnerProfile) {
+            state.roomShard = 0;
             if (openWorldChannel && sbClient) {
                 sbClient.removeChannel(openWorldChannel);
                 openWorldChannel = null;
@@ -2474,6 +2493,8 @@
         }
 
         function enterClubMulti(shard = 1) {
+            state.roomShard = shard;
+            updatePresenceLocation('club');
             cancelMatchmaking();
             document.getElementById('lobby-modal').classList.add('hidden');
             clearGroup(avatarsGroup);
@@ -2524,7 +2545,7 @@
                     if (!roomChecked) {
                         roomChecked = true;
                         const others = Object.values(pState).flat().filter((u) => u && u.id && u.id !== CLIENT_ID).length;
-                        if (others >= ROOM_CAPACITY && shard < 30) { enterClubMulti(shard + 1); return; }
+                        if (others >= ROOM_CAPACITY && shard < 30) { appendChatMessage('', `Oda ${shard} dolu, Oda ${shard + 1}'e alınıyorsun...`, false, true); enterClubMulti(shard + 1); return; }
                         if (shard > 1) {
                             document.getElementById('hud-theme-name').textContent += ` • Oda ${shard}`;
                         }
@@ -2969,6 +2990,7 @@
                         id: CLIENT_ID,
                         name: state.playerName || 'Misafir',
                         theme: pendingPresenceTheme || state.theme,
+                        room: currentRoomForPresence(),
                         joinedAt: new Date().toISOString()
                     });
                 } catch (err) {
@@ -3173,6 +3195,7 @@
                                 id: CLIENT_ID,
                                 name: state.playerName || 'Misafir',
                                 theme: state.theme,
+                                room: currentRoomForPresence(),
                                 joinedAt: new Date().toISOString()
                             });
                             syncCount();
@@ -3264,11 +3287,11 @@
             countActivity('joins', state.theme);
 
             if (state.theme === 'campfire') {
-                enterCampfireGroup();
+                enterCampfireGroup(state.preferredShard || 1);
                 return;
             }
             if (state.theme === 'club') {
-                enterClubMulti();
+                enterClubMulti(state.preferredShard || 1);
                 return;
             }
 
@@ -3547,8 +3570,13 @@
                         <div class="text-[11px] text-slate-400 leading-tight mt-0.5">${escapeHtml(t.desc)}</div>
                     </div>
                 `;
+                if (t.id === 'campfire' || t.id === 'club') {
+                    const roomsEl = buildRoomChips(t.id, () => card.click());
+                    if (roomsEl) card.querySelector('.min-w-0.flex-1').appendChild(roomsEl);
+                }
                 card.addEventListener('click', () => {
                     userHasInteracted = true;
+                    if (state.theme !== t.id) state.preferredShard = 0;
                     state.theme = t.id;
                     const matchBtn = document.getElementById('btn-auto-match');
                     if (t.id === 'campfire') matchBtn.textContent = '🔥 Kamp Ateşine Katıl';
@@ -3611,7 +3639,8 @@
         document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmaking);
         document.getElementById('btn-fan-grill').addEventListener('click', () => {
             if (state.theme !== 'campfire') return;
-            animatedObjects.grillFanUntil = clock.getElapsedTime() + 4;
+            animatedObjects.grillFanUntil = clock.getElapsedTime() + 5.5;
+            walkPlayerToGrill(CLIENT_ID);
             showOpenWorldBubble(CLIENT_ID, 'Mangalı yelledim! 💨');
             if (openWorldChannel) {
                 openWorldChannel.send({ type: 'broadcast', event: 'cf_fan_grill', payload: { id: CLIENT_ID } });
@@ -3824,6 +3853,7 @@
             requestAnimationFrame(animate);
             const dt = Math.min(clock.getDelta(), 0.05);
             const t = clock.getElapsedTime();
+            try { extrasTick(dt, t); } catch (e) {}
 
             if (animatedObjects.fireLight) {
                 state.fireFuel = Math.max(0.28, state.fireFuel - dt * 0.028);
@@ -4027,6 +4057,198 @@
             controls.update();
             renderer.render(scene, camera);
             labelRenderer.render(scene, camera);
+        }
+
+        // =====================================================================
+        // EKLER (1): Oda seçimi, mangal yürüyüşü, ısmarlama, karaktere tıklama, kamp hayvanları
+        // =====================================================================
+        function currentRoomForPresence() {
+            const inMulti = (state.theme === 'campfire' && !state.cfPrivateMode) || state.theme === 'club';
+            return inMulti && state.roomShard ? state.roomShard : 0;
+        }
+
+        // Lobide Kamp Ateşi / Gece Kulübü için "Oda 1 · 15/15 DOLU · Oda 2 · 3/15" göstergesi
+        function buildRoomChips(themeId, selectCard) {
+            const rooms = {};
+            Object.values(activeUsersMap).forEach((u) => {
+                if (u && u.theme === themeId && Number(u.room) > 0) rooms[u.room] = (rooms[u.room] || 0) + 1;
+            });
+            const used = Object.keys(rooms).map(Number);
+            let maxRoom = Math.max(1, ...used);
+            const allFull = Array.from({ length: maxRoom }, (_, i) => (rooms[i + 1] || 0) >= ROOM_CAPACITY).every(Boolean);
+            if (allFull) maxRoom += 1;
+            if (!used.length) return null; // kimse yokken sade kalsın
+            const wrap = document.createElement('div');
+            wrap.className = 'flex flex-wrap gap-1 mt-1.5';
+            for (let r = 1; r <= maxRoom; r++) {
+                const n = rooms[r] || 0;
+                const full = n >= ROOM_CAPACITY;
+                const chip = document.createElement('span');
+                const selected = state.theme === themeId && state.preferredShard === r;
+                chip.className = 'text-[10px] px-1.5 py-0.5 rounded border ' + (full
+                    ? 'border-rose-700 bg-rose-950/80 text-rose-300 cursor-not-allowed'
+                    : (selected ? 'border-amber-400 bg-amber-600 text-white cursor-pointer' : 'border-emerald-700 bg-emerald-950/80 text-emerald-300 cursor-pointer'));
+                chip.textContent = full ? `Oda ${r} · ${n}/${ROOM_CAPACITY} DOLU` : `Oda ${r} · ${n}/${ROOM_CAPACITY}`;
+                if (!full) {
+                    chip.setAttribute('role', 'button');
+                    chip.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (state.theme !== themeId) selectCard();
+                        state.preferredShard = r;
+                        const matchBtn = document.getElementById('btn-auto-match');
+                        matchBtn.textContent = themeId === 'campfire' ? `🔥 Kamp Ateşi – Oda ${r}'e Katıl` : `🪩 Gece Kulübü – Oda ${r}'e Gir`;
+                        renderThemeCards();
+                    });
+                }
+                wrap.appendChild(chip);
+            }
+            return wrap;
+        }
+
+        // Mangalı yelle: sandalyeden kalk, mangala yürü, yelle, yerine dön
+        function walkPlayerToGrill(playerId) {
+            const p = state.owPlayers[playerId];
+            const base = animatedObjects.grillBase;
+            if (!p || !base) return;
+            const homeX = typeof p.homeX === 'number' ? p.homeX : p.x;
+            const homeZ = typeof p.homeZ === 'number' ? p.homeZ : p.z;
+            p.awayUntil = Date.now() + 5200;
+            p.targetX = base.x + 1.05;
+            p.targetZ = base.z - 0.2;
+            setTimeout(() => {
+                const pp = state.owPlayers[playerId];
+                if (!pp) return;
+                pp.targetX = homeX;
+                pp.targetZ = homeZ;
+                setTimeout(() => { if (state.owPlayers[playerId]) state.owPlayers[playerId].awayUntil = 0; }, 1200);
+            }, 4000);
+        }
+
+        document.getElementById('btn-cf-gift').addEventListener('click', () => {
+            const targetId = state.cfSelectedPlayerId;
+            if (!targetId || !state.owPlayers[targetId]) return;
+            state.giftTargetId = targetId;
+            document.getElementById('cf-player-bar').classList.add('hidden');
+            document.getElementById('teleport-drawer').classList.add('hidden');
+            renderMenuDrawer();
+            document.getElementById('order-drawer').classList.remove('hidden');
+        });
+        document.getElementById('btn-close-order').addEventListener('click', () => { state.giftTargetId = null; });
+        document.getElementById('btn-toggle-menu').addEventListener('click', () => { state.giftTargetId = null; }, true);
+
+        // Karakterin kendisine dokununca da seçilsin (sadece isme değil)
+        (function initCharacterTap() {
+            const ray = new THREE.Raycaster();
+            const ndc = new THREE.Vector2();
+            let downX = 0, downY = 0;
+            renderer.domElement.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
+            renderer.domElement.addEventListener('pointerup', (e) => {
+                if (Math.hypot(e.clientX - downX, e.clientY - downY) > 8) return; // sürükleme
+                if (!((state.theme === 'campfire' && !state.cfPrivateMode) || state.theme === 'club')) return;
+                const rect = renderer.domElement.getBoundingClientRect();
+                ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+                ray.setFromCamera(ndc, camera);
+                const others = Object.values(state.owPlayers).filter((p) => !p.isMe && p.sprite);
+                const hits = ray.intersectObjects(others.map((p) => p.sprite), false);
+                if (!hits.length) return;
+                const hit = others.find((p) => p.sprite === hits[0].object);
+                if (hit) handlePlayerInteractionClick(hit.id);
+            });
+        })();
+
+        // ---- Kamp ateşi hayvanları (nadir, sürpriz) ----
+        const emojiTexCache = {};
+        function emojiTexture(emoji) {
+            if (emojiTexCache[emoji]) return emojiTexCache[emoji];
+            const c = document.createElement('canvas');
+            c.width = c.height = 128;
+            const g = c.getContext('2d');
+            g.font = '100px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+            g.textAlign = 'center';
+            g.textBaseline = 'middle';
+            g.fillText(emoji, 64, 70);
+            const tex = new THREE.CanvasTexture(c);
+            emojiTexCache[emoji] = tex;
+            return tex;
+        }
+        function makeEmojiSprite(emoji, size) {
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTexture(emoji), transparent: true, depthWrite: false }));
+            sp.scale.set(size, size, 1);
+            return sp;
+        }
+
+        const ANIMALS = [
+            { key: 'fox', emoji: '🦊', size: 0.95, speed: 2.0, w: 3, msg: '🦊 Çalıların arasından bir tilki çıktı!' },
+            { key: 'cat', emoji: '🐈', size: 0.8, speed: 2.1, w: 3, msg: '🐈 Bir kedi kampa uğradı!' },
+            { key: 'dog', emoji: '🐕', size: 0.95, speed: 2.3, w: 2, msg: '🐕 Bir köpek koşarak geçti!' },
+            { key: 'owl', emoji: '🦉', size: 0.8, speed: 2.6, w: 2, fly: true, msg: '🦉 Tepeden bir baykuş süzüldü... hu hu!' },
+            { key: 'bear', emoji: '🐻', size: 1.7, speed: 1.0, w: 1, msg: '🐻 Uzaktan bir ayı geçiyor! Sessiz olun...' }
+        ];
+        const wildlife = { next: 0, active: null };
+        function scheduleNextAnimal(t) { wildlife.next = t + 35 + Math.random() * 55; }
+
+        function spawnAnimal(t) {
+            const total = ANIMALS.reduce((a, b) => a + b.w, 0);
+            let r = Math.random() * total, def = ANIMALS[0];
+            for (const a of ANIMALS) { r -= a.w; if (r <= 0) { def = a; break; } }
+            const dir = Math.random() < 0.5 ? 1 : -1;
+            const sprite = makeEmojiSprite(def.emoji, def.size);
+            // emojiler sola bakıyor: sağa giderken ters çevir
+            if (dir > 0) sprite.material.rotation = 0;
+            sprite.scale.x = def.size * (dir > 0 ? -1 : 1);
+            const crossFire = def.key === 'cat' && Math.random() < 0.45;
+            const z = crossFire ? 0 : -(5.5 + Math.random() * 3);
+            const y = def.fly ? 4.2 + Math.random() * 1.2 : def.size / 2;
+            sprite.position.set(-13 * dir, y, z);
+            environmentGroup.add(sprite);
+            wildlife.active = { def, sprite, dir, x: -13 * dir, z, y, crossFire, born: t };
+            appendChatMessage('', crossFire ? '🐈 Bir kedi ateşe doğru koşuyor!' : def.msg, false, true);
+        }
+
+        function tickWildlife(dt, t) {
+            if (state.theme !== 'campfire' || !document.getElementById('lobby-modal').classList.contains('hidden')) {
+                if (wildlife.active) { environmentGroup.remove(wildlife.active.sprite); wildlife.active = null; }
+                if (!wildlife.next || wildlife.next < t) scheduleNextAnimal(t);
+                return;
+            }
+            if (!wildlife.active) {
+                if (!wildlife.next) scheduleNextAnimal(t);
+                if (t >= wildlife.next) spawnAnimal(t);
+                return;
+            }
+            const a = wildlife.active;
+            if (!a.sprite.parent) { wildlife.active = null; scheduleNextAnimal(t); return; }
+            a.x += a.dir * a.def.speed * dt;
+            let y = a.y;
+            if (a.def.fly) {
+                y = a.y + Math.sin(t * 3) * 0.25;
+                a.sprite.scale.y = a.def.size * (0.85 + Math.abs(Math.sin(t * 9)) * 0.2);
+            } else {
+                y = a.y + Math.abs(Math.sin(t * 10)) * 0.06; // yürüme sekmesi
+                if (a.crossFire && Math.abs(a.x) < 1.3) {
+                    const k = 1 - Math.abs(a.x) / 1.3; // ateşin üstünden zıpla
+                    y = a.y + Math.sin(k * Math.PI / 2) * 1.5;
+                    if (!a.jumpedMsg && Math.abs(a.x) < 0.25) { a.jumpedMsg = true; appendChatMessage('', '🐈🔥 Kedi ateşin üstünden atladı!', false, true); }
+                }
+            }
+            a.sprite.position.set(a.x, y, a.z);
+            if (Math.abs(a.x) > 14) {
+                environmentGroup.remove(a.sprite);
+                wildlife.active = null;
+                scheduleNextAnimal(t);
+            }
+        }
+
+        let extraButtonsTimer = 0;
+        function extrasTick(dt, t) {
+            tickWildlife(dt, t);
+            if (typeof tickBeachExtras === 'function') tickBeachExtras(dt, t);
+            extraButtonsTimer += dt;
+            if (extraButtonsTimer > 0.6) {
+                extraButtonsTimer = 0;
+                if (typeof updateBeachButtons === 'function') updateBeachButtons();
+            }
         }
 
         window.addEventListener('load', () => {
