@@ -687,6 +687,36 @@
         const PF_POLITICS_TOKEN = ['apo','lenin','putin','trump','biden','nazi','feto','isis','isid','daes','deas','akp','rte'];
         const PF_NICK_SAFE = ['besiktas','musik','mosik'];
 
+        // ---- Takma ad ek filtresi: cinsel, şiddet içeren ve türetilmiş adlar ----
+        // Boşluklu (s i k i c i), noktalı (s.i.k), rakamlı (s1k1c1, p0rn) yazımlar da yakalanır.
+        const NICK_BAN_SUBSTR = ['porn', 'sex', 'amcik', 'amcig', 'amcuk', 'sikici', 'siken', 'sikis',
+            'katil', 'katliam', 'cinayet', 'tecavuz', 'intihar', 'terorist', 'killer', 'murder'];
+        const NICK_GOT_SAFE = ['gotik', 'gotham', 'gotze', 'gotti'];
+        function isNicknameExtraBlocked(name, leetLoose) {
+            const raw = String(name || '').toLocaleLowerCase('tr');
+            // "31" (aradaki boşluk/işaretlerle birlikte: 3 1, 3.1, 3_1)
+            if (/3[\s._\-*'`~]*1/.test(raw)) return true;
+            const loose = String(leetLoose || '').replace(/[^a-z]/g, '');
+            if (NICK_BAN_SUBSTR.some((w) => loose.includes(w))) return true;
+            // "seks" ama "seksen" serbest
+            if (loose.replace(/seksen/g, '').includes('seks')) return true;
+            // "meme" ama Memet/Memed serbest
+            if (loose.replace(/memet|memed/g, '').includes('meme')) return true;
+            // ö / ı korunarak: göt, ölüm, öldür
+            const strict = raw.replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ç/g, 'c')
+                .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's').replace(/7/g, 't')
+                .replace(/[^a-zıö]/g, '');
+            if (strict.includes('göt') || strict.includes('ölum') || strict.includes('öldur')) return true;
+            // ASCII yazılan "got", "olum", "oldur" ile başlayan kelimeler (Margot, Gotik gibi masumlar hariç)
+            const toks = pfTokens(name, false);
+            if (toks.some((t) => (t.startsWith('got') && !NICK_GOT_SAFE.some((x) => t.startsWith(x))) || t === 'olum' || t.startsWith('oldur'))) return true;
+            if (loose.startsWith('got') && !NICK_GOT_SAFE.some((x) => loose.startsWith(x))) return true;
+            // tek başına "am" ve türevleri (Adam, Kamil, Samet serbest); "am_ci", "am.ci" gibi ayrık yazımlar da
+            if (toks.some((t) => PF_EXACT_EXTRA.includes(t))) return true;
+            if (raw.split(/[^a-zçğıöşü0-9]+/).filter(Boolean).some((t) => t === 'am' || t === '4m')) return true;
+            return false;
+        }
+
         function isNicknameBlocked(name) {
             if (containsProfanity(name, false)) return true;
             const base = String(name || '').toLocaleLowerCase('tr')
@@ -698,6 +728,7 @@
             let compactSafe = leet.replace(/[^a-z]/g, '');
             PF_NICK_SAFE.forEach((w) => { compactSafe = compactSafe.split(w).join(''); });
             if (compactSafe.includes('sik') || compactSafe.includes('amk') || /(^|[^a-z])aq([^a-z]|$)/.test(base)) return true;
+            if (isNicknameExtraBlocked(name, leet)) return true;
             // siyasi / politik isimler
             const compact = base.replace(/[^a-z]/g, '');
             if (PF_POLITICS_SUBSTR.some((r) => compact.includes(r))) return true;
