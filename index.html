@@ -4384,7 +4384,7 @@
             { id: 'lIdrRRofKm0', dur: 170, title: 'Anyma & Rebūke - Syren' }
         ];
         const CLUB_EPOCH = Date.UTC(2026, 10, 28, 0, 0, 0);
-        const clubMusic = { on: false, box: null, frameBox: null, titleEl: null, btn: null, timer: null, idx: -1 };
+        const clubMusic = { active: false, wrap: null, backdrop: null, holder: null, titleEl: null, msgEl: null, muteBtn: null, player: null, idx: -1, timer: null, playing: false };
         function clubNow() {
             const total = CLUB_PLAYLIST.reduce((a, t) => a + t.dur, 0);
             let t = ((Date.now() - CLUB_EPOCH) / 1000) % total;
@@ -4394,55 +4394,109 @@
             }
             return { i: 0, off: 0, left: CLUB_PLAYLIST[0].dur };
         }
-        function ensureClubMusicBox() {
-            if (clubMusic.box) return;
-            const b = document.createElement('div');
-            b.id = 'club-music';
-            b.style.cssText = 'position:fixed;top:64px;left:8px;z-index:20;display:none;align-items:center;gap:8px;background:rgba(17,20,31,.92);border:1px solid #a21caf;border-radius:10px;padding:6px 8px;max-width:min(92vw,360px);color:#f5d0fe;font-size:12px;box-shadow:0 4px 20px rgba(162,28,175,.35)';
-            const fb = document.createElement('div'); fb.style.cssText = 'width:96px;height:54px;border-radius:6px;overflow:hidden;background:#000;flex:none;display:none';
-            const info = document.createElement('div'); info.style.cssText = 'min-width:0;flex:1';
-            const l1 = document.createElement('div'); l1.textContent = '🎧 Kulüp DJ'; l1.style.cssText = 'font-weight:700;color:#f0abfc';
-            const l2 = document.createElement('div'); l2.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85';
-            info.append(l1, l2);
-            const btn = document.createElement('button'); btn.type = 'button';
-            btn.style.cssText = 'flex:none;padding:6px 10px;border-radius:8px;border:0;background:#a21caf;color:#fff;font-weight:700;font-size:12px;cursor:pointer';
-            btn.addEventListener('click', () => { clubMusic.on = !clubMusic.on; renderClubMusic(true); });
-            b.append(fb, info, btn);
-            document.body.appendChild(b);
-            Object.assign(clubMusic, { box: b, frameBox: fb, titleEl: l2, btn });
+        function loadYTApi() {
+            return new Promise((res) => {
+                if (window.YT && YT.Player) return res();
+                const prev = window.onYouTubeIframeAPIReady;
+                window.onYouTubeIframeAPIReady = () => { if (prev) try { prev(); } catch (e) {} res(); };
+                if (!document.getElementById('yt-api')) { const sc = document.createElement('script'); sc.id = 'yt-api'; sc.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(sc); }
+            });
         }
-        function renderClubMusic(force) {
-            ensureClubMusicBox();
+        function clubLayout(big) {
+            const w = clubMusic.wrap;
+            if (big) {
+                clubMusic.backdrop.style.display = 'block';
+                w.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:61;width:min(90vw,360px);background:#160b24;border:2px solid #d946ef;border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 0 60px rgba(217,70,239,.5);color:#fae8ff;text-align:center';
+                clubMusic.holderBox.style.cssText = 'width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000';
+                clubMusic.msgEl.style.display = 'block';
+                clubMusic.closeBtn.style.display = 'block';
+                clubMusic.muteBtn.style.display = 'none';
+            } else {
+                clubMusic.backdrop.style.display = 'none';
+                w.style.cssText = 'position:fixed;top:64px;left:8px;z-index:20;display:flex;flex-direction:row;align-items:center;gap:8px;background:rgba(17,20,31,.92);border:1px solid #a21caf;border-radius:10px;padding:6px 8px;max-width:min(92vw,360px);color:#f5d0fe;font-size:12px;text-align:left';
+                clubMusic.holderBox.style.cssText = 'width:112px;height:63px;flex:none;border-radius:6px;overflow:hidden;background:#000';
+                clubMusic.msgEl.style.display = 'none';
+                clubMusic.closeBtn.style.display = 'none';
+                clubMusic.muteBtn.style.display = 'block';
+            }
+        }
+        function startClubMusic() {
+            if (clubMusic.active) return;
+            clubMusic.active = true; clubMusic.playing = false;
+            const bd = document.createElement('div');
+            bd.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6)';
+            const w = document.createElement('div');
+            const head = document.createElement('div'); head.textContent = '🎧 Kulüpte müzik çalıyor!'; head.style.cssText = 'font-weight:800;font-size:18px;color:#f0abfc';
+            const title = document.createElement('div'); title.style.cssText = 'font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%';
+            const msg = document.createElement('div'); msg.textContent = '🎵 Müziği açmak için videodaki ▶ düğmesine dokun'; msg.style.cssText = 'font-weight:700;color:#fde68a;font-size:15px';
+            const hb = document.createElement('div'); const holder = document.createElement('div'); hb.appendChild(holder);
+            const close = document.createElement('button'); close.type = 'button'; close.textContent = 'Müziksiz devam et';
+            close.style.cssText = 'background:transparent;border:0;color:#c4b5fd;font-size:12px;text-decoration:underline;cursor:pointer';
+            close.addEventListener('click', () => { clubMusic.dismissed = true; stopClubMusic(); });
+            const mute = document.createElement('button'); mute.type = 'button'; mute.textContent = '🔇';
+            mute.style.cssText = 'flex:none;padding:6px 10px;border-radius:8px;border:0;background:#a21caf;color:#fff;font-size:14px;cursor:pointer';
+            mute.addEventListener('click', () => {
+                const p = clubMusic.player; if (!p) return;
+                if (p.isMuted()) { p.unMute(); mute.textContent = '🔇'; } else { p.mute(); mute.textContent = '🔊'; }
+            });
+            const info = document.createElement('div'); info.style.cssText = 'min-width:0;flex:1;display:flex;flex-direction:column;gap:2px';
+            info.append(head, title);
+            w.append(info, msg, hb, mute, close);
+            document.body.append(bd, w);
+            Object.assign(clubMusic, { wrap: w, backdrop: bd, holder, holderBox: hb, titleEl: title, msgEl: msg, muteBtn: mute, closeBtn: close, headEl: head });
+            clubLayout(true);
+            const now = clubNow(); const tr = CLUB_PLAYLIST[now.i];
+            clubMusic.idx = now.i; title.textContent = '▶ ' + tr.title;
+            loadYTApi().then(() => {
+                if (!clubMusic.active) return;
+                clubMusic.player = new YT.Player(holder, {
+                    width: '100%', height: '100%', host: 'https://www.youtube-nocookie.com', videoId: tr.id,
+                    playerVars: { autoplay: 1, playsinline: 1, controls: 1, rel: 0, start: now.off },
+                    events: {
+                        onStateChange: (e) => {
+                            if (e.data === YT.PlayerState.PLAYING) {
+                                if (!clubMusic.playing) { clubMusic.playing = true; head.textContent = '🎧 Kulüp DJ'; clubLayout(false); try { SoundFX.setTheme('club_music'); } catch (er) {} }
+                                const n = clubNow();
+                                if (n.i === clubMusic.idx && Math.abs(e.target.getCurrentTime() - n.off) > 3) e.target.seekTo(n.off, true);
+                            }
+                            if (e.data === YT.PlayerState.ENDED) nextClubTrack();
+                        }
+                    }
+                });
+            });
+            scheduleClubTrack();
+        }
+        function scheduleClubTrack() {
+            if (clubMusic.timer) clearTimeout(clubMusic.timer);
+            clubMusic.timer = setTimeout(nextClubTrack, Math.max(1000, clubNow().left * 1000 + 600));
+        }
+        function nextClubTrack() {
+            if (!clubMusic.active) return;
             const now = clubNow();
-            const tr = CLUB_PLAYLIST[now.i];
-            clubMusic.titleEl.textContent = '▶ ' + tr.title;
-            clubMusic.btn.textContent = clubMusic.on ? '🔇 Kapat' : '🎵 Müziği aç';
-            if (clubMusic.timer) { clearTimeout(clubMusic.timer); clubMusic.timer = null; }
-            if (!clubMusic.on) {
-                clubMusic.frameBox.replaceChildren(); clubMusic.frameBox.style.display = 'none'; clubMusic.idx = -1;
-                try { SoundFX.setTheme('club'); } catch (e) {}
-                return;
-            }
-            try { SoundFX.setTheme('club_music'); } catch (e) {}
-            if (force || clubMusic.idx !== now.i) {
-                const f = document.createElement('iframe');
-                f.src = `https://www.youtube-nocookie.com/embed/${tr.id}?autoplay=1&playsinline=1&controls=0&rel=0&start=${now.off}`;
-                f.allow = 'autoplay; encrypted-media';
-                f.style.cssText = 'width:100%;height:100%;border:0';
-                clubMusic.frameBox.replaceChildren(f); clubMusic.frameBox.style.display = 'block';
+            if (now.i !== clubMusic.idx) {
                 clubMusic.idx = now.i;
+                const tr = CLUB_PLAYLIST[now.i];
+                clubMusic.titleEl.textContent = '▶ ' + tr.title;
+                try { if (clubMusic.player && clubMusic.player.loadVideoById) clubMusic.player.loadVideoById({ videoId: tr.id, startSeconds: now.off }); } catch (e) {}
             }
-            clubMusic.timer = setTimeout(() => renderClubMusic(false), Math.max(1000, now.left * 1000 + 600));
+            scheduleClubTrack();
         }
+        function stopClubMusic() {
+            if (!clubMusic.active) return;
+            clubMusic.active = false; clubMusic.playing = false;
+            if (clubMusic.timer) { clearTimeout(clubMusic.timer); clubMusic.timer = null; }
+            try { if (clubMusic.player) clubMusic.player.destroy(); } catch (e) {}
+            clubMusic.player = null;
+            if (clubMusic.wrap) clubMusic.wrap.remove();
+            if (clubMusic.backdrop) clubMusic.backdrop.remove();
+            clubMusic.wrap = clubMusic.backdrop = null;
+            try { SoundFX.setTheme(state.theme === 'club' ? 'club' : state.theme); } catch (e) {}
+        }
+        let clubDismissedAt = 0;
         function tickClubMusic() {
             const inClub = state.theme === 'club' && document.getElementById('lobby-modal').classList.contains('hidden');
-            ensureClubMusicBox();
-            if (inClub) {
-                if (clubMusic.box.style.display !== 'flex') { clubMusic.box.style.display = 'flex'; renderClubMusic(false); }
-            } else if (clubMusic.box.style.display !== 'none') {
-                clubMusic.box.style.display = 'none';
-                if (clubMusic.on) { clubMusic.on = false; renderClubMusic(false); }
-            }
+            if (inClub && !clubMusic.active && !clubMusic.dismissed) startClubMusic();
+            if (!inClub) { clubMusic.dismissed = false; if (clubMusic.active) stopClubMusic(); }
         }
 
         // ---- Kamp alanı: büyük beyaz perde, birlikte YouTube izleme ----
