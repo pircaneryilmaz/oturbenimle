@@ -4363,39 +4363,39 @@
 
             // Boğaz köprüsü (uzakta silüet)
             const bMat = new THREE.MeshBasicMaterial({ color: 0x3b2440 });
-            const bz = -30;
+            const bz = -34;
             [-15, -3].forEach((tx) => {
                 [-0.35, 0.35].forEach((off) => {
-                    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.35, 7.2, 0.35), bMat);
-                    leg.position.set(tx + off, 3.6, bz);
+                    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 3.6, 0.3), bMat);
+                    leg.position.set(tx + off, 1.8, bz);
                     G.add(leg);
                 });
                 const cross = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.25, 0.3), bMat);
-                cross.position.set(tx, 6.6, bz);
+                cross.position.set(tx, 3.3, bz);
                 G.add(cross);
             });
-            const deck = new THREE.Mesh(new THREE.BoxGeometry(30, 0.32, 0.6), bMat);
-            deck.position.set(-9, 2.3, bz);
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(30, 0.22, 0.6), bMat);
+            deck.position.set(-9, 1.0, bz);
             G.add(deck);
             const cablePts = [];
             for (let i = 0; i <= 40; i++) {
                 const x = -15 + (12 * i) / 40;
                 const k = (x + 9) / 6; // -1..1
-                cablePts.push(new THREE.Vector3(x, 2.5 + 4.3 * k * k, bz));
+                cablePts.push(new THREE.Vector3(x, 1.15 + 2.2 * k * k, bz));
             }
             [[-24, -15], [-3, 6]].forEach(([x0, x1]) => {
                 cablePts.unshift(); // yan açıklıklar için düz kablo
                 G.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(x0, 2.5, bz), new THREE.Vector3(x0 < -10 ? -15 : -3, 6.8, bz)
+                    new THREE.Vector3(x0, 1.15, bz), new THREE.Vector3(x0 < -10 ? -15 : -3, 3.4, bz)
                 ]), new THREE.LineBasicMaterial({ color: 0x3b2440 })));
                 if (x1 > 0) G.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(-3, 6.8, bz), new THREE.Vector3(x1, 2.5, bz)
+                    new THREE.Vector3(-3, 3.4, bz), new THREE.Vector3(x1, 1.15, bz)
                 ]), new THREE.LineBasicMaterial({ color: 0x3b2440 })));
             });
             G.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(cablePts), new THREE.LineBasicMaterial({ color: 0x3b2440 })));
             for (let i = 0; i < 18; i++) {
                 const dot = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), new THREE.MeshBasicMaterial({ color: i % 3 ? 0xfde68a : 0xa78bfa, fog: false }));
-                dot.position.set(-23 + i * 1.65, 2.55, bz + 0.35);
+                dot.position.set(-23 + i * 1.65, 1.15, bz + 0.35);
                 G.add(dot);
             }
 
