@@ -632,13 +632,14 @@
         const PF_COLLAPSE = (w) => w.replace(/(.)\1+/g, '$1');
         // Kelimenin içinde geçmesi bile yeterli olan, masum anlamı olmayan uzun kökler
         const PF_STRONG = ['orospu','orspu','pezevenk','siktir','ziktir','amcik','kahpe','fahise','surtuk','kaltak',
-            'gavat','yavsak','gotveren','götveren','aminakoy','aminoglu','sikerim','sikeyim','sikecem','sikicem'].map(PF_COLLAPSE);
+            'gavat','yavsak','gotveren','götveren','aminakoy','aminoglu','sikerim','sikeyim','sikecem','sikicem',
+            // Hakaretler: kelimenin içinde geçse bile yakalanır ("salaksın", "aptallar", "salaksınsahil")
+            'salak','aptal','gerizekali','dangalak','ahmak','embesil','serefsiz','haysiyetsiz','oglanci'].map(PF_COLLAPSE);
         // Tam kelime olarak eşleşenler (ı korunur: "sıkım" ≠ "sikim")
         const PF_EXACT_STRICT = ['sik','sikim','sikime','sikimi','sikimin','amk','aq','amq','oc','ocu','göt','götu','götune','götunu','götlek'].map(PF_COLLAPSE);
         // Kök + Türkçe ek zinciri ("yarağı", "bokum", "ibneler")
         const PF_ROOTS = ['bok','yarak','yarag','tasak','tasag','dasak','dasag','pust','ibne','ipne','pic',
-            // Hakaretler (kök + ek: "salaksın", "aptallar", "gerizekalısın")
-            'salak','aptal','aptalar','aptalik','gerizekali','dangalak','ahmak','embesil','serefsiz','haysiyetsiz','oglanci','yavsak'].map(PF_COLLAPSE);
+            ].map(PF_COLLAPSE);
         const PF_SUFFIX = /^(?:lar|ler|im|in|i|u|a|e|da|de|dan|den|la|le|ci|cu|lik|luk|li|lu|si|su|um|un|sin|sun|na|ne|ni|nu|yi|yu|ya|ye|ki)*$/;
 
         function pfTokens(text, keepDotless) {
