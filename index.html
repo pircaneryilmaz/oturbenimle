@@ -3386,12 +3386,6 @@
             // Bu cihazda daha önce kullanılan ad sabit kalır
             let savedNick = null;
             try { savedNick = localStorage.getItem('ob_nick_base'); } catch (e) {}
-            if (savedNick && savedNick.toLocaleLowerCase('tr') !== rawName.toLocaleLowerCase('tr')) {
-                nickWarning.textContent = `Bu cihazda takma adın "${savedNick}" olarak kayıtlı, değiştiremezsin.`;
-                nickWarning.classList.remove('hidden');
-                nickInput.value = savedNick;
-                return;
-            }
             if (rawName.length > 16) {
                 nickWarning.textContent = 'Takma ad en fazla 16 karakter olabilir.';
                 nickWarning.classList.remove('hidden');
