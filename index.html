@@ -4383,11 +4383,11 @@
             { id: 'a58xaPrYhcQ', dur: 160, title: 'YAMA' },
             { id: 'lIdrRRofKm0', dur: 170, title: 'Anyma & Rebūke - Syren' }
         ];
-        const CLUB_EPOCH = Date.UTC(2026, 10, 28, 0, 0, 0);
+        const CLUB_EPOCH = Date.UTC(2026, 0, 1, 0, 0, 0);
         const clubMusic = { active: false, wrap: null, backdrop: null, holder: null, titleEl: null, msgEl: null, muteBtn: null, player: null, idx: -1, timer: null, playing: false };
         function clubNow() {
             const total = CLUB_PLAYLIST.reduce((a, t) => a + t.dur, 0);
-            let t = ((Date.now() - CLUB_EPOCH) / 1000) % total;
+            let t = ((((Date.now() - CLUB_EPOCH) / 1000) % total) + total) % total;
             for (let i = 0; i < CLUB_PLAYLIST.length; i++) {
                 if (t < CLUB_PLAYLIST[i].dur) return { i, off: Math.floor(t), left: CLUB_PLAYLIST[i].dur - t };
                 t -= CLUB_PLAYLIST[i].dur;
