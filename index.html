@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>oturbenimle</title>
+    <meta name="description" content="Kayıt yok, şifre yok. Takma adını seç; kafede, sahilde, kamp ateşinde ya da gece kulübünde gerçek biriyle 3D masaya otur ve sohbet et.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://oturbenimle.vercel.app/">
+    <meta property="og:title" content="oturbenimle — Gel, otur benimle">
+    <meta property="og:description" content="Kayıt yok, şifre yok. Takma adını seç, gerçek biriyle 3D masaya otur ve sohbet et.">
+    <meta property="og:locale" content="tr_TR">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@yokyeredelirme">
+    <meta name="theme-color" content="#0d1118">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -259,28 +268,12 @@
     <div id="canvas-container"></div>
     <div id="label-container"></div>
 
-    <!-- Açık Dünya Mobil Joystick -->
+    <!-- Gece Kulübü Mobil Joystick -->
     <div id="mobile-joystick-zone" class="hidden">
         <div id="mobile-joystick-knob"></div>
     </div>
 
-    <!-- Açık Dünya Sağ Alt Etkileşim Çubuğu -->
-    <div id="ow-social-bar" class="hidden fixed right-3 bottom-48 sm:bottom-52 z-20 flex flex-col items-end gap-1.5 pointer-events-none">
-        <div id="ow-zone-banner" class="glass-panel px-2.5 py-1 text-[11px] font-semibold text-amber-300 border-amber-600/50">
-            Meydan Merkezi
-        </div>
-        <div class="flex flex-wrap justify-end gap-1.5 pointer-events-auto max-w-[230px]">
-            <button type="button" id="btn-ow-wave" class="ow-action-btn bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600">El Salla</button>
-            <button type="button" id="btn-ow-sit" class="hidden ow-action-btn bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-400">Otur</button>
-            <button type="button" id="btn-ow-jump" class="hidden ow-action-btn bg-purple-700 hover:bg-purple-600 text-white border border-purple-400">Zipla</button>
-            <button type="button" id="btn-ow-love" class="hidden ow-action-btn bg-pink-700 hover:bg-pink-600 text-white border border-pink-400">Ask Yasa</button>
-            <button type="button" id="btn-ow-hug" class="hidden ow-action-btn bg-rose-700 hover:bg-rose-600 text-white border border-rose-400">Saril</button>
-            <button type="button" id="btn-ow-hand" class="hidden ow-action-btn bg-sky-700 hover:bg-sky-600 text-white border border-sky-400">El Ele Tutus</button>
-            <button type="button" id="btn-ow-stop-pair" class="hidden ow-action-btn bg-amber-700 hover:bg-amber-600 text-white border border-amber-400">Ayril</button>
-        </div>
-    </div>
-
-    <!-- Karşılıklı Onay Penceresi -->
+    <!-- Karşılıklı Onay Penceresi (Kamp Ateşi baş başa daveti) -->
     <div id="ow-consent-banner" class="hidden fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-30 glass-panel border-amber-500/80 px-3.5 py-2.5 flex items-center gap-3 shadow-lg">
         <span id="ow-consent-text" class="text-xs font-semibold text-slate-100">Oyuncu seninle etkileşim istiyor</span>
         <div class="flex items-center gap-1.5 shrink-0">
@@ -368,38 +361,6 @@
                 <div id="teleport-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5"></div>
             </div>
 
-            <!-- Mini Oyun Çekmecesi (XOX & Taş-Kağıt-Makas) -->
-            <div id="minigame-drawer" class="hidden glass-panel p-2.5 flex flex-col gap-2">
-                <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
-                    <span class="pixel-title text-xs font-bold text-emerald-300">🎮 MASA & ATEŞ OYUNLARI</span>
-                    <div class="flex items-center gap-1">
-                        <button type="button" id="btn-tab-xox" class="pixel-btn bg-emerald-600 text-white px-2 py-0.5 text-[11px] font-bold">XOX</button>
-                        <button type="button" id="btn-tab-rps" class="pixel-btn bg-slate-800 text-slate-300 px-2 py-0.5 text-[11px] font-bold">Taş-Kağıt-Makas</button>
-                        <button type="button" id="btn-close-minigame" class="text-xs text-slate-400 hover:text-white px-1.5">✕</button>
-                    </div>
-                </div>
-
-                <!-- XOX -->
-                <div id="xox-panel" class="flex flex-col items-center gap-2 py-1">
-                    <div id="xox-status" class="text-xs font-semibold text-amber-200 text-center">Sıra X oyuncusunda</div>
-                    <div id="xox-board" class="grid grid-cols-3 gap-1.5 w-36 h-36"></div>
-                    <button type="button" id="btn-reset-xox" class="pixel-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 text-[11px] font-semibold">
-                        🔄 Yeni El XOX
-                    </button>
-                </div>
-
-                <!-- Taş-Kağıt-Makas -->
-                <div id="rps-panel" class="hidden flex flex-col items-center gap-2 py-1">
-                    <div id="rps-status" class="text-xs font-semibold text-sky-200 text-center">Seçimini yap!</div>
-                    <div class="flex items-center justify-center gap-2">
-                        <button type="button" data-rps="rock" class="rps-choice-btn pixel-btn bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-bold text-white">🪨 Taş</button>
-                        <button type="button" data-rps="paper" class="rps-choice-btn pixel-btn bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-bold text-white">📄 Kağıt</button>
-                        <button type="button" data-rps="scissors" class="rps-choice-btn pixel-btn bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-bold text-white">✂️ Makas</button>
-                    </div>
-                    <div id="rps-result" class="text-xs text-amber-300 font-bold min-h-[18px] text-center"></div>
-                </div>
-            </div>
-
             <!-- Kamp Ateşi Oyuncu Etkileşim Barı -->
             <div id="cf-player-bar" class="hidden glass-panel border-orange-500/70 px-2.5 py-1.5 flex items-center justify-between gap-2">
                 <span id="cf-selected-name" class="text-xs font-semibold text-orange-200 truncate">Oyuncu seçildi</span>
@@ -424,10 +385,6 @@
                         <span class="pixel-title text-xs">Ortam Değiştir</span>
                     </button>
 
-                    <button type="button" id="btn-toggle-minigame" class="hidden pixel-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
-                        <span>🎮</span>
-                        <span class="pixel-title text-xs">Oyunlar</span>
-                    </button>
 
                     <button type="button" id="btn-throw-wood" class="hidden pixel-btn bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
                         <span>🪵</span>
@@ -546,7 +503,7 @@
                 <button type="button" id="btn-auto-match" class="pixel-btn w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold pixel-title text-xs sm:text-sm tracking-wide">
                     🔥 Kamp Ateşine Katıl
                 </button>
-                <p class="text-[11px] text-slate-400 text-center">🔒 Hiçbir mesaj ve kişisel veri kaydedilmez; çıkış yaptığınızda oturumunuz anında silinir.</p>
+                <p class="text-[11px] text-slate-400 text-center">🔒 Sohbetler kaydedilmez; çıkış yaptığınızda oturumunuz silinir. Yalnızca şikâyet edilen sohbetlerin son mesajları inceleme için saklanır.</p>
             </div>
 
             <div id="matching-overlay" class="hidden bg-slate-900/95 border border-emerald-700/60 rounded p-3 text-center flex flex-col items-center gap-2">
@@ -611,8 +568,8 @@
             </div>
             <div class="text-xs text-slate-300 space-y-2 max-h-64 overflow-y-auto custom-scroll leading-relaxed pr-1">
                 <p><strong>1. Veri Sorumlusu ve Amaç:</strong> <em>oturbenimle</em> platformu, kullanıcıların kayıt veya şifre gerektirmeden anlık 3D sanal ortamlarda sohbet etmesini sağlar.</p>
-                <p><strong>2. İşlenen Veriler:</strong> Oturum süresince yalnızca belirlediğiniz takma ad (nickname), seçtiğiniz karakter cinsiyeti ve anlık sohbet mesajlarınız tarayıcı belleğinde geçici olarak işlenir. Gerçek kimlik bilgisi, e-posta veya konum verisi toplanmaz.</p>
-                <p><strong>3. Gizlilik ve Saklama Süresi:</strong> Sohbet geçmişi ve oturum bilgileri kalıcı veritabanlarında tutulmaz; sayfayı kapattığınızda veya yeni eşleşme başlattığınızda tüm oturum verileri anında temizlenir.</p>
+                <p><strong>2. İşlenen Veriler:</strong> Oturum süresince yalnızca belirlediğiniz takma ad (nickname), seçtiğiniz karakter cinsiyeti ve anlık sohbet mesajlarınız tarayıcı belleğinde geçici olarak işlenir. Eşleşme sırasında takma adınız ve karakter seçiminiz, eşleşme bitene kadar geçici olarak sunucuda tutulur. Site kullanımına dair isimsiz toplam sayılar (ziyaret, mesaj adedi gibi) istatistik amacıyla tutulur. Gerçek kimlik bilgisi, e-posta veya konum verisi toplanmaz.</p>
+                <p><strong>3. Gizlilik ve Saklama Süresi:</strong> Sohbet geçmişi ve oturum bilgileri kalıcı veritabanlarında tutulmaz; sayfayı kapattığınızda veya yeni eşleşme başlattığınızda oturum verileri temizlenir. <strong>İstisna:</strong> Bir kullanıcı "Bildir" butonunu kullanırsa, iki tarafın takma adı, şikâyet sebebi ve o masadaki son sohbet mesajları moderasyon incelemesi için saklanır ve yalnızca site yöneticisi tarafından görülebilir.</p>
                 <p><strong>4. Topluluk Kuralları:</strong> Karşılıklı saygı çerçevesinde iletişim kurulması esastır; hakaret, taciz veya spam içeren mesajlar sistem tarafından engellenir.</p>
             </div>
             <button type="button" id="btn-accept-kvkk" class="pixel-btn w-full py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold pixel-title text-xs">
@@ -675,11 +632,21 @@
         const PF_COLLAPSE = (w) => w.replace(/(.)\1+/g, '$1');
         // Kelimenin içinde geçmesi bile yeterli olan, masum anlamı olmayan uzun kökler
         const PF_STRONG = ['orospu','orspu','pezevenk','siktir','ziktir','amcik','kahpe','fahise','surtuk','kaltak',
-            'gavat','yavsak','gotveren','götveren','aminakoy','aminoglu','sikerim','sikeyim','sikecem','sikicem'].map(PF_COLLAPSE);
+            'gavat','yavsak','gotveren','götveren','aminakoy','aminoglu','sikerim','sikeyim','sikecem','sikicem',
+            // Hakaretler: kelimenin içinde geçse bile yakalanır ("salaksın", "aptallar", "salaksınsahil")
+            'salak','aptal','gerizekali','dangalak','ahmak','embesil','serefsiz','haysiyetsiz','oglanci',
+            // Cinsel içerik ve türetilmiş birleşik küfürler ("pornobagimlisi", "amsiken", "gotsiken", "sexting")
+            'porn','sex','amsik','gotsik','amcig','amcuk','pezeveng'].map(PF_COLLAPSE);
+        // Tek başına kelime olarak yasak olanlar ("tamam", "akşam", "seksen" gibi masum kelimeler etkilenmez)
+        const PF_EXACT_EXTRA = ['am','ami','amı','amın','amina','amına','amini','amını','amda','amdan','amlar',
+            'seks','seksi','seksler','sexy'].map(PF_COLLAPSE);
+        // Bu köklerle başlayan kelimeler yasak (muaf olanlar hariç): "seksüel", "seksiyim"... ama "seksen" serbest
+        const PF_PREFIX = [{ root: 'seks', safe: ['seksen'] }];
         // Tam kelime olarak eşleşenler (ı korunur: "sıkım" ≠ "sikim")
         const PF_EXACT_STRICT = ['sik','sikim','sikime','sikimi','sikimin','amk','aq','amq','oc','ocu','göt','götu','götune','götunu','götlek'].map(PF_COLLAPSE);
         // Kök + Türkçe ek zinciri ("yarağı", "bokum", "ibneler")
-        const PF_ROOTS = ['bok','yarak','yarag','tasak','tasag','dasak','dasag','pust','ibne','ipne','pic'].map(PF_COLLAPSE);
+        const PF_ROOTS = ['bok','yarak','yarag','tasak','tasag','dasak','dasag','pust','ibne','ipne','pic',
+            ].map(PF_COLLAPSE);
         const PF_SUFFIX = /^(?:lar|ler|im|in|i|u|a|e|da|de|dan|den|la|le|ci|cu|lik|luk|li|lu|si|su|um|un|sin|sun|na|ne|ni|nu|yi|yu|ya|ye|ki)*$/;
 
         function pfTokens(text, keepDotless) {
@@ -750,7 +717,7 @@
             const looseTokens = pfTokens(text, false);   // ı->i, ö->o
             for (const w of strictTokens) {
                 if (allowExceptions && ALLOWED_SLANG.has(w)) continue;
-                if (PF_EXACT_STRICT.includes(w)) return true;
+                if (PF_EXACT_STRICT.includes(w) || PF_EXACT_EXTRA.includes(w)) return true;
             }
             for (let i = 0; i < looseTokens.length - 1; i++) {
                 if (looseTokens[i] === 'amina' && looseTokens[i + 1].startsWith('ko')) return true;
@@ -758,6 +725,10 @@
             for (const w of looseTokens) {
                 if (allowExceptions && ALLOWED_SLANG.has(w)) continue;
                 for (const bad of PF_STRONG) if (w.includes(PF_COLLAPSE(bad.replace(/ö/g, 'o')))) return true;
+                if (PF_EXACT_EXTRA.includes(w)) return true;
+                for (const p of PF_PREFIX) {
+                    if (w.startsWith(p.root) && !p.safe.some((x) => w.startsWith(x))) return true;
+                }
                 for (const root of PF_ROOTS) {
                     if (w.startsWith(root) && PF_SUFFIX.test(w.slice(root.length))) return true;
                 }
@@ -885,12 +856,7 @@
             fireFuel: 0.72,
             clubDancing: false,
             clubSeatedTableId: null,
-            clubSeatedSeatIdx: -1,
-            xoxBoard: Array(9).fill(null),
-            xoxTurn: 'X',
-            xoxWinner: null,
-            myRpsChoice: null,
-            partnerRpsChoice: null
+            clubSeatedSeatIdx: -1
         };
 
         let lastOwBroadcast = 0;
@@ -900,10 +866,6 @@
         const OW_MAX_PLAYERS_PER_SHARD = 25;
         const owInput = { x: 0, z: 0 };
         const owKeys = {};
-        const owBenches = [];
-        const owConcertNpcs = [];
-        const owConcertSpotlights = [];
-        const owConcertSpeakers = [];
         const cfChairMeshes = [];
         const clubTables = [];
 
@@ -948,10 +910,7 @@
             camera.aspect = aspect;
             camera.updateProjectionMatrix();
 
-            if (themeId === 'openworld') {
-                camera.position.set(state.owPos.x, isPortrait ? 6.8 : 5.4, state.owPos.z + (isPortrait ? 8.8 : 7.2));
-                controls.target.set(state.owPos.x, 1.0, state.owPos.z);
-            } else if (themeId === 'campfire') {
+            if (themeId === 'campfire') {
                 camera.position.set(0, isPortrait ? 5.2 : 4.1, isPortrait ? 7.8 : 6.0);
                 controls.target.set(0, 0.9, 0);
             } else if (themeId === 'club') {
@@ -1730,7 +1689,7 @@
 
         function renderTreatsOnTable() {
             clearGroup(treatsGroup);
-            if (state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club') return;
+            if (state.theme === 'campfire' || state.theme === 'club') return;
 
             const tableY = state.theme === 'beach' ? 0.54 : 0.84;
             const seatOffsets = [
@@ -1753,7 +1712,7 @@
             const t = THEMES[themeId] || THEMES.cafe;
 
             scene.background = new THREE.Color(t.skyColor);
-            scene.fog = new THREE.FogExp2(t.fogColor, (themeId === 'openworld' || themeId === 'club') ? 0.022 : 0.042);
+            scene.fog = new THREE.FogExp2(t.fogColor, themeId === 'club' ? 0.022 : 0.042);
             ambientLight.color = new THREE.Color(t.ambientLight);
 
             clearGroup(environmentGroup);
@@ -1771,14 +1730,12 @@
             animatedObjects.chalkboardLabelObj = null;
 
             const joyZone = document.getElementById('mobile-joystick-zone');
-            const owSocialBar = document.getElementById('ow-social-bar');
             const woodBtn = document.getElementById('btn-throw-wood');
             const jumpFireBtn = document.getElementById('btn-jump-fire');
             const clubDanceBtn = document.getElementById('btn-club-dance');
             const clubTableBtn = document.getElementById('btn-club-table');
 
             joyZone.classList.add('hidden');
-            owSocialBar.classList.add('hidden');
             woodBtn.classList.add('hidden');
             document.getElementById('btn-fan-grill').classList.add('hidden');
             jumpFireBtn.classList.add('hidden');
@@ -1826,7 +1783,7 @@
             }
 
             applyResponsiveCameraForTheme(themeId);
-            if (themeId !== 'openworld' && themeId !== 'campfire' && themeId !== 'club') {
+            if (themeId !== 'campfire' && themeId !== 'club') {
                 renderAvatars();
             }
         }
@@ -1837,7 +1794,7 @@
         const avatarObjects = [null, null];
 
         function renderAvatars() {
-            if (state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club') return;
+            if (state.theme === 'campfire' || state.theme === 'club') return;
             clearGroup(avatarsGroup);
             avatarObjects[0] = null;
             avatarObjects[1] = null;
@@ -2005,7 +1962,7 @@
         }
 
         function showSpeechBubble(seatIdx, text) {
-            if (state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club') {
+            if (state.theme === 'campfire' || state.theme === 'club') {
                 showOpenWorldBubble(CLIENT_ID, text);
                 return;
             }
@@ -2033,7 +1990,6 @@
 
             document.getElementById('btn-stand').classList.remove('hidden');
             document.getElementById('bottom-chat-bar').classList.remove('hidden');
-            updateMinigameButtonVisibility();
             renderAvatars();
         }
 
@@ -2073,7 +2029,6 @@
             owInput.z = 0;
 
             document.getElementById('mobile-joystick-zone').classList.add('hidden');
-            document.getElementById('ow-social-bar').classList.add('hidden');
             document.getElementById('ow-consent-banner').classList.add('hidden');
             document.getElementById('cf-player-bar').classList.add('hidden');
             document.getElementById('btn-throw-wood').classList.add('hidden');
@@ -2084,11 +2039,9 @@
             document.getElementById('btn-stand').classList.add('hidden');
             document.getElementById('btn-report-partner').classList.add('hidden');
             document.getElementById('bottom-chat-bar').classList.add('hidden');
-            document.getElementById('btn-toggle-minigame').classList.add('hidden');
-            document.getElementById('minigame-drawer').classList.add('hidden');
             updateConsumeButton();
             renderTreatsOnTable();
-            if (state.theme !== 'openworld' && state.theme !== 'campfire' && state.theme !== 'club') renderAvatars();
+            if (state.theme !== 'campfire' && state.theme !== 'club') renderAvatars();
         }
 
         // ==========================================
@@ -2134,7 +2087,7 @@
             const grid = document.getElementById('order-items-grid');
             grid.innerHTML = '';
 
-            const isMultiRoom = state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club';
+            const isMultiRoom = state.theme === 'campfire' || state.theme === 'club';
             const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
             const hasPartner = !isMultiRoom && Boolean(state.seats[partnerIdx]);
 
@@ -2220,7 +2173,7 @@
 
         function updateConsumeButton() {
             const btn = document.getElementById('btn-consume-item');
-            const isMulti = state.theme === 'openworld' || state.theme === 'campfire' || state.theme === 'club';
+            const isMulti = state.theme === 'campfire' || state.theme === 'club';
             const myItem = (!isMulti && state.mySeatIndex !== -1) ? state.heldItems[state.mySeatIndex] : null;
             if (!myItem || myItem.remaining <= 0) {
                 btn.classList.add('hidden');
@@ -2259,6 +2212,14 @@
             }
         }
 
+        function applyPairThemeChange(themeId) {
+            buildSceneForTheme(themeId);
+            updatePresenceLocation(themeId);
+            ['order-drawer', 'teleport-drawer'].forEach((id) => document.getElementById(id).classList.add('hidden'));
+            renderTreatsOnTable();
+            updateConsumeButton();
+        }
+
         function renderTeleportDrawer() {
             const grid = document.getElementById('teleport-items-grid');
             grid.innerHTML = '';
@@ -2271,6 +2232,23 @@
                 btn.innerHTML = `<span class="text-lg">${t.icon}</span><div><div class="text-xs font-bold text-slate-100">${escapeHtml(t.name)}</div><div class="text-[10px] text-slate-400">Işınlan</div></div>`;
                 btn.addEventListener('click', () => {
                     document.getElementById('teleport-drawer').classList.add('hidden');
+
+                    // Masada partnerle birlikteyken 2 kişilik ortama (Kafe/Sahil) ışınlanınca
+                    // ikisi birlikte aynı masayla yeni ortama geçer.
+                    const isPairTheme = (id) => id === 'cafe' || id === 'beach';
+                    const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
+                    const hasPartner = state.mySeatIndex !== -1 && state.seats && state.seats[partnerIdx];
+                    if (isPairTheme(state.theme) && isPairTheme(t.id) && hasPartner && roomChannel) {
+                        applyPairThemeChange(t.id);
+                        roomChannel.send({
+                            type: 'broadcast',
+                            event: 'change_theme',
+                            payload: { senderId: CLIENT_ID, senderName: state.playerName, themeId: t.id }
+                        });
+                        appendChatMessage('', `✨ Birlikte "${t.name}" ortamına ışınlandınız!`, false, true);
+                        return;
+                    }
+
                     standUp(true);
                     state.theme = t.id;
                     updatePresenceLocation(t.id);
@@ -2287,150 +2265,6 @@
         }
 
         // ==========================================
-        // 6.5 MİNİ OYUNLAR: XOX & TAŞ-KAĞIT-MAKAS
-        // ==========================================
-        const XOX_WINS = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
-
-        function updateMinigameButtonVisibility() {
-            const btn = document.getElementById('btn-toggle-minigame');
-            const allowed = false; // Mini oyunlar kaldırıldı
-            if (allowed && state.mySeatIndex !== -1) {
-                btn.classList.remove('hidden');
-            } else {
-                btn.classList.add('hidden');
-                document.getElementById('minigame-drawer').classList.add('hidden');
-            }
-        }
-
-        function checkXoxWinner(board) {
-            for (const [a, b, c] of XOX_WINS) {
-                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                    return board[a];
-                }
-            }
-            if (board.every(cell => cell !== null)) return 'DRAW';
-            return null;
-        }
-
-        function sendMinigameBroadcast(eventName, payload) {
-            const isGroupCampfire = state.theme === 'campfire' && !state.cfPrivateMode;
-            if (isGroupCampfire && openWorldChannel) {
-                openWorldChannel.send({ type: 'broadcast', event: eventName, payload });
-            } else if (roomChannel) {
-                roomChannel.send({ type: 'broadcast', event: eventName, payload });
-            }
-        }
-
-        function renderXoxBoard() {
-            const boardEl = document.getElementById('xox-board');
-            const statusEl = document.getElementById('xox-status');
-            if (!boardEl || !statusEl) return;
-
-            boardEl.innerHTML = '';
-            state.xoxBoard.forEach((cell, idx) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'pixel-btn bg-slate-900 hover:bg-slate-800 border border-slate-700 h-11 text-base font-bold flex items-center justify-center ' +
-                    (cell === 'X' ? 'text-amber-300' : (cell === 'O' ? 'text-sky-300' : 'text-slate-400'));
-                btn.textContent = cell || '';
-                btn.disabled = Boolean(cell) || Boolean(state.xoxWinner);
-                btn.addEventListener('click', () => handleXoxClick(idx));
-                boardEl.appendChild(btn);
-            });
-
-            if (state.xoxWinner === 'DRAW') {
-                statusEl.textContent = '🤝 Berabere! Yeni el başlatabilirsin.';
-            } else if (state.xoxWinner) {
-                statusEl.textContent = `🏆 Kazanan: ${state.xoxWinner}!`;
-            } else {
-                statusEl.textContent = `Sıra ${state.xoxTurn} oyuncusunda`;
-            }
-        }
-
-        function handleXoxClick(idx, isRemote = false, forcedMark = null) {
-            if (state.xoxBoard[idx] || state.xoxWinner) return;
-            const mark = forcedMark || state.xoxTurn;
-            state.xoxBoard[idx] = mark;
-            state.xoxWinner = checkXoxWinner(state.xoxBoard);
-            if (!state.xoxWinner) {
-                state.xoxTurn = mark === 'X' ? 'O' : 'X';
-            }
-            renderXoxBoard();
-
-            if (!isRemote) {
-                sendMinigameBroadcast('xox_move', {
-                    senderId: CLIENT_ID,
-                    senderName: state.playerName,
-                    idx,
-                    mark
-                });
-                if (state.xoxWinner && state.xoxWinner !== 'DRAW') {
-                    appendChatMessage('', `🎮 XOX oyununu ${state.xoxWinner} kazandı!`, false, true);
-                }
-            }
-        }
-
-        function resetXoxGame(isRemote = false) {
-            state.xoxBoard = Array(9).fill(null);
-            state.xoxTurn = 'X';
-            state.xoxWinner = null;
-            renderXoxBoard();
-            if (!isRemote) {
-                sendMinigameBroadcast('xox_reset', { senderId: CLIENT_ID, senderName: state.playerName });
-            }
-        }
-
-        const RPS_LABELS = { rock: '🪨 Taş', paper: '📄 Kağıt', scissors: '✂️ Makas' };
-
-        function evaluateRpsRound() {
-            const resEl = document.getElementById('rps-result');
-            const stEl = document.getElementById('rps-status');
-            if (!state.myRpsChoice || !state.partnerRpsChoice) {
-                if (state.myRpsChoice) {
-                    stEl.textContent = `Seçimin: ${RPS_LABELS[state.myRpsChoice]} • Karşı taraf bekleniyor...`;
-                }
-                return;
-            }
-
-            const a = state.myRpsChoice;
-            const b = state.partnerRpsChoice;
-            let outcomeText = '';
-            if (a === b) {
-                outcomeText = `Berabere! İkiniz de ${RPS_LABELS[a]} seçtiniz.`;
-            } else if (
-                (a === 'rock' && b === 'scissors') ||
-                (a === 'paper' && b === 'rock') ||
-                (a === 'scissors' && b === 'paper')
-            ) {
-                outcomeText = `Sen kazandın! (${RPS_LABELS[a]} vs ${RPS_LABELS[b]})`;
-            } else {
-                outcomeText = `Karşı taraf kazandı! (${RPS_LABELS[a]} vs ${RPS_LABELS[b]})`;
-            }
-
-            stEl.textContent = 'Tur tamamlandı! Tekrar seçebilirsin.';
-            resEl.textContent = outcomeText;
-            appendChatMessage('', `✊ ${state.playerName}: ${outcomeText}`, false, true);
-
-            state.myRpsChoice = null;
-            state.partnerRpsChoice = null;
-        }
-
-        function handleRpsChoice(choice) {
-            state.myRpsChoice = choice;
-            document.getElementById('rps-result').textContent = '';
-            sendMinigameBroadcast('rps_choice', {
-                senderId: CLIENT_ID,
-                senderName: state.playerName,
-                choice
-            });
-            evaluateRpsRound();
-        }
-
-        // ==========================================
         // 7. ÇOK OYUNCULU KAMP ATEŞİ & GECE KULÜBÜ
         // ==========================================
         const ROOM_CAPACITY = 15;
@@ -2444,7 +2278,6 @@
             state.cfSelectedPlayerId = null;
             state.cfJumpAnim = null;
             state.fireFuel = 0.78;
-            resetXoxGame(true);
 
             buildSceneForTheme('campfire');
             upsertOpenWorldPlayer({
@@ -2460,7 +2293,6 @@
             document.getElementById('btn-stand').classList.add('hidden');
             document.getElementById('btn-report-partner').classList.add('hidden');
             document.getElementById('bottom-chat-bar').classList.remove('hidden');
-            updateMinigameButtonVisibility();
 
             const feed = document.getElementById('chat-feed');
             feed.innerHTML = '';
@@ -2517,19 +2349,6 @@
                     if (!payload || payload.id === CLIENT_ID) return;
                     triggerCampfireFireJump(payload.id, payload.x, payload.z);
                 })
-                .on('broadcast', { event: 'xox_move' }, ({ payload }) => {
-                    if (!payload || payload.senderId === CLIENT_ID) return;
-                    handleXoxClick(payload.idx, true, payload.mark);
-                })
-                .on('broadcast', { event: 'xox_reset' }, ({ payload }) => {
-                    if (!payload || payload.senderId === CLIENT_ID) return;
-                    resetXoxGame(true);
-                })
-                .on('broadcast', { event: 'rps_choice' }, ({ payload }) => {
-                    if (!payload || payload.senderId === CLIENT_ID) return;
-                    state.partnerRpsChoice = payload.choice;
-                    evaluateRpsRound();
-                })
                 .on('broadcast', { event: 'cf_private_invite' }, ({ payload }) => {
                     if (!payload || payload.targetId !== CLIENT_ID) return;
                     state.owPendingInvite = {
@@ -2575,7 +2394,6 @@
             state.mySeatIndex = mySeatIdx;
             state.cfJumpAnim = null;
             state.fireFuel = 0.85;
-            resetXoxGame(true);
 
             buildSceneForTheme('campfire');
             clearGroup(avatarsGroup);
@@ -2604,7 +2422,6 @@
 
             document.getElementById('btn-report-partner').classList.remove('hidden');
             document.getElementById('bottom-chat-bar').classList.remove('hidden');
-            updateMinigameButtonVisibility();
             const feed = document.getElementById('chat-feed');
             feed.innerHTML = '';
             appendChatMessage('', `🔥 ${partnerProfile.name} ile gruptan ayrı baş başa kamp ateşine geçtiniz!`, false, true);
@@ -2794,99 +2611,8 @@
         }
 
         // ==========================================
-        // 9. AÇIK DÜNYA GİRİŞİ & KONTROLLERİ
+        // 9. KAMP ATEŞİ & KULÜP KONTROLLERİ (joystick, odun, dans)
         // ==========================================
-        function getNearestBench(x, z, maxDist = 1.65) {
-            let best = null;
-            let bestDist = maxDist;
-            owBenches.forEach((b) => {
-                const d = Math.hypot(x - b.x, z - b.z);
-                if (d < bestDist) {
-                    bestDist = d;
-                    best = b;
-                }
-            });
-            return best;
-        }
-
-        function getNearestOtherPlayer(x, z, maxDist = 2.4) {
-            let best = null;
-            let bestDist = maxDist;
-            Object.values(state.owPlayers).forEach((p) => {
-                if (p.id === CLIENT_ID) return;
-                const d = Math.hypot(x - p.x, z - p.z);
-                if (d < bestDist) {
-                    bestDist = d;
-                    best = p;
-                }
-            });
-            return best;
-        }
-
-        function updateOpenWorldContextButtons() {
-            if (state.theme !== 'openworld') return;
-
-            const zoneEl = document.getElementById('ow-zone-banner');
-            const { x, z } = state.owPos;
-            if (x < -4.5) zoneEl.textContent = 'OTUR BENİMLE Parki';
-            else if (x > 4.5) zoneEl.textContent = 'STARBUKSH Kafe';
-            else if (z < -4.2) zoneEl.textContent = 'BEN PİRO Konser Alani';
-            else zoneEl.textContent = 'Meydan Merkezi';
-
-            const sitBtn = document.getElementById('btn-ow-sit');
-            if (state.owSeatedBenchId) {
-                sitBtn.classList.remove('hidden');
-                sitBtn.textContent = 'Kalk';
-            } else {
-                const nearBench = getNearestBench(x, z);
-                if (nearBench) {
-                    sitBtn.classList.remove('hidden');
-                    sitBtn.textContent = 'Otur';
-                } else {
-                    sitBtn.classList.add('hidden');
-                }
-            }
-
-            const jumpBtn = document.getElementById('btn-ow-jump');
-            const distToConcert = Math.hypot(x - 0, z - (-6.2));
-            if (distToConcert < 3.4) jumpBtn.classList.remove('hidden');
-            else jumpBtn.classList.add('hidden');
-
-            const loveBtn = document.getElementById('btn-ow-love');
-            const hugBtn = document.getElementById('btn-ow-hug');
-            const handBtn = document.getElementById('btn-ow-hand');
-            const stopPairBtn = document.getElementById('btn-ow-stop-pair');
-            const nearPlayer = getNearestOtherPlayer(x, z);
-
-            if (state.owLovePartnerId) {
-                loveBtn.classList.add('hidden');
-                stopPairBtn.classList.remove('hidden');
-                const partnerObj = state.owPlayers[state.owLovePartnerId];
-                const isPartnerClose = partnerObj && Math.hypot(x - partnerObj.x, z - partnerObj.z) < 2.6;
-                if (isPartnerClose && !state.owPairState) {
-                    hugBtn.classList.remove('hidden');
-                    handBtn.classList.remove('hidden');
-                } else {
-                    hugBtn.classList.add('hidden');
-                    handBtn.classList.add('hidden');
-                }
-            } else {
-                hugBtn.classList.add('hidden');
-                handBtn.classList.add('hidden');
-                stopPairBtn.classList.add('hidden');
-                if (nearPlayer) loveBtn.classList.remove('hidden');
-                else loveBtn.classList.add('hidden');
-            }
-        }
-
-        function setPlayerWavingVisual(playerId, waving) {
-            const p = state.owPlayers[playerId];
-            if (!p || !p.sprite) return;
-            const tex = createCharacterTexture(p.gender, p.profileIndex, false, false, waving);
-            p.sprite.material.map = tex;
-            p.sprite.material.needsUpdate = true;
-        }
-
         function initOpenWorldControls() {
             const zone = document.getElementById('mobile-joystick-zone');
             const knob = document.getElementById('mobile-joystick-knob');
@@ -3070,87 +2796,6 @@
                 }
             });
 
-            document.getElementById('btn-ow-wave').addEventListener('click', () => {
-                state.owWaveEndTime = performance.now() + 1800;
-                setPlayerWavingVisual(CLIENT_ID, true);
-                showOpenWorldBubble(CLIENT_ID, 'Selam!');
-                setTimeout(() => setPlayerWavingVisual(CLIENT_ID, false), 1800);
-                if (openWorldChannel) {
-                    openWorldChannel.send({
-                        type: 'broadcast',
-                        event: 'ow_wave',
-                        payload: { id: CLIENT_ID, name: state.playerName }
-                    });
-                }
-            });
-
-            document.getElementById('btn-ow-sit').addEventListener('click', () => {
-                if (state.owSeatedBenchId) {
-                    state.owSeatedBenchId = null;
-                    state.owPos.z += 0.65;
-                    return;
-                }
-                const bench = getNearestBench(state.owPos.x, state.owPos.z);
-                if (!bench) return;
-                state.owPairState = null;
-                state.owSeatedBenchId = bench.id;
-                const d0 = Math.hypot(state.owPos.x - bench.seats[0].x, state.owPos.z - bench.seats[0].z);
-                const d1 = Math.hypot(state.owPos.x - bench.seats[1].x, state.owPos.z - bench.seats[1].z);
-                const chosenSeat = d0 <= d1 ? bench.seats[0] : bench.seats[1];
-                state.owPos.x = chosenSeat.x;
-                state.owPos.z = chosenSeat.z;
-                if (state.owPlayers[CLIENT_ID]) {
-                    state.owPlayers[CLIENT_ID].targetX = chosenSeat.x;
-                    state.owPlayers[CLIENT_ID].targetZ = chosenSeat.z;
-                }
-                if (openWorldChannel) {
-                    openWorldChannel.send({
-                        type: 'broadcast',
-                        event: 'ow_move',
-                        payload: {
-                            id: CLIENT_ID,
-                            name: state.playerName,
-                            gender: state.gender,
-                            profileIndex: state.profileIndex,
-                            x: Number(chosenSeat.x.toFixed(2)),
-                            z: Number(chosenSeat.z.toFixed(2))
-                        }
-                    });
-                }
-            });
-
-            document.getElementById('btn-ow-jump').addEventListener('click', () => {
-                state.owSeatedBenchId = null;
-                state.owJumpEndTime = performance.now() + 4500;
-            });
-
-            const sendPairInvite = (type) => {
-                const target = type === 'love'
-                    ? getNearestOtherPlayer(state.owPos.x, state.owPos.z)
-                    : (state.owPlayers[state.owLovePartnerId] || getNearestOtherPlayer(state.owPos.x, state.owPos.z));
-                if (!target) return;
-                let text = 'el ele tutuşma';
-                if (type === 'love') text = 'aşk yaşama';
-                else if (type === 'hug') text = 'sarılma';
-                appendChatMessage('', `${target.name} adlı kişiye ${text} isteği gönderildi.`, false, true);
-                if (openWorldChannel) {
-                    openWorldChannel.send({
-                        type: 'broadcast',
-                        event: 'ow_pair_invite',
-                        payload: {
-                            fromId: CLIENT_ID,
-                            fromName: state.playerName,
-                            targetId: target.id,
-                            type
-                        }
-                    });
-                }
-            };
-
-            document.getElementById('btn-ow-love').addEventListener('click', () => sendPairInvite('love'));
-            document.getElementById('btn-ow-hug').addEventListener('click', () => sendPairInvite('hug'));
-            document.getElementById('btn-ow-hand').addEventListener('click', () => sendPairInvite('hand'));
-
             document.getElementById('btn-ow-accept-pair').addEventListener('click', () => {
                 document.getElementById('ow-consent-banner').classList.add('hidden');
                 const inv = state.owPendingInvite;
@@ -3181,28 +2826,6 @@
                     });
                     return;
                 }
-
-                state.owSeatedBenchId = null;
-                state.owLovePartnerId = inv.fromId;
-                if (inv.type === 'love') {
-                    appendChatMessage('', `${inv.fromName} ile aşk yaşamaya başladınız! Sarıl ve El Ele Tutuş butonları açıldı.`, false, true);
-                } else {
-                    state.owPairState = { partnerId: inv.fromId, type: inv.type };
-                    const actionLabel = inv.type === 'hug' ? 'sarıldınız' : 'el ele tutuştunuz';
-                    appendChatMessage('', `${inv.fromName} ile ${actionLabel}!`, false, true);
-                }
-                if (openWorldChannel) {
-                    openWorldChannel.send({
-                        type: 'broadcast',
-                        event: 'ow_pair_accept',
-                        payload: {
-                            fromId: CLIENT_ID,
-                            fromName: state.playerName,
-                            targetId: inv.fromId,
-                            type: inv.type
-                        }
-                    });
-                }
             });
 
             document.getElementById('btn-ow-decline-pair').addEventListener('click', () => {
@@ -3210,19 +2833,6 @@
                 state.owPendingInvite = null;
             });
 
-            document.getElementById('btn-ow-stop-pair').addEventListener('click', () => {
-                const partnerId = state.owLovePartnerId || (state.owPairState && state.owPairState.partnerId);
-                state.owLovePartnerId = null;
-                state.owPairState = null;
-                appendChatMessage('', 'Birliktelik sonlandırıldı.', false, true);
-                if (partnerId && openWorldChannel) {
-                    openWorldChannel.send({
-                        type: 'broadcast',
-                        event: 'ow_pair_stop',
-                        payload: { fromId: CLIENT_ID, targetId: partnerId }
-                    });
-                }
-            });
         }
 
         // ==========================================
@@ -3606,7 +3216,6 @@
             state.recentMessages = [];
             state.heldItems = [null, null];
             state.seats = [null, null];
-            resetXoxGame(true);
 
             buildSceneForTheme(state.theme);
 
@@ -3627,7 +3236,6 @@
 
             document.getElementById('btn-stand').classList.remove('hidden');
             document.getElementById('bottom-chat-bar').classList.remove('hidden');
-            updateMinigameButtonVisibility();
 
             const feed = document.getElementById('chat-feed');
             feed.innerHTML = '';
@@ -3672,19 +3280,6 @@
                     const partnerIdx = state.mySeatIndex === 0 ? 1 : 0;
                     consumeSeatItem(partnerIdx);
                 })
-                .on('broadcast', { event: 'xox_move' }, ({ payload }) => {
-                    if (!payload || payload.senderId === CLIENT_ID) return;
-                    handleXoxClick(payload.idx, true, payload.mark);
-                })
-                .on('broadcast', { event: 'xox_reset' }, ({ payload }) => {
-                    if (!payload || payload.senderId === CLIENT_ID) return;
-                    resetXoxGame(true);
-                })
-                .on('broadcast', { event: 'rps_choice' }, ({ payload }) => {
-                    if (!payload || payload.senderId === CLIENT_ID) return;
-                    state.partnerRpsChoice = payload.choice;
-                    evaluateRpsRound();
-                })
                 .on('broadcast', { event: 'chalkboard_update' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
                     applyChalkboardDataUrl(payload.dataUrl);
@@ -3704,8 +3299,8 @@
                     if (!payload || payload.senderId === CLIENT_ID) return;
                     const t = THEMES[payload.themeId];
                     if (!t) return;
-                    buildSceneForTheme(payload.themeId);
-                    appendChatMessage('', `✨ ${payload.senderName} ortamı "${t.name}" olarak değiştirdi!`, false, true);
+                    applyPairThemeChange(payload.themeId);
+                    appendChatMessage('', `✨ ${payload.senderName} sizi "${t.name}" ortamına ışınladı!`, false, true);
                 })
                 .on('broadcast', { event: 'player_left' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
@@ -3900,7 +3495,6 @@
         document.getElementById('btn-toggle-menu').addEventListener('click', () => {
             const drawer = document.getElementById('order-drawer');
             document.getElementById('teleport-drawer').classList.add('hidden');
-            document.getElementById('minigame-drawer').classList.add('hidden');
             if (drawer.classList.contains('hidden')) {
                 renderMenuDrawer();
                 drawer.classList.remove('hidden');
@@ -3915,7 +3509,6 @@
         document.getElementById('btn-toggle-teleport').addEventListener('click', () => {
             const drawer = document.getElementById('teleport-drawer');
             document.getElementById('order-drawer').classList.add('hidden');
-            document.getElementById('minigame-drawer').classList.add('hidden');
             if (drawer.classList.contains('hidden')) {
                 renderTeleportDrawer();
                 drawer.classList.remove('hidden');
@@ -3925,38 +3518,6 @@
         });
         document.getElementById('btn-close-teleport').addEventListener('click', () => {
             document.getElementById('teleport-drawer').classList.add('hidden');
-        });
-
-        document.getElementById('btn-toggle-minigame').addEventListener('click', () => {
-            const drawer = document.getElementById('minigame-drawer');
-            document.getElementById('order-drawer').classList.add('hidden');
-            document.getElementById('teleport-drawer').classList.add('hidden');
-            if (drawer.classList.contains('hidden')) {
-                renderXoxBoard();
-                drawer.classList.remove('hidden');
-            } else {
-                drawer.classList.add('hidden');
-            }
-        });
-        document.getElementById('btn-close-minigame').addEventListener('click', () => {
-            document.getElementById('minigame-drawer').classList.add('hidden');
-        });
-        document.getElementById('btn-tab-xox').addEventListener('click', () => {
-            document.getElementById('btn-tab-xox').className = 'pixel-btn bg-emerald-600 text-white px-2 py-0.5 text-[11px] font-bold';
-            document.getElementById('btn-tab-rps').className = 'pixel-btn bg-slate-800 text-slate-300 px-2 py-0.5 text-[11px] font-bold';
-            document.getElementById('xox-panel').classList.remove('hidden');
-            document.getElementById('rps-panel').classList.add('hidden');
-            renderXoxBoard();
-        });
-        document.getElementById('btn-tab-rps').addEventListener('click', () => {
-            document.getElementById('btn-tab-rps').className = 'pixel-btn bg-sky-600 text-white px-2 py-0.5 text-[11px] font-bold';
-            document.getElementById('btn-tab-xox').className = 'pixel-btn bg-slate-800 text-slate-300 px-2 py-0.5 text-[11px] font-bold';
-            document.getElementById('rps-panel').classList.remove('hidden');
-            document.getElementById('xox-panel').classList.add('hidden');
-        });
-        document.getElementById('btn-reset-xox').addEventListener('click', () => resetXoxGame(false));
-        document.querySelectorAll('.rps-choice-btn').forEach((btn) => {
-            btn.addEventListener('click', () => handleRpsChoice(btn.dataset.rps));
         });
 
         document.getElementById('btn-consume-item').addEventListener('click', () => {
@@ -3991,7 +3552,7 @@
             showSpeechBubble(state.mySeatIndex, text);
             appendChatMessage(state.playerName, text, true);
 
-            const isMulti = state.theme === 'openworld' || (state.theme === 'campfire' && !state.cfPrivateMode) || state.theme === 'club';
+            const isMulti = (state.theme === 'campfire' && !state.cfPrivateMode) || state.theme === 'club';
             if (isMulti) {
                 if (openWorldChannel) {
                     openWorldChannel.send({
@@ -4217,26 +3778,7 @@
                     p.sprite.position.set(p.x, 1.04 + Math.sin(t * 2.4 + idx) * 0.02, p.z);
                     p.labelObj.position.set(p.x, p.sprite.position.y + 1.12, p.z);
                 });
-            } else if ((state.theme === 'openworld' || state.theme === 'club') && state.owPlayers[CLIENT_ID]) {
-                if (state.theme === 'openworld') {
-                    animatedObjects.fountainDrops.forEach((drop, idx) => {
-                        const phase = (t * 2.4 + idx * 0.4) % 1;
-                        drop.position.y = 0.55 + Math.sin(phase * Math.PI) * 0.75;
-                        drop.position.x = Math.cos(idx * 0.8) * (0.2 + phase * 0.65);
-                        drop.position.z = 2.2 + Math.sin(idx * 0.8) * (0.2 + phase * 0.65);
-                    });
-
-                    owConcertSpeakers.forEach((w, idx) => {
-                        const pulse = 1 + Math.abs(Math.sin(t * 7 + idx)) * 0.16;
-                        w.scale.set(pulse, 1, pulse);
-                    });
-                    owConcertSpotlights.forEach((sp, idx) => {
-                        sp.intensity = 1.25 + Math.sin(t * 5 + idx * 1.8) * 0.55;
-                    });
-                    owConcertNpcs.forEach((npc) => {
-                        npc.sprite.position.y = npc.baseY + Math.abs(Math.sin(t * 5.2 + npc.phase)) * npc.amp;
-                    });
-                }
+            } else if (state.theme === 'club' && state.owPlayers[CLIENT_ID]) {
 
                 let moveX = owInput.x;
                 let moveZ = owInput.z;
@@ -4301,17 +3843,6 @@
                     }
                 }
 
-                if (state.theme === 'openworld' && state.owPairState) {
-                    const partner = state.owPlayers[state.owPairState.partnerId];
-                    if (partner) {
-                        const offset = state.owPairState.type === 'hug' ? 0.42 : 0.72;
-                        state.owPos.x += (partner.x - offset - state.owPos.x) * 0.12;
-                        state.owPos.z += (partner.z - state.owPos.z) * 0.12;
-                        const me = state.owPlayers[CLIENT_ID];
-                        me.targetX = state.owPos.x;
-                        me.targetZ = state.owPos.z;
-                    }
-                }
 
                 Object.values(state.owPlayers).forEach((p, idx) => {
                     p.x += (p.targetX - p.x) * 0.16;
@@ -4327,8 +3858,7 @@
                     p.labelObj.position.set(p.x, p.sprite.position.y + 1.13, p.z);
                 });
 
-                if (state.theme === 'openworld') updateOpenWorldContextButtons();
-                else if (state.theme === 'club') updateClubTableButton();
+                if (state.theme === 'club') updateClubTableButton();
 
                 const me = state.owPlayers[CLIENT_ID];
                 controls.target.x += (me.x - controls.target.x) * 0.12;
