@@ -2088,7 +2088,13 @@
 
         function showSpeechBubble(seatIdx, text) {
             if (state.theme === 'campfire' || state.theme === 'club') {
-                showOpenWorldBubble(CLIENT_ID, text);
+                let targetId = CLIENT_ID;
+                if (seatIdx !== state.mySeatIndex) {
+                    const occ = state.seats && state.seats[seatIdx];
+                    const other = Object.values(state.owPlayers || {}).find((p) => !p.isMe);
+                    targetId = (occ && occ.id && state.owPlayers[occ.id]) ? occ.id : (other ? other.id : CLIENT_ID);
+                }
+                showOpenWorldBubble(targetId, text);
                 return;
             }
             const av = avatarObjects[seatIdx];
