@@ -1620,6 +1620,19 @@
                 pe.position.set(3.3, 0, -2.5);
                 pe.rotation.y = -0.18;
                 tableGroup.add(pe);
+                pe.updateMatrixWorld(true);
+                [['Polat', -0.5], ['Elif', 0.5]].forEach(([nm, x]) => {
+                    const w = document.createElement('div');
+                    w.className = 'seat-label-wrapper';
+                    const nb = document.createElement('div');
+                    nb.className = 'name-badge';
+                    nb.style.pointerEvents = 'none';
+                    nb.textContent = nm;
+                    w.appendChild(nb);
+                    const lo = new THREE.CSS2DObject(w);
+                    lo.position.copy(pe.localToWorld(new THREE.Vector3(x, 2.05, 0.02)));
+                    tableGroup.add(lo);
+                });
             } catch (e) { console.warn('Polat-Elif bankı:', e); }
             try { addBeachExtras(); } catch (e) { console.warn('Sahil ekleri:', e); }
         }
