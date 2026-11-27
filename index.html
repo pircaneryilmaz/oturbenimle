@@ -3131,18 +3131,12 @@
                     lastStatsWriteAt = now;
                     const isNew = !sessionStorage.getItem('ob_visited_flag');
                     if (isNew) sessionStorage.setItem('ob_visited_flag', '1');
-                    await sbClient.rpc('record_site_visit', {
-                        p_is_new_visitor: isNew,
-                        p_current_online: currentOnline
-                    });
+                    await sbClient.rpc('record_activity', { p_theme: 'all', p_visits: isNew ? 1 : 0, p_joins: 0, p_messages: 0, p_online: currentOnline });
                     return;
                 }
                 if (isLeader && now - lastStatsWriteAt > 60000) {
                     lastStatsWriteAt = now;
-                    await sbClient.rpc('record_site_visit', {
-                        p_is_new_visitor: false,
-                        p_current_online: currentOnline
-                    });
+                    await sbClient.rpc('record_activity', { p_theme: 'all', p_visits: 0, p_joins: 0, p_messages: 0, p_online: currentOnline });
                 }
             } catch (err) {
                 console.warn('İstatistik güncellenemedi:', err);
@@ -3175,6 +3169,50 @@
                 }
             }, wait);
         }
+
+        // --- Moderasyon kanalı: sadece yönetici gönderebilir (Supabase politikası ile korunur) ---
+        let modChannel = null;
+        function initModChannel() {
+            if (!sbClient || modChannel) return;
+            const mine = (payload) => payload && (payload.targetId === CLIENT_ID ||
+                (state.playerName && payload.targetName && payload.targetName === state.playerName));
+            modChannel = sbClient.channel('private_oturbenimle_mod', { config: { private: true } })
+                .on('broadcast', { event: 'admin_warning' }, ({ payload }) => {
+                    if (mine(payload)) triggerAdminWarningModal(payload.message, payload.seconds || 10);
+                })
+                .on('broadcast', { event: 'admin_kick' }, ({ payload }) => {
+                    if (mine(payload)) {
+                        standUp(false);
+                        cancelMatchmaking();
+                        document.getElementById('lobby-modal').classList.remove('hidden');
+                        renderThemeCards();
+                    }
+                })
+                .subscribe();
+        }
+
+        // --- Yönetim paneli istatistikleri: sayaçlar bellekte tutulur, 5 dakikada bir toplu yazılır ---
+        const activity = { joins: {}, messages: {} };
+        function countActivity(kind, theme) {
+            activity[kind][theme] = (activity[kind][theme] || 0) + 1;
+        }
+        async function flushActivity() {
+            if (!sbClient) return;
+            const joins = activity.joins, messages = activity.messages;
+            activity.joins = {}; activity.messages = {};
+            const themes = new Set([...Object.keys(joins), ...Object.keys(messages)]);
+            for (const t of themes) {
+                try {
+                    await sbClient.rpc('record_activity', {
+                        p_theme: t, p_visits: 0, p_joins: joins[t] || 0, p_messages: messages[t] || 0, p_online: 0
+                    });
+                } catch (err) { /* sessizce geç */ }
+            }
+        }
+        setInterval(flushActivity, 300000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') flushActivity();
+        });
 
         let onlineRetryCount = 0;
         let onlineSyncTimer = null;
@@ -3219,25 +3257,6 @@
                     .on('presence', { event: 'sync' }, syncCount)
                     .on('presence', { event: 'join' }, syncCount)
                     .on('presence', { event: 'leave' }, syncCount)
-                    .on('broadcast', { event: 'admin_warning' }, ({ payload }) => {
-                        if (!payload) return;
-                        const matchesId = payload.targetId === CLIENT_ID;
-                        const matchesName = state.playerName && payload.targetName && payload.targetName === state.playerName;
-                        if (matchesId || matchesName) {
-                            triggerAdminWarningModal(payload.message, payload.seconds || 10);
-                        }
-                    })
-                    .on('broadcast', { event: 'admin_kick' }, ({ payload }) => {
-                        if (!payload) return;
-                        const matchesId = payload.targetId === CLIENT_ID;
-                        const matchesName = state.playerName && payload.targetName && payload.targetName === state.playerName;
-                        if (matchesId || matchesName) {
-                            standUp(false);
-                            cancelMatchmaking();
-                            document.getElementById('lobby-modal').classList.remove('hidden');
-                            renderThemeCards();
-                        }
-                    })
                     .subscribe(async (status) => {
                         if (status === 'SUBSCRIBED') {
                             onlineRetryCount = 0;
@@ -3333,6 +3352,7 @@
 
             state.playerName = rawName;
             updatePresenceLocation(state.theme);
+            countActivity('joins', state.theme);
 
             if (state.theme === 'campfire') {
                 enterCampfireGroup();
@@ -3806,6 +3826,7 @@
             }
 
             lastChatSentAt = now;
+            countActivity('messages', state.theme);
             input.value = '';
             showSpeechBubble(state.mySeatIndex, text);
             appendChatMessage(state.playerName, text, true);
@@ -4156,7 +4177,7 @@
             renderThemeCards();
             updateGenderButtons();
             buildSceneForTheme('campfire');
-            ensureAnonymousSession().finally(() => initOnlineCounter());
+            ensureAnonymousSession().finally(() => { initOnlineCounter(); initModChannel(); });
             initChalkboardCanvas();
             initOpenWorldControls();
             animate();

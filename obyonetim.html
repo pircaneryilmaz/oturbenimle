@@ -64,13 +64,26 @@
                     <div id="stat-peak" class="text-lg font-bold text-amber-300 mt-1">0 Kişi</div>
                 </div>
                 <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
-                    <div class="text-[11px] text-slate-400">Tekil Ziyaretçi</div>
+                    <div class="text-[11px] text-slate-400">Son 24 Saat Giriş</div>
                     <div id="stat-visits" class="text-lg font-bold text-sky-400 mt-1">0 Kişi</div>
                 </div>
                 <div class="bg-[#0d1118] border border-slate-800 rounded p-3">
                     <div class="text-[11px] text-slate-400">Şikayet Kaydı</div>
                     <div id="stat-reports" class="text-lg font-bold text-rose-400 mt-1">0 Kayıt</div>
                 </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold text-slate-300">📊 Son 24 Saat (5 dk'da bir yenilenir)</h2>
+                    <span id="stats-updated" class="text-[11px] text-slate-500"></span>
+                </div>
+                <div class="grid grid-cols-3 gap-2.5">
+                    <div class="bg-[#0d1118] border border-slate-800 rounded p-3"><div class="text-[11px] text-slate-400">Toplam Mesaj</div><div id="stat-msgs" class="text-lg font-bold text-emerald-400 mt-1">0 Mesaj</div></div>
+                    <div class="bg-[#0d1118] border border-slate-800 rounded p-3"><div class="text-[11px] text-slate-400">Giriş Başı Ort. Mesaj</div><div id="stat-avg" class="text-lg font-bold text-sky-400 mt-1">0</div></div>
+                    <div class="bg-[#0d1118] border border-slate-800 rounded p-3"><div class="text-[11px] text-slate-400">En Çok Tercih Edilen</div><div id="stat-top-theme" class="text-lg font-bold text-amber-300 mt-1">-</div></div>
+                </div>
+                <table class="w-full text-xs text-slate-300 bg-[#0d1118] border border-slate-800 rounded"><thead><tr class="text-slate-400"><th class="text-left p-1.5">Ortam</th><th class="text-right p-1.5">Giriş sayısı</th></tr></thead><tbody id="theme-table" class="px-1.5"></tbody></table>
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -107,6 +120,7 @@
         };
 
         let presenceChannel = null;
+        let modChannel = null;
         let isPresenceSubscribed = false;
 
         // Sayfanın güncel HTML kaynağını obyonetim.html olarak bilgisayara indirir
@@ -130,7 +144,7 @@
         async function checkSession() {
             try {
                 const { data } = await sb.auth.getSession();
-                if (data?.session) {
+                if (data?.session && !data.session.user.is_anonymous) {
                     showDashboard();
                 }
             } catch (err) {
@@ -149,22 +163,30 @@
 
         async function fetchSiteStats() {
             try {
-                const { data } = await sb
-                    .from('site_stats')
-                    .select('total_visits, peak_online')
-                    .eq('id', 1)
-                    .single();
-
-                if (data) {
-                    document.getElementById('stat-visits').textContent = `${data.total_visits || 0} Kişi`;
-                    document.getElementById('stat-peak').textContent = `${data.peak_online || 0} Kişi`;
-                }
+                const { data, error } = await sb.rpc('admin_stats');
+                if (error || !data) { console.error('İstatistik hatası:', error); return; }
+                const v = data.visits_24h || 0, m = data.messages_24h || 0;
+                document.getElementById('stat-visits').textContent = `${v} Giriş`;
+                document.getElementById('stat-peak').textContent = `${data.peak_all_time || 0} Kişi`;
+                document.getElementById('stat-msgs').textContent = `${m} Mesaj`;
+                document.getElementById('stat-avg').textContent = v ? (m / v).toFixed(1) : '0';
+                const joins = data.joins || {};
+                const rows = Object.entries(joins).sort((x, y) => y[1] - x[1]);
+                document.getElementById('stat-top-theme').textContent = rows.length ? (THEME_NAMES[rows[0][0]] || rows[0][0]) : '-';
+                document.getElementById('theme-table').innerHTML = rows.length
+                    ? rows.map(([k, n]) => `<tr><td class="py-1">${THEME_NAMES[k] || k}</td><td class="py-1 text-right">${n}</td></tr>`).join('')
+                    : '<tr><td class="py-1 text-slate-500" colspan="2">Henüz veri yok</td></tr>';
+                document.getElementById('stats-updated').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
             } catch (err) {
                 console.error('İstatistik hatası:', err);
             }
         }
 
         function startPresenceListener() {
+            if (!modChannel) {
+                modChannel = sb.channel('private_oturbenimle_mod', { config: { private: true, broadcast: { ack: true } } });
+                modChannel.subscribe();
+            }
             if (presenceChannel) sb.removeChannel(presenceChannel);
             isPresenceSubscribed = false;
 
@@ -203,7 +225,7 @@
                         });
                     });
                 }
-                const res = await presenceChannel.send({
+                const res = await modChannel.send({
                     type: 'broadcast',
                     event: eventName,
                     payload
@@ -251,7 +273,7 @@
                                 Oyundan Çıkar
                             </button>
                             <button type="button" data-warn-id="${safeId}" data-warn-name="${safeName}" class="warn-user-btn text-[11px] bg-amber-950/90 hover:bg-amber-600 text-amber-200 border border-amber-600/70 px-2 py-0.5 rounded cursor-pointer">
-                                10 Sn Uyarı
+                                Uyarı Gönder
                             </button>
                         </div>
                     </div>`;
@@ -295,7 +317,7 @@
                             targetId,
                             targetName,
                             seconds: 10,
-                            message: 'KÜFÜR ETME! Küfür edersen banlanır, bir daha siteye giriş yapamazsın!'
+                            message: 'Gerekli bir sebepten dolayı uyarı yedin. Aranızdayım, sizi izliyorum. Tekrar etme, kalıcı banlanırsın.'
                         });
                         if (ok) {
                             setModStatus(`🚨 "${targetName}" ekranına 10 saniyelik uyarı gönderildi.`);
@@ -303,7 +325,7 @@
 
                         setTimeout(() => {
                             btn.disabled = false;
-                            btn.textContent = '10 Sn Uyarı';
+                            btn.textContent = 'Uyarı Gönder';
                         }, 1500);
                     });
                 });
@@ -378,6 +400,7 @@
                     errEl.classList.remove('hidden');
                     return;
                 }
+                await sb.auth.getSession().then(({ data }) => { if (data?.session?.user?.is_anonymous) throw new Error('anon'); });
                 showDashboard();
             } catch (err) {
                 errEl.classList.remove('hidden');
@@ -397,6 +420,7 @@
             fetchReports();
         });
 
+        setInterval(() => { if (!document.getElementById('dashboard-view').classList.contains('hidden')) { fetchSiteStats(); fetchReports(); } }, 300000);
         checkSession();
     </script>
 </body>
