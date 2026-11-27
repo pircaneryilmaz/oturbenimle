@@ -4379,7 +4379,7 @@
         // ---- Kamp alanı: büyük beyaz perde, birlikte YouTube izleme ----
         const movie = { mesh: null, corners: null, overlay: null, current: null, joined: false };
         function addMovieScreen() {
-            const W = 7.2, H = 4.05, cx = 0, cy = 3.1, cz = -7.2;
+            const W = 5.6, H = 3.15, cx = 0, cy = 4.6, cz = -7.2;
             const g = new THREE.Group();
             const screen = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ color: 0xf1f5f9 }));
             screen.position.set(cx, cy, cz);
@@ -4417,7 +4417,7 @@
             if (movie.overlay) return movie.overlay;
             const o = document.createElement('div');
             o.id = 'movie-overlay';
-            o.style.cssText = 'position:fixed;z-index:15;display:none;background:#000;border-radius:4px;overflow:hidden;box-shadow:0 0 40px rgba(255,255,255,.15)';
+            o.style.cssText = 'position:fixed;z-index:3;display:none;background:#000;border-radius:4px;overflow:hidden;box-shadow:0 0 40px rgba(255,255,255,.15)';
             document.body.appendChild(o);
             movie.overlay = o;
             return o;
