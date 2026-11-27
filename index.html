@@ -343,6 +343,8 @@
                 <span class="pixel-title text-[11px] sm:text-xs">Kalk</span>
             </button>
 
+            <button type="button" id="btn-sound" title="Sesi aç / kapat" class="glass-panel pixel-btn hover:bg-[#262b38] px-2.5 py-1.5 sm:px-3 sm:py-2 text-sm">🔊</button>
+
             <button type="button" id="btn-open-lobby" class="glass-panel pixel-btn hover:bg-[#262b38] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-slate-100">
                 <span>🏠</span>
                 <span class="pixel-title text-[11px] sm:text-xs">Lobiye Dön</span>
@@ -415,6 +417,16 @@
                     <button type="button" id="btn-jump-fire" class="hidden pixel-btn bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
                         <span>🔥</span>
                         <span class="pixel-title text-xs">Ateşten Atla</span>
+                    </button>
+
+                    <button type="button" id="btn-beach-fish" class="hidden pixel-btn bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                        <span>🎣</span>
+                        <span class="pixel-title text-xs">Balık Tut</span>
+                    </button>
+
+                    <button type="button" id="btn-beach-simit" class="hidden pixel-btn bg-amber-700 hover:bg-amber-600 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                        <span>🥯</span>
+                        <span class="pixel-title text-xs">Martıya Simit At</span>
                     </button>
 
                     <button type="button" id="btn-club-dance" class="hidden pixel-btn bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
@@ -831,9 +843,9 @@
                 name: 'Sahilde Bank',
                 icon: '🌊',
                 desc: 'Kız Kulesi manzarası, deniz meltemi ve martılar',
-                skyColor: 0x101d2e,
-                fogColor: 0x101d2e,
-                ambientLight: 0xbae6fd,
+                skyColor: 0xf2995e,
+                fogColor: 0xe58a64,
+                ambientLight: 0xffd2a8,
                 menu: [
                     { id: 'simit_tea', icon: '🥯', name: 'Çıtır Simit & Çay', type: 'food', color: 0xd97706, bites: 4, actionText: 'Ye', treatMsg: 'Sana Çıtır Simit & Çay ısmarlamak istedim 🥯' },
                     { id: 'lemonade', icon: '🍋', name: 'Naneli Limonata', type: 'drink', color: 0xfef08a, bites: 5, actionText: 'Yudumla', treatMsg: 'Sana Naneli Limonata ısmarlamak istedim 🍋' },
@@ -1533,7 +1545,7 @@
             sand.receiveShadow = true;
             environmentGroup.add(sand);
 
-            const sea = new THREE.Mesh(new THREE.PlaneGeometry(36, 20), new THREE.MeshStandardMaterial({ color: 0x0369a1, roughness: 0.35 }));
+            const sea = new THREE.Mesh(new THREE.PlaneGeometry(36, 20), new THREE.MeshStandardMaterial({ color: 0x2c4a78, roughness: 0.35 }));
             sea.rotation.x = -Math.PI / 2;
             sea.position.set(0, -0.04, -10);
             environmentGroup.add(sea);
@@ -1575,6 +1587,7 @@
                 bLeg.position.set(bx, by, bz);
                 tableGroup.add(bLeg);
             });
+            try { addBeachExtras(); } catch (e) { console.warn('Sahil ekleri:', e); }
         }
 
         function buildClubScene() {
@@ -1762,7 +1775,7 @@
             const t = THEMES[themeId] || THEMES.cafe;
 
             scene.background = new THREE.Color(t.skyColor);
-            scene.fog = new THREE.FogExp2(t.fogColor, themeId === 'club' ? 0.022 : 0.042);
+            scene.fog = new THREE.FogExp2(t.fogColor, themeId === 'club' ? 0.022 : (themeId === 'beach' ? 0.016 : 0.042));
             ambientLight.color = new THREE.Color(t.ambientLight);
 
             clearGroup(environmentGroup);
@@ -1833,6 +1846,7 @@
             }
 
             applyResponsiveCameraForTheme(themeId);
+            try { SoundFX.setTheme(themeId); } catch (e) {}
             if (themeId !== 'campfire' && themeId !== 'club') {
                 renderAvatars();
             }
@@ -3465,6 +3479,14 @@
                     if (!payload || payload.senderId === CLIENT_ID) return;
                     triggerCampfireFireJump(payload.senderId || payload.id, payload.x, payload.z);
                 })
+                .on('broadcast', { event: 'beach_fish' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    playFishing(payload.seatIdx, payload.count || 1, false);
+                })
+                .on('broadcast', { event: 'beach_simit' }, ({ payload }) => {
+                    if (!payload || payload.senderId === CLIENT_ID) return;
+                    playSimitThrow(payload.seatIdx);
+                })
                 .on('broadcast', { event: 'change_theme' }, ({ payload }) => {
                     if (!payload || payload.senderId === CLIENT_ID) return;
                     const t = THEMES[payload.themeId];
@@ -4250,6 +4272,452 @@
                 if (typeof updateBeachButtons === 'function') updateBeachButtons();
             }
         }
+
+        // =====================================================================
+        // EKLER (2): Sahil (gün batımı, köprü, gemi, martılar, balık, simit) ve ortam sesleri
+        // =====================================================================
+        const beachFx = { ship: null, shipNext: 0, gulls: [], throws: [], rods: [], fishCount: 0 };
+
+        function gradientTexture(stops, w = 4, h = 256) {
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const g = c.getContext('2d');
+            const gr = g.createLinearGradient(0, 0, 0, h);
+            stops.forEach(([p, col]) => gr.addColorStop(p, col));
+            g.fillStyle = gr;
+            g.fillRect(0, 0, w, h);
+            return new THREE.CanvasTexture(c);
+        }
+
+        function gullTexture() {
+            const c = document.createElement('canvas');
+            c.width = 64; c.height = 32;
+            const g = c.getContext('2d');
+            g.strokeStyle = '#f8fafc'; g.lineWidth = 5; g.lineCap = 'round';
+            g.beginPath(); g.moveTo(4, 10); g.quadraticCurveTo(18, 2, 32, 18); g.quadraticCurveTo(46, 2, 60, 10); g.stroke();
+            return new THREE.CanvasTexture(c);
+        }
+
+        function addBeachExtras() {
+            const G = environmentGroup;
+            beachFx.gulls = []; beachFx.throws = []; beachFx.rods = []; beachFx.ship = null;
+            beachFx.shipNext = clock.getElapsedTime() + 4;
+
+            // Gün batımı gökyüzü
+            const sky = new THREE.Mesh(new THREE.PlaneGeometry(140, 46), new THREE.MeshBasicMaterial({
+                map: gradientTexture([[0, '#2e1a47'], [0.38, '#b4436c'], [0.62, '#f2774b'], [0.8, '#ffb35c'], [1, '#ffd9a0']]),
+                fog: false, depthWrite: false
+            }));
+            sky.position.set(0, 16, -46);
+            G.add(sky);
+            const sun = new THREE.Mesh(new THREE.CircleGeometry(3.2, 40), new THREE.MeshBasicMaterial({ color: 0xffd27a, fog: false }));
+            sun.position.set(7, 1.6, -45);
+            G.add(sun);
+            const glow = new THREE.Mesh(new THREE.CircleGeometry(6, 40), new THREE.MeshBasicMaterial({ color: 0xffa94d, transparent: true, opacity: 0.35, fog: false }));
+            glow.position.set(7, 1.6, -45.2);
+            G.add(glow);
+            // Denizde güneş yansıması
+            const refl = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 26), new THREE.MeshBasicMaterial({ color: 0xffb35c, transparent: true, opacity: 0.35, depthWrite: false }));
+            refl.rotation.x = -Math.PI / 2;
+            refl.position.set(5.5, 0.0, -20);
+            G.add(refl);
+            beachFx.refl = refl;
+
+            // Kız Kulesi: kayalık ada, geniş taban, yan bina, fener ışığı, bayrak
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 1 });
+            [[-1.1, 0.2, 1.3], [0.9, 0.15, 1.1], [0, 0.1, 1.9]].forEach(([rx, ry, rs]) => {
+                const r = new THREE.Mesh(new THREE.DodecahedronGeometry(rs, 0), rockMat);
+                r.position.set(rx, ry - rs * 0.55, -13 + (rx > 0 ? 0.4 : -0.2));
+                r.scale.y = 0.45;
+                G.add(r);
+            });
+            const annex = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.75, 0.9), new THREE.MeshStandardMaterial({ color: 0xf1f5f9 }));
+            annex.position.set(1.15, 0.75, -12.8);
+            G.add(annex);
+            const annexRoof = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 1.0), new THREE.MeshStandardMaterial({ color: 0x9f1239 }));
+            annexRoof.position.set(1.15, 1.18, -12.8);
+            G.add(annexRoof);
+            const winMat = new THREE.MeshBasicMaterial({ color: 0xfde68a });
+            for (let i = 0; i < 3; i++) {
+                const w = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.22, 0.02), winMat);
+                w.position.set(-0.2 + i * 0.2, 1.6, -12.61);
+                G.add(w);
+                const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.02), winMat);
+                w2.position.set(0.75 + i * 0.4, 0.8, -12.34);
+                G.add(w2);
+            }
+            const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.34, 8), new THREE.MeshBasicMaterial({ color: 0xfff1a8 }));
+            lantern.position.set(0, 2.45, -13);
+            G.add(lantern);
+            const towerLight = new THREE.PointLight(0xffd27a, 1.1, 6);
+            towerLight.position.set(0, 2.5, -12.4);
+            G.add(towerLight);
+            beachFx.lantern = lantern;
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 4), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            pole.position.set(0, 3.45, -13);
+            G.add(pole);
+            const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.26), new THREE.MeshBasicMaterial({ color: 0xe11d48, side: THREE.DoubleSide }));
+            flag.position.set(0.22, 3.65, -13);
+            G.add(flag);
+            beachFx.flag = flag;
+
+            // Boğaz köprüsü (uzakta silüet)
+            const bMat = new THREE.MeshBasicMaterial({ color: 0x3b2440 });
+            const bz = -30;
+            [-15, -3].forEach((tx) => {
+                [-0.35, 0.35].forEach((off) => {
+                    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.35, 7.2, 0.35), bMat);
+                    leg.position.set(tx + off, 3.6, bz);
+                    G.add(leg);
+                });
+                const cross = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.25, 0.3), bMat);
+                cross.position.set(tx, 6.6, bz);
+                G.add(cross);
+            });
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(30, 0.32, 0.6), bMat);
+            deck.position.set(-9, 2.3, bz);
+            G.add(deck);
+            const cablePts = [];
+            for (let i = 0; i <= 40; i++) {
+                const x = -15 + (12 * i) / 40;
+                const k = (x + 9) / 6; // -1..1
+                cablePts.push(new THREE.Vector3(x, 2.5 + 4.3 * k * k, bz));
+            }
+            [[-24, -15], [-3, 6]].forEach(([x0, x1]) => {
+                cablePts.unshift(); // yan açıklıklar için düz kablo
+                G.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(x0, 2.5, bz), new THREE.Vector3(x0 < -10 ? -15 : -3, 6.8, bz)
+                ]), new THREE.LineBasicMaterial({ color: 0x3b2440 })));
+                if (x1 > 0) G.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-3, 6.8, bz), new THREE.Vector3(x1, 2.5, bz)
+                ]), new THREE.LineBasicMaterial({ color: 0x3b2440 })));
+            });
+            G.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(cablePts), new THREE.LineBasicMaterial({ color: 0x3b2440 })));
+            for (let i = 0; i < 18; i++) {
+                const dot = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), new THREE.MeshBasicMaterial({ color: i % 3 ? 0xfde68a : 0xa78bfa, fog: false }));
+                dot.position.set(-23 + i * 1.65, 2.55, bz + 0.35);
+                G.add(dot);
+            }
+
+            // Martılar
+            const gTex = gullTexture();
+            for (let i = 0; i < 5; i++) {
+                const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: gTex, transparent: true, depthWrite: false }));
+                sp.scale.set(0.9, 0.45, 1);
+                G.add(sp);
+                beachFx.gulls.push({ sp, phase: Math.random() * 10, r: 3 + Math.random() * 4, cx: (Math.random() - 0.5) * 10, cz: -6 - Math.random() * 6, h: 3 + Math.random() * 2.5, speed: 0.25 + Math.random() * 0.25, dive: null });
+            }
+        }
+
+        function spawnShip(t) {
+            const g = new THREE.Group();
+            const hull = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.7, 1.1), new THREE.MeshStandardMaterial({ color: 0x1f2937 }));
+            hull.position.y = 0.35;
+            g.add(hull);
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(4.25, 0.12, 1.12), new THREE.MeshStandardMaterial({ color: 0xb91c1c }));
+            stripe.position.y = 0.05;
+            g.add(stripe);
+            const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.7, 0.9), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+            cabin.position.set(-0.3, 1.05, 0);
+            g.add(cabin);
+            for (let i = 0; i < 5; i++) {
+                const w = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.16, 0.02), new THREE.MeshBasicMaterial({ color: 0xfde68a }));
+                w.position.set(-1.0 + i * 0.35, 1.1, 0.46);
+                g.add(w);
+            }
+            const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.6, 8), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
+            chimney.position.set(0.3, 1.7, 0);
+            g.add(chimney);
+            const dir = Math.random() < 0.5 ? 1 : -1;
+            g.position.set(-30 * dir, 0, -18 - Math.random() * 4);
+            g.rotation.y = dir > 0 ? 0 : Math.PI;
+            environmentGroup.add(g);
+            beachFx.ship = { g, dir, speed: 1.1 + Math.random() * 0.5 };
+            if (Math.random() < 0.45) SoundFX.event('horn');
+        }
+
+        function seatAvatar(seatIdx) {
+            const av = (typeof avatarObjects !== 'undefined') ? avatarObjects[seatIdx] : null;
+            return av && av.sprite ? av : null;
+        }
+
+        function playFishing(seatIdx, count, isMe) {
+            const av = seatAvatar(seatIdx);
+            if (!av) return;
+            const p = av.sprite.position;
+            const rodGroup = new THREE.Group();
+            const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 1.8, 5), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+            rod.position.set(0, 0.6, -0.5);
+            rod.rotation.x = -0.9;
+            rodGroup.add(rod);
+            const tip = new THREE.Vector3(0, 1.3, -1.25);
+            const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([tip, new THREE.Vector3(0, -0.9, -4.2)]), new THREE.LineBasicMaterial({ color: 0xe2e8f0 }));
+            rodGroup.add(line);
+            rodGroup.position.set(p.x + (seatIdx === 0 ? -0.25 : 0.25), p.y - 0.4, p.z);
+            tableGroup.add(rodGroup);
+            const fish = makeEmojiSprite('🐟', 0.55);
+            fish.visible = false;
+            tableGroup.add(fish);
+            beachFx.rods.push({ rodGroup, fish, start: clock.getElapsedTime(), from: new THREE.Vector3(p.x, 0.1, p.z - 4.2), to: new THREE.Vector3(p.x, p.y + 0.9, p.z - 0.6), seatIdx, count, isMe });
+            if (isMe) showSpeechBubble(seatIdx, 'Oltayı attım, bakalım ne çıkacak 🎣');
+        }
+
+        function playSimitThrow(seatIdx) {
+            const av = seatAvatar(seatIdx);
+            if (!av) return;
+            const p = av.sprite.position;
+            const piece = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.04, 6, 10), new THREE.MeshStandardMaterial({ color: 0xc2410c }));
+            piece.position.set(p.x, p.y + 0.3, p.z);
+            tableGroup.add(piece);
+            const target = new THREE.Vector3(p.x + (Math.random() - 0.5) * 3, 2.2 + Math.random(), p.z - 5 - Math.random() * 2);
+            let gull = null, best = 1e9;
+            beachFx.gulls.forEach((g) => { const d = g.sp.position.distanceTo(target); if (!g.dive && d < best) { best = d; gull = g; } });
+            if (gull) gull.dive = { target: target.clone(), start: clock.getElapsedTime() + 0.6, from: gull.sp.position.clone() };
+            beachFx.throws.push({ piece, from: piece.position.clone(), to: target, start: clock.getElapsedTime(), gull });
+            showSpeechBubble(seatIdx, 'Martılara simit atıyorum 🥯');
+        }
+
+        function tickBeachExtras(dt, t) {
+            if (state.theme !== 'beach' || !beachFx.gulls.length) return;
+            if (beachFx.flag) beachFx.flag.rotation.y = Math.sin(t * 4) * 0.35;
+            if (beachFx.lantern) beachFx.lantern.material.color.setHSL(0.13, 1, 0.75 + Math.sin(t * 3) * 0.1);
+            if (beachFx.refl) beachFx.refl.material.opacity = 0.28 + Math.sin(t * 1.7) * 0.08;
+            // Gemi
+            if (!beachFx.ship && t > beachFx.shipNext) spawnShip(t);
+            if (beachFx.ship) {
+                const s = beachFx.ship;
+                s.g.position.x += s.dir * s.speed * dt;
+                s.g.position.y = Math.sin(t * 1.3) * 0.05;
+                if (Math.abs(s.g.position.x) > 32) { environmentGroup.remove(s.g); beachFx.ship = null; beachFx.shipNext = t + 25 + Math.random() * 35; }
+            }
+            // Martılar
+            beachFx.gulls.forEach((g) => {
+                if (g.dive && t >= g.dive.start) {
+                    const k = Math.min(1, (t - g.dive.start) / 1.1);
+                    g.sp.position.lerpVectors(g.dive.from, g.dive.target, k);
+                    if (k >= 1) { g.dive = null; }
+                } else if (!g.dive) {
+                    const a = t * g.speed + g.phase;
+                    g.sp.position.set(g.cx + Math.cos(a) * g.r, g.h + Math.sin(a * 2.3) * 0.4, g.cz + Math.sin(a) * g.r * 0.5);
+                }
+                g.sp.scale.y = 0.45 * (0.6 + Math.abs(Math.sin(t * 7 + g.phase)) * 0.6);
+            });
+            // Simit atışları
+            beachFx.throws = beachFx.throws.filter((th) => {
+                const k = (t - th.start) / 1.1;
+                if (k >= 1) {
+                    tableGroup.remove(th.piece);
+                    if (th.gull) appendChatMessage('', '🕊️ Bir martı simidi havada kaptı!', false, true);
+                    return false;
+                }
+                th.piece.position.lerpVectors(th.from, th.to, k);
+                th.piece.position.y += Math.sin(k * Math.PI) * 1.4;
+                th.piece.rotation.x += dt * 10;
+                return true;
+            });
+            // Oltalar
+            beachFx.rods = beachFx.rods.filter((r) => {
+                const el = t - r.start;
+                if (el > 2.2 && el < 3.4) {
+                    r.fish.visible = true;
+                    const k = (el - 2.2) / 1.2;
+                    r.fish.position.lerpVectors(r.from, r.to, k);
+                    r.fish.position.y += Math.sin(k * Math.PI) * 1.2;
+                    r.fish.material.rotation = Math.sin(t * 20) * 0.4;
+                    if (!r.announced) {
+                        r.announced = true;
+                        const msg = `🐟 1 balık yakaladım! (Toplam: ${r.count})`;
+                        showSpeechBubble(r.seatIdx, msg);
+                        if (r.isMe) appendChatMessage('', `🎣 1 balık yakaladın! Toplam: ${r.count}`, false, true);
+                    }
+                }
+                if (el > 4.2) { tableGroup.remove(r.rodGroup); tableGroup.remove(r.fish); return false; }
+                return true;
+            });
+        }
+
+        function updateBeachButtons() {
+            const show = state.theme === 'beach' && state.mySeatIndex !== -1 && !document.getElementById('bottom-chat-bar').classList.contains('hidden');
+            document.getElementById('btn-beach-fish').classList.toggle('hidden', !show);
+            document.getElementById('btn-beach-simit').classList.toggle('hidden', !show);
+        }
+
+        let lastBeachAction = 0;
+        document.getElementById('btn-beach-fish').addEventListener('click', () => {
+            if (state.theme !== 'beach' || state.mySeatIndex === -1 || Date.now() - lastBeachAction < 4500) return;
+            lastBeachAction = Date.now();
+            beachFx.fishCount += 1;
+            playFishing(state.mySeatIndex, beachFx.fishCount, true);
+            if (roomChannel) roomChannel.send({ type: 'broadcast', event: 'beach_fish', payload: { senderId: CLIENT_ID, seatIdx: state.mySeatIndex, count: beachFx.fishCount } });
+        });
+        document.getElementById('btn-beach-simit').addEventListener('click', () => {
+            if (state.theme !== 'beach' || state.mySeatIndex === -1 || Date.now() - lastBeachAction < 1500) return;
+            lastBeachAction = Date.now();
+            playSimitThrow(state.mySeatIndex);
+            if (roomChannel) roomChannel.send({ type: 'broadcast', event: 'beach_simit', payload: { senderId: CLIENT_ID, seatIdx: state.mySeatIndex } });
+        });
+
+        // ---------------- Ortam sesleri (tamamen tarayıcıda üretilir, dosya yok) ----------------
+        const SoundFX = (() => {
+            let ctx = null, master = null, current = null, nodes = [], timers = [];
+            let muted = false;
+            try { muted = localStorage.getItem('ob_muted') === '1'; } catch (e) {}
+            const noiseBufs = {};
+
+            function ensure() {
+                if (!ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (!AC) return null;
+                    ctx = new AC();
+                    master = ctx.createGain();
+                    master.gain.value = muted ? 0 : 0.5;
+                    master.connect(ctx.destination);
+                }
+                if (ctx.state === 'suspended') ctx.resume();
+                return ctx;
+            }
+            function noise(kind) {
+                if (noiseBufs[kind]) return noiseBufs[kind];
+                const len = ctx.sampleRate * 3;
+                const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                let last = 0, b0 = 0, b1 = 0, b2 = 0;
+                for (let i = 0; i < len; i++) {
+                    const w = Math.random() * 2 - 1;
+                    if (kind === 'brown') { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+                    else if (kind === 'pink') { b0 = 0.99765 * b0 + w * 0.099; b1 = 0.963 * b1 + w * 0.2965; b2 = 0.57 * b2 + w * 1.0526; d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.11; }
+                    else d[i] = w;
+                }
+                noiseBufs[kind] = buf;
+                return buf;
+            }
+            function loopNoise(kind, type, freq, gain, lfoRate = 0, lfoDepth = 0) {
+                const src = ctx.createBufferSource(); src.buffer = noise(kind); src.loop = true;
+                const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+                const g = ctx.createGain(); g.gain.value = gain;
+                src.connect(f); f.connect(g); g.connect(master);
+                src.start();
+                nodes.push(src, f, g);
+                if (lfoRate) {
+                    const lfo = ctx.createOscillator(); lfo.frequency.value = lfoRate;
+                    const lg = ctx.createGain(); lg.gain.value = lfoDepth;
+                    lfo.connect(lg); lg.connect(g.gain); lfo.start();
+                    nodes.push(lfo, lg);
+                }
+                return g;
+            }
+            function burst(kind, type, freq, gain, dur, when = 0, q = 1) {
+                const t0 = ctx.currentTime + when;
+                const src = ctx.createBufferSource(); src.buffer = noise(kind);
+                const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+                const g = ctx.createGain(); g.gain.setValueAtTime(gain, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+                src.connect(f); f.connect(g); g.connect(master);
+                src.start(t0, Math.random() * 2); src.stop(t0 + dur + 0.05);
+            }
+            function tone(type, f0, f1, gain, dur, when = 0, attack = 0.01, filterHz = 0) {
+                const t0 = ctx.currentTime + when;
+                const o = ctx.createOscillator(); o.type = type;
+                o.frequency.setValueAtTime(f0, t0);
+                if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.0001, t0);
+                g.gain.exponentialRampToValueAtTime(gain, t0 + attack);
+                g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+                let out = o;
+                if (filterHz) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = filterHz; o.connect(f); out = f; }
+                out.connect(g); g.connect(master);
+                o.start(t0); o.stop(t0 + dur + 0.05);
+            }
+            function every(minMs, maxMs, fn) {
+                let id;
+                const run = () => { try { fn(); } catch (e) {} id = setTimeout(run, minMs + Math.random() * (maxMs - minMs)); timers.push(id); };
+                id = setTimeout(run, minMs * Math.random()); timers.push(id);
+            }
+            function stopAll() {
+                timers.forEach(clearTimeout); timers = [];
+                nodes.forEach((n) => { try { n.stop && n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} });
+                nodes = [];
+            }
+            const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+            const scenes = {
+                campfire() {
+                    loopNoise('brown', 'lowpass', 380, 0.16, 0.06, 0.07);           // rüzgar uğultusu
+                    loopNoise('pink', 'bandpass', 900, 0.025);                       // ateş fısırtısı
+                    every(60, 220, () => { if (Math.random() < 0.55) burst('white', 'highpass', 1800 + Math.random() * 2500, 0.08 + Math.random() * 0.22, 0.03 + Math.random() * 0.05); }); // çatırtı
+                    every(900, 1700, () => { for (let i = 0; i < 3; i++) tone('sine', 4300, 4300, 0.018, 0.04, i * 0.07, 0.005); }); // cırcır böceği
+                    every(9000, 18000, () => { tone('sine', 1900, 2800, 0.03, 0.25); tone('sine', 2600, 2100, 0.025, 0.2, 0.3); }); // gece kuşu
+                },
+                beach() {
+                    loopNoise('pink', 'lowpass', 700, 0.35, 0.11, 0.25);            // dalgalar
+                    loopNoise('white', 'highpass', 4000, 0.012, 0.11, 0.01);         // köpük
+                    every(6000, 13000, () => { const n = 2 + Math.floor(Math.random() * 2); for (let i = 0; i < n; i++) tone('triangle', 1500, 950, 0.05, 0.32, i * 0.38, 0.02, 2600); }); // martı
+                    every(70000, 130000, () => scenesExtra.horn());
+                },
+                cafe() {
+                    // hafif lo-fi: Fmaj7 - Em7 - Dm7 - Cmaj7
+                    const chords = [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]];
+                    let step = 0;
+                    loopNoise('white', 'bandpass', 2500, 0.004);                    // plak cızırtısı
+                    const play = () => {
+                        const ch = chords[step % 4];
+                        ch.forEach((m, i) => { tone('triangle', midi(m), midi(m), 0.035, 2.3, i * 0.03, 0.08, 1500); });
+                        tone('sine', midi(ch[0] - 12), midi(ch[0] - 12), 0.07, 2.2, 0, 0.05);
+                        [0.6, 1.2, 1.8].forEach((w) => { if (Math.random() < 0.6) tone('sine', midi(ch[1 + Math.floor(Math.random() * 3)] + 12), 0, 0.02, 0.5, w, 0.01, 2200); });
+                        step++;
+                    };
+                    play();
+                    const id = setInterval(play, 2400); timers.push(id);
+                },
+                club() {
+                    const bpm = 124, sixteenth = 60 / bpm / 4;
+                    let next = ctx.currentTime + 0.1, s = 0;
+                    const bass = [45, 0, 45, 0, 48, 0, 45, 0, 43, 0, 43, 0, 47, 0, 45, 0];
+                    const sched = () => {
+                        while (next < ctx.currentTime + 0.15) {
+                            const w = next - ctx.currentTime;
+                            const st = s % 16;
+                            if (st % 4 === 0) tone('sine', 150, 42, 0.45, 0.32, w, 0.002);                       // kick
+                            if (st % 4 === 2) burst('white', 'highpass', 7500, 0.06, 0.05, w);                 // hi-hat
+                            if (st === 4 || st === 12) burst('white', 'bandpass', 1600, 0.12, 0.12, w, 0.8);    // clap
+                            if (bass[st]) tone('sawtooth', midi(bass[st]), midi(bass[st]), 0.06, sixteenth * 1.8, w, 0.005, 420);
+                            if (st === 0 && Math.floor(s / 16) % 2 === 0) [57, 60, 64].forEach((m) => tone('square', midi(m), midi(m), 0.015, 0.35, w + sixteenth * 2, 0.01, 1200));
+                            next += sixteenth; s++;
+                        }
+                    };
+                    const id = setInterval(sched, 25); timers.push(id);
+                }
+            };
+            const scenesExtra = {
+                horn() { if (!ctx || current !== 'beach') return; tone('sawtooth', 98, 96, 0.08, 2.6, 0, 0.25, 520); tone('sawtooth', 147, 145, 0.05, 2.6, 0, 0.25, 520); }
+            };
+
+            function start(themeId) {
+                if (!ctx) return;
+                stopAll();
+                if (scenes[themeId]) scenes[themeId]();
+            }
+            return {
+                setTheme(themeId) { if (themeId === current) return; current = themeId; if (ctx) start(themeId); },
+                unlock() { if (!ensure()) return; if (current && !nodes.length && !timers.length) start(current); },
+                toggle() {
+                    muted = !muted;
+                    try { localStorage.setItem('ob_muted', muted ? '1' : '0'); } catch (e) {}
+                    if (master) master.gain.setTargetAtTime(muted ? 0 : 0.5, ctx.currentTime, 0.05);
+                    return muted;
+                },
+                isMuted() { return muted; },
+                event(name) { if (ctx && scenesExtra[name]) scenesExtra[name](); }
+            };
+        })();
+
+        function refreshSoundButton() {
+            const b = document.getElementById('btn-sound');
+            if (b) b.textContent = SoundFX.isMuted() ? '🔇' : '🔊';
+        }
+        document.getElementById('btn-sound').addEventListener('click', (e) => { e.stopPropagation(); SoundFX.unlock(); SoundFX.toggle(); refreshSoundButton(); });
+        ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => window.addEventListener(ev, () => SoundFX.unlock(), { passive: true }));
+        refreshSoundButton();
 
         window.addEventListener('load', () => {
             handleViewportResize();
