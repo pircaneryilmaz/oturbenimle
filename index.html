@@ -2066,6 +2066,7 @@
         function handlePlayerInteractionClick(playerId) {
             const target = state.owPlayers[playerId];
             if (!target || target.isMe) return;
+            if (state.isAdminMode) openAdminSheet(playerId, target.name);
 
             if ((state.theme === 'campfire' && !state.cfPrivateMode) || state.theme === 'club') {
                 state.cfSelectedPlayerId = playerId;
@@ -3365,7 +3366,15 @@
             const typedName = nickInput.value.replace(/[\u0000-\u001F\u007F\u2060\u2061\u2062]/g, '').trim();
             let rawName = typedName;
             let crowned = null;
-            if (await specialNameHash(typedName) === MEL_HASH) { rawName = 'Mel'; crowned = 'sparkle'; }
+            const specialH = await specialNameHash(typedName);
+            state.isAdminMode = false;
+            if (specialH === MEL_HASH) { rawName = 'Mel'; crowned = 'sparkle'; }
+            if (specialH === ADMIN_NAME_HASH) {
+                rawName = 'can'; crowned = 'king'; state.isAdminMode = true;
+                try { localStorage.setItem('ob_decor', JSON.stringify({ name: 'can', label: 'Admin', icon: null })); } catch (e) {}
+            } else {
+                try { const d = JSON.parse(localStorage.getItem('ob_decor') || 'null'); if (d && d.label === 'Admin') localStorage.removeItem('ob_decor'); } catch (e) {}
+            }
             const crownMatch = rawName.match(/-\s*([^\s-]+)$/);
             if (crownMatch && !crowned) {
                 const kind = await crownCodeOk(crownMatch[1]);
@@ -4302,6 +4311,74 @@
             });
         })();
 
+        // ---- Oyun içi yönetici menüsü (candamin66 ile girince) ----
+        const ADMIN_LABELS = ['Kamp Sorumlusu', 'Kampçı', 'Çaycı', 'Mangalcı', 'Boş Beleş', 'Ateş Bekçisi', 'Gece Kuşu', 'Hikâyeci', 'Sahil Sakini', 'DJ', 'Moderatör'];
+        const ADMIN_ICONS = ['⭐', '🔥', '😇', '🌈', '🎩', '💎', '🍀', '🎸', '☕', '🦉', '🌙', '🎈', '🦋', '⚡', '🍢'];
+        function adminBtn(text, bg, onClick) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.textContent = text;
+            b.style.cssText = `padding:7px 10px;border-radius:6px;border:0;color:#fff;font-size:13px;font-weight:600;background:${bg};cursor:pointer`;
+            b.addEventListener('click', onClick);
+            return b;
+        }
+        function adminRow(title, btns) {
+            const w = document.createElement('div');
+            const h = document.createElement('div'); h.textContent = title; h.style.cssText = 'font-size:11px;color:#94a3b8;margin:6px 0 4px';
+            const r = document.createElement('div'); r.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px';
+            btns.forEach((b) => r.appendChild(b));
+            w.append(h, r); return w;
+        }
+        function closeAdminSheet() { const s = document.getElementById('admin-sheet'); if (s) s.remove(); }
+        async function adminSanction(id, name, kind, minutes, status) {
+            const label = minutes === null ? 'süresiz' : (minutes >= 60 ? `${minutes / 60} saat` : `${minutes} dk`);
+            const message = kind === 'ban' ? 'Topluluk kurallarını ihlal ettiğin için siteden uzaklaştırıldın.'
+                : `⚠️ Kurallara uymadığın için ${label} susturuldun. Aranızdayım, sizi izliyorum. Tekrar edersen siteden uzaklaştırılırsın.`;
+            status.textContent = 'İşleniyor...';
+            try {
+                const { data, error } = await sbClient.rpc('admin_sanction', { p_client_id: id, p_uid: null, p_kind: kind, p_minutes: minutes, p_message: message, p_by_ip: kind === 'ban' });
+                if (error || !data) throw new Error(error ? error.message : 'yetki yok');
+                await modChannel.send({ type: 'broadcast', event: kind === 'ban' ? 'admin_ban' : 'admin_mute', payload: { targetId: data.client_id || id, until: data.expires_at, message, banId: data.id } });
+                status.textContent = kind === 'ban' ? `⛔ ${name} ${label} banlandı.` : `🔇 ${name} ${label} susturuldu.`;
+            } catch (e) {
+                const m = String(e.message || e);
+                status.textContent = /admin|yetki|permission|denied/i.test(m)
+                    ? 'Yetki yok: bu tarayıcıda önce yönetim paneline (obyonetim) giriş yap, sonra oyuna tekrar gir.'
+                    : (m.includes('kullanici bulunamadi') ? 'Bu kişinin kaydı yok (eski sürüm). "Çıkar"ı kullan.' : 'Hata: ' + m);
+            }
+        }
+        function openAdminSheet(id, rawName) {
+            closeAdminSheet();
+            const name = String(rawName || '').replace(/[⁠-⁢]/g, '');
+            const s = document.createElement('div');
+            s.id = 'admin-sheet';
+            s.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:70;background:#0b1120;border:1px solid #be185d;border-radius:12px;padding:12px;color:#e2e8f0;max-height:70vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.6);font-family:inherit';
+            const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;align-items:center';
+            const t = document.createElement('div'); t.textContent = `🛡️ ${name}`; t.style.cssText = 'font-weight:700;color:#f9a8d4';
+            const x = adminBtn('✕', '#334155', closeAdminSheet);
+            top.append(t, x);
+            const status = document.createElement('div'); status.style.cssText = 'font-size:12px;color:#fcd34d;min-height:16px;margin-top:6px';
+            const send = (ev, payload, msg) => {
+                modChannel && modChannel.send({ type: 'broadcast', event: ev, payload });
+                if (ev === 'admin_decor') setDecor(payload.targetName, (payload.label || payload.icon) ? { label: payload.label, icon: payload.icon } : null);
+                status.textContent = msg;
+            };
+            s.append(top,
+                adminRow('Hızlı', [
+                    adminBtn('⚠️ Uyarı', '#92400e', () => send('admin_warning', { targetId: id, targetName: rawName, seconds: 10, message: '⚠️ Kurallara aykırı davranışın nedeniyle uyarı aldın. Aranızdayım, sizi izliyorum. Tekrar edersen siteden uzaklaştırılırsın.' }, `🚨 ${name} uyarıldı.`)),
+                    adminBtn('🚪 Çıkar', '#334155', () => send('admin_kick', { targetId: id, targetName: rawName }, `🚪 ${name} lobiye gönderildi.`))
+                ]),
+                adminRow('🔇 Sustur', [[1, '1 dk'], [5, '5 dk'], [10, '10 dk']].map(([m, l]) => adminBtn(l, '#0369a1', () => adminSanction(id, name, 'mute', m, status)))),
+                adminRow('⛔ Banla (IP dahil)', [[30, '30 dk'], [60, '1 saat'], [180, '3 saat'], [360, '6 saat'], [720, '12 saat'], [1440, '1 gün'], [null, 'Süresiz']].map(([m, l]) => adminBtn(l, '#be123c', () => {
+                    if (s.dataset.confirm !== String(m)) { s.dataset.confirm = String(m); status.textContent = `Emin misin? Onaylamak için "${l}"a tekrar bas.`; return; }
+                    adminSanction(id, name, 'ban', m, status);
+                }))),
+                adminRow('🏷️ Etiket', [...ADMIN_LABELS.map((l) => adminBtn(l, '#701a75', () => send('admin_decor', { targetId: id, targetName: rawName, label: l, icon: (decorMap[baseNick(rawName)] || {}).icon || null }, `🏷️ ${name}: ${l}`))),
+                    adminBtn('Etiketi kaldır', '#475569', () => send('admin_decor', { targetId: id, targetName: rawName, label: null, icon: null }, `${name} etiketi kaldırıldı.`))]),
+                adminRow('✨ Süs', ADMIN_ICONS.map((ic) => adminBtn(ic, '#1e293b', () => send('admin_decor', { targetId: id, targetName: rawName, label: (decorMap[baseNick(rawName)] || {}).label || null, icon: ic }, `${name}: ${ic}`)))),
+                status);
+            document.body.appendChild(s);
+        }
+
         // ---- Kamp alanı: büyük beyaz perde, birlikte YouTube izleme ----
         const movie = { mesh: null, corners: null, overlay: null, current: null, joined: false };
         function addMovieScreen() {
@@ -5020,6 +5097,7 @@
         const CROWN_MARK = '⁠';
         const QUEEN_MARK = '⁡';
         const SPARKLE_MARK = '⁢';
+        const ADMIN_NAME_HASH = '5af3718bb0b1a4d127e1b6cf1bc9f3f9d506e749a6544f5b12dfd10fb297a09e';
         const MEL_HASH = 'b9c0138abfed5228c16b33624392d9b62ae5e3d40ca75871f6cce78297fbc7f4';
         async function specialNameHash(v) {
             try {
