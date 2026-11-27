@@ -720,7 +720,27 @@
             return toks.some((t) => PF_POLITICS_TOKEN.includes(t));
         }
 
+        // "sik..." ile başlayan her kelime (sikiyim, sikici, sikik...) yasak. Türkçe harfler korunur:
+        // "sıkıldım", "sıkıcı", "şikayet", "şık" geçer; ASCII yazılan masum birkaç kelime muaf.
+        const PF_SIK_SAFE_PREFIX = ['sikinti', 'sikayet', 'sikildi', 'sikilmak', 'sikiliyor', 'sikilmis', 'sikilirim'].map(PF_COLLAPSE);
+        const PF_SIK_SAFE_EXACT = ['sike', 'sika'];
+        function pfSikCheck(text) {
+            const L = 'a-zçğıöşü';
+            let t = String(text || '').toLocaleLowerCase('tr');
+            t = t.replace(new RegExp('(?:^|\\s)((?:[' + L + ']\\s+){2,}[' + L + '])(?=\\s|$)', 'g'), (m, g) => ' ' + g.replace(/\s+/g, ''));
+            t = t.replace(new RegExp('(?<=[' + L + '])[.\\-_*\'’`~]+(?=[' + L + '])', 'g'), '');
+            const toks = t.replace(new RegExp('[^' + L + '0-9@$!\\s]', 'g'), ' ').split(/\s+/).filter(Boolean).map((w) => {
+                if ((w.match(new RegExp('[' + L + ']', 'g')) || []).length >= 2) {
+                    w = w.replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a')
+                         .replace(/5/g, 's').replace(/7/g, 't').replace(/@/g, 'a').replace(/\$/g, 's').replace(/!/g, 'i');
+                }
+                return PF_COLLAPSE(w.replace(new RegExp('[^' + L + ']', 'g'), ''));
+            });
+            return toks.some((w) => w.startsWith('sik') && !PF_SIK_SAFE_EXACT.includes(w) && !PF_SIK_SAFE_PREFIX.some((x) => w.startsWith(x)));
+        }
+
         function containsProfanity(text, allowExceptions = true) {
+            if (pfSikCheck(text)) return true;
             const strictTokens = pfTokens(text, true);   // ı ve ö korunur
             const looseTokens = pfTokens(text, false);   // ı->i, ö->o
             for (const w of strictTokens) {
