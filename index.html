@@ -1600,6 +1600,27 @@
                 bLeg.position.set(bx, by, bz);
                 tableGroup.add(bLeg);
             });
+            // Polat ile Elif: yandaki bankta hep oturan, hiç konuşmayan sevimli çift
+            try {
+                const pe = new THREE.Group();
+                const s2 = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.1, 0.66), benchWoodMat);
+                s2.position.set(0, 0.48, 0); s2.castShadow = true; pe.add(s2);
+                const b2 = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.52, 0.09), benchWoodMat);
+                b2.position.set(0, 0.8, -0.29); b2.castShadow = true; pe.add(b2);
+                [[-1, 0.24, -0.24], [1, 0.24, -0.24], [-1, 0.24, 0.24], [1, 0.24, 0.24]].forEach(([x, y, z]) => {
+                    const l = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.48, 0.09), benchIronMat);
+                    l.position.set(x, y, z); pe.add(l);
+                });
+                [['male', 3, -0.5], ['female', 1, 0.5]].forEach(([g, idx, x]) => {
+                    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: createCharacterTexture(g, idx, false, false), transparent: true }));
+                    sp.scale.set(1.1, 1.64, 1);
+                    sp.position.set(x, 1.0, 0.02);
+                    pe.add(sp);
+                });
+                pe.position.set(3.3, 0, -2.5);
+                pe.rotation.y = -0.18;
+                tableGroup.add(pe);
+            } catch (e) { console.warn('Polat-Elif bankı:', e); }
             try { addBeachExtras(); } catch (e) { console.warn('Sahil ekleri:', e); }
         }
 
