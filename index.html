@@ -5323,6 +5323,90 @@
                 controls.update();
             })();
         })();
+        // ---- Her akşam 22:00 buluşma duyurusu (günde bir kez, kapatılabilir) ----
+        (function initMeetupPopup() {
+            const HOUR = 22;
+            const trNow = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Istanbul' }));
+            function statusText() {
+                const n = trNow();
+                const h = n.getHours(), m = n.getMinutes();
+                if (h >= HOUR) return { live: true, text: '🔥 Şu an buluşma saati! Herkes ateşin başında, hemen gel.' };
+                const mins = (HOUR - h) * 60 - m;
+                const hh = Math.floor(mins / 60), mm = mins % 60;
+                return { live: false, text: `⏳ Bu akşamki buluşmaya ${hh ? hh + ' saat ' : ''}${mm} dakika kaldı` };
+            }
+            function icsBlob() {
+                const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//oturbenimle//TR', 'BEGIN:VEVENT',
+                    'UID:oturbenimle-2200@oturbenimle', 'DTSTAMP:20261128T000000Z',
+                    'DTSTART;TZID=Europe/Istanbul:20261128T220000', 'DTEND;TZID=Europe/Istanbul:20261128T230000',
+                    'RRULE:FREQ=DAILY', 'SUMMARY:🔥 oturbenimle - kamp ateşi buluşması',
+                    'DESCRIPTION:Her akşam 22:00\'de kamp ateşinin başındayız. https://oturbenimle.vercel.app',
+                    'URL:https://oturbenimle.vercel.app',
+                    'BEGIN:VALARM', 'TRIGGER:-PT10M', 'ACTION:DISPLAY', 'DESCRIPTION:Kamp ateşi 10 dakika sonra başlıyor', 'END:VALARM',
+                    'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+                return new Blob([ics], { type: 'text/calendar' });
+            }
+            function addToCalendar() {
+                const isApple = /iPhone|iPad|Macintosh/i.test(navigator.userAgent);
+                if (isApple) {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(icsBlob());
+                    a.download = 'oturbenimle-2200.ics';
+                    document.body.appendChild(a); a.click(); a.remove();
+                } else {
+                    const u = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+                        + '&text=' + encodeURIComponent('🔥 oturbenimle - kamp ateşi buluşması')
+                        + '&dates=20261128T220000/20261128T230000&ctz=Europe/Istanbul'
+                        + '&recur=' + encodeURIComponent('RRULE:FREQ=DAILY')
+                        + '&details=' + encodeURIComponent('Her akşam 22:00\'de kamp ateşinin başındayız. https://oturbenimle.vercel.app');
+                    window.open(u, '_blank', 'noopener');
+                }
+            }
+            function show() {
+                if (document.getElementById('meetup-popup')) return;
+                const bd = document.createElement('div');
+                bd.id = 'meetup-popup';
+                bd.style.cssText = 'position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px';
+                const c = document.createElement('div');
+                c.style.cssText = 'width:100%;max-width:360px;background:#1a1208;border:2px solid #f59e0b;border-radius:16px;padding:20px 18px;text-align:center;color:#fde68a;box-shadow:0 0 50px rgba(245,158,11,.35);position:relative;font-family:inherit';
+                const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', 'Kapat');
+                x.style.cssText = 'position:absolute;top:8px;right:10px;background:transparent;border:0;color:#fcd34d;font-size:18px;cursor:pointer';
+                const fire = document.createElement('div'); fire.textContent = '🔥'; fire.style.cssText = 'font-size:44px;line-height:1';
+                const h = document.createElement('div'); h.textContent = 'Her akşam 22:00\'de kamp ateşinde buluşuyoruz!';
+                h.style.cssText = 'font-weight:800;font-size:19px;color:#fff;margin-top:8px';
+                const p = document.createElement('div'); p.textContent = 'Saatini al, ateşin başında görüşelim. O saatte herkes burada.';
+                p.style.cssText = 'font-size:13px;color:#fcd9a0;margin-top:6px';
+                const st = document.createElement('div'); st.style.cssText = 'margin-top:12px;font-weight:700;font-size:14px;color:#fbbf24';
+                const cal = document.createElement('button'); cal.type = 'button'; cal.textContent = '📅 Takvimime ekle (her gün 22:00)';
+                cal.style.cssText = 'margin-top:14px;width:100%;padding:11px;border-radius:10px;border:0;background:#f59e0b;color:#1a1208;font-weight:800;font-size:14px;cursor:pointer';
+                const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = 'Tamam, akşam görüşürüz 👋';
+                ok.style.cssText = 'margin-top:8px;width:100%;padding:9px;border-radius:10px;border:1px solid #92400e;background:transparent;color:#fde68a;font-size:13px;cursor:pointer';
+                c.append(x, fire, h, p, st, cal, ok);
+                bd.appendChild(c);
+                document.body.appendChild(bd);
+                const upd = () => { const s = statusText(); st.textContent = s.text; st.style.color = s.live ? '#4ade80' : '#fbbf24'; };
+                upd(); const iv = setInterval(upd, 30000);
+                const close = () => { clearInterval(iv); bd.remove(); };
+                x.addEventListener('click', close); ok.addEventListener('click', close);
+                bd.addEventListener('click', (e) => { if (e.target === bd) close(); });
+                cal.addEventListener('click', () => { addToCalendar(); cal.textContent = '✅ Takvime eklendi'; });
+            }
+            window.showMeetupPopup = show;
+            // Lobide sabit küçük şerit: dokununca pencere tekrar açılır
+            const strip = document.createElement('button');
+            strip.type = 'button';
+            strip.id = 'meetup-strip';
+            strip.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:55;padding:8px 14px;border-radius:999px;border:1px solid #f59e0b;background:rgba(26,18,8,.95);color:#fde68a;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 4px 20px rgba(245,158,11,.35);white-space:nowrap';
+            strip.addEventListener('click', show);
+            document.body.appendChild(strip);
+            const updStrip = () => {
+                const lobbyOpen = !document.getElementById('lobby-modal').classList.contains('hidden');
+                strip.style.display = lobbyOpen ? 'block' : 'none';
+                strip.textContent = statusText().live ? '🔥 Şu an buluşma saati, ateşin başına gel!' : '🔥 Her akşam 22:00 kamp ateşinde buluşuyoruz';
+            };
+            updStrip(); setInterval(updStrip, 1500);
+            setTimeout(show, 1200);
+        })();
     </script>
 </body>
 </html>
