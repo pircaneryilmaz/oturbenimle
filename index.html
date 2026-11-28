@@ -5403,15 +5403,36 @@
                 const st = document.createElement('div'); st.style.cssText = 'margin-top:12px;font-weight:700;font-size:14px;color:#fbbf24';
                 const cal = document.createElement('button'); cal.type = 'button'; cal.textContent = '📅 Takvimime ekle (her gün 22:00)';
                 cal.style.cssText = 'margin-top:14px;width:100%;padding:11px;border-radius:10px;border:0;background:#f59e0b;color:#1a1208;font-weight:800;font-size:14px;cursor:pointer';
-                const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = 'Tamam, akşam görüşürüz 👋';
-                ok.style.cssText = 'margin-top:8px;width:100%;padding:9px;border-radius:10px;border:1px solid #92400e;background:transparent;color:#fde68a;font-size:13px;cursor:pointer';
-                c.append(x, fire, h, p, st, ok);
+                const q = document.createElement('div'); q.textContent = 'Geliyor musun?';
+                q.style.cssText = 'margin-top:16px;font-weight:800;font-size:16px;color:#fff';
+                const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-top:10px';
+                const yes = document.createElement('button'); yes.type = 'button'; yes.textContent = 'Evet 🙋';
+                yes.style.cssText = 'flex:1;padding:11px 6px;border-radius:10px;border:0;background:#f59e0b;color:#1a1208;font-weight:800;font-size:14px;cursor:pointer';
+                const may = document.createElement('button'); may.type = 'button'; may.textContent = 'Akşama bakarız ya';
+                may.style.cssText = 'flex:1;padding:11px 6px;border-radius:10px;border:1px solid #f59e0b;background:transparent;color:#fde68a;font-weight:700;font-size:14px;cursor:pointer';
+                row.append(yes, may);
+                const msg = document.createElement('div'); msg.style.cssText = 'display:none;margin-top:16px;font-weight:800;font-size:17px;color:#4ade80';
+                c.append(x, fire, h, p, st, q, row, msg);
                 bd.appendChild(c);
                 document.body.appendChild(bd);
                 const upd = () => { const s = statusText(); st.textContent = s.text; st.style.color = s.live ? '#4ade80' : '#fbbf24'; };
                 upd(); const iv = setInterval(upd, 30000);
                 const close = () => { clearInterval(iv); bd.remove(); };
-                x.addEventListener('click', close); ok.addEventListener('click', close);
+                x.addEventListener('click', close);
+                const answer = (ans) => {
+                    const day = trNow().toDateString();
+                    try { localStorage.setItem('ob_rsvp', JSON.stringify({ day, ans })); } catch (e) {}
+                    let rid = null;
+                    try { rid = localStorage.getItem('ob_rsvp_id'); if (!rid) { rid = 'r_' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36); localStorage.setItem('ob_rsvp_id', rid); } } catch (e) { rid = CLIENT_ID; }
+                    try { if (sbClient) sbClient.rpc('meetup_rsvp_set', { p_client_id: rid, p_answer: ans }).then(() => {}, () => {}); } catch (e) {}
+                    q.style.display = 'none'; row.style.display = 'none';
+                    msg.textContent = ans === 'yes' ? 'Tamam, akşam görüşürüz 👋' : 'Gel, mutlaka bekliyoruz 🔥';
+                    msg.style.display = 'block';
+                    setTimeout(close, 2200);
+                };
+                yes.addEventListener('click', () => answer('yes'));
+                may.addEventListener('click', () => answer('maybe'));
+                try { const prev = JSON.parse(localStorage.getItem('ob_rsvp') || 'null'); if (prev && prev.day === trNow().toDateString()) { q.textContent = prev.ans === 'yes' ? 'Geliyorsun, süper! Fikrin değişti mi?' : 'Geliyor musun? (en son "bakarız" demiştin)'; } } catch (e) {}
                 bd.addEventListener('click', (e) => { if (e.target === bd) close(); });
             }
             window.showMeetupPopup = show;
