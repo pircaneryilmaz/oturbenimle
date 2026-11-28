@@ -5381,7 +5381,7 @@
                 cal.style.cssText = 'margin-top:14px;width:100%;padding:11px;border-radius:10px;border:0;background:#f59e0b;color:#1a1208;font-weight:800;font-size:14px;cursor:pointer';
                 const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = 'Tamam, akşam görüşürüz 👋';
                 ok.style.cssText = 'margin-top:8px;width:100%;padding:9px;border-radius:10px;border:1px solid #92400e;background:transparent;color:#fde68a;font-size:13px;cursor:pointer';
-                c.append(x, fire, h, p, st, cal, ok);
+                c.append(x, fire, h, p, st, ok);
                 bd.appendChild(c);
                 document.body.appendChild(bd);
                 const upd = () => { const s = statusText(); st.textContent = s.text; st.style.color = s.live ? '#4ade80' : '#fbbf24'; };
@@ -5389,7 +5389,6 @@
                 const close = () => { clearInterval(iv); bd.remove(); };
                 x.addEventListener('click', close); ok.addEventListener('click', close);
                 bd.addEventListener('click', (e) => { if (e.target === bd) close(); });
-                cal.addEventListener('click', () => { addToCalendar(); cal.textContent = '✅ Takvime eklendi'; });
             }
             window.showMeetupPopup = show;
             // Lobide sabit küçük şerit: dokununca pencere tekrar açılır
